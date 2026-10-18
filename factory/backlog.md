@@ -20,17 +20,23 @@ the orchestrator moves items whose dependencies are all merged from **Menunggu**
 - [x] [infra-017] Factory tooling: dashboard task list with detail drawer and clickable blockers, task graph page, task codes and wave backlog, parallel-safe jobs, fe preview servers, dashboard decision inbox, AI requirement docs with autosave → infra-017
 - [x] [infra-018] Project setup: Next.js scaffold, Supabase clients and project config, migration rules, initial MVP backlog → infra-018
 - [x] [infra-019] Dashboard drawer UX: resizable job and task drawers (drag handle, width remembered, double-click for full width), header and decision form scroll with the content instead of sticking, file list stays beside the markdown → infra-019
+- [x] [infra-020] Responsive rule: spec and AGENTS.md require a real desktop layout (≥ 1024px) for every screen, not only mobile → infra-020
+- [x] [infra-021] Preview button at any stage: job cards show "Lihat preview" whenever a preview server is running, not only while waiting on a human decision → infra-021
+- [x] [infra-022] Rename to Umra Hub: brand "Umra Hub" in docs and conventions, `umrahub` as package name, local Supabase project id, GitHub repo, Vercel and Supabase project names (UI copy is renamed in fe-004) → infra-022
+- [x] [infra-023] No AI co-author: AGENTS.md, builder and factory skill forbid Co-Authored-By/AI attribution in commits and merges → infra-023
+- [x] [infra-024] Vercel Web Analytics: installed by the user from the Vercel dashboard (GitHub PR #1: `@vercel/analytics` and `<Analytics />` in `src/app/layout.tsx`); merged into local main → infra-024
+- [x] [infra-025] Spelling rule: worship term is always "Umrah" in both languages (never "Umroh"); brand is "Umra Hub" — AGENTS.md, spec and fe-004 requirements → infra-025
+- [x] [infra-026] Merge via GitHub PR: approved jobs are pushed and opened as pull requests instead of merging into local main; `factory/watch.sh` streams dashboard requests and PR merged/closed events; dashboard gets a Pull request column and PR links → infra-026
+- [x] [infra-027] Sync main via PR: publish the already-reviewed local main commits (fe-001, fe-002, be-003, infra-017…026) through one PR so job PRs show only their own commits; orchestrator's infra commits now always go through a PR → infra-027
 
 ## Siap — gelombang 1
 
 - [x] [fe-002] Design refresh: restyle the app to the new visual direction in .plans/design-reference.png and the spec's updated Design Direction: replace the sand/gold tokens with a lavender-to-white gradient background, white large-radius cards with soft shadows, an indigo-violet primary, pastel icon-tile colours and a deep-navy dark theme; add reusable primitives in src/components/ui (Card, Chip/segmented control, round IconButton, primary pill Button with a white circular arrow badge, floating dark pill BottomNav with max 4 tabs, not mounted on the landing page yet) using inline SVG icons and no new dependencies; restyle the landing page to match the reference's first screen (CSS/SVG hero composition with floating icon chips, centred headline, indigo "Masuk dengan Google" pill CTA, still no auth); keep 44px tap targets, body text contrast ≥ 7:1 and text on indigo ≥ 4.5:1; update AGENTS.md's Design system section → 002-design-refresh
 - [x] [be-003] DB schema: database schema migration for the MVP data model in the spec (preparation_steps, city_cost_overrides, trips, travelers, trip_step_config, trip_step_progress) with RLS so users only read and write their own trips; preparation_steps and city_cost_overrides are readable by any signed-in user → 003-db-schema
+- [x] [be-005] Seed content: seed migration with the full preparation-step content from the spec (all timeline phases and categories, Bahasa Indonesia and English titles, summaries and detail markdown, dependencies, shared/individual default, IDR cost ranges, city cost overrides for flights from Jakarta, Surabaya, Medan, Makassar and Yogyakarta) → be-005
+- [x] [fe-004] i18n: Bahasa Indonesia (default) and English with a language toggle in the header, all existing UI copy moved into message files, choice persisted in a cookie → fe-004
 
 ## Menunggu
-
-Gelombang 2
-- [fe-004] i18n: Bahasa Indonesia (default) and English with a language toggle in the header, all existing UI copy moved into message files, choice persisted in a cookie (butuh: fe-002)
-- [be-005] Seed content: seed migration with the full preparation-step content from the spec (all timeline phases and categories, Bahasa Indonesia and English titles, summaries and detail markdown, dependencies, shared/individual default, IDR cost ranges, city cost overrides for flights from Jakarta, Surabaya, Medan, Makassar and Yogyakarta) (butuh: be-003)
 
 Gelombang 3
 - [be-006] Google auth: Google sign-in with Supabase Auth: the landing CTA starts Google OAuth, /auth/callback exchanges the code, middleware refreshes the session, every route except / and /auth/* redirects signed-out users to /, and a signed-in header shows the user's name, avatar and a sign-out button (butuh: fe-004)

@@ -139,6 +139,7 @@ function statusOf(t, seen = new Set()) {
   const job = t.job && jobs.find((j) => j.id === t.job)
   if (t.section.startsWith('Selesai') || job?.stage === 'merged') return { key: 'done', label: 'selesai' }
   if (job?.stage === 'needs-human') return { key: 'human', label: 'butuh kamu' }
+  if (job?.stage === 'pr') return { key: 'human', label: 'merge PR' }
   if (job) return { key: 'run', label: job.stage }
   if (t.checked) return { key: 'run', label: 'berjalan' }
   if (t.section.startsWith('Baru')) return { key: 'new', label: 'perlu dicek' }

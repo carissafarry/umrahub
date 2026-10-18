@@ -97,10 +97,21 @@ Below, `<paths>` stands for that sentence.
 Every agent prompt also ends with ` Task code: <type>-<NNN>.` (for jobs from
 the backlog). Every commit in that job is `<type>-<NNN> <message>`, no brackets.
 
+Your own commits never pile up unpushed on `main`: job branches start from
+local `main`, and every unpushed `main` commit would show up inside the job's
+PR. After committing infra work on `main`, push it as `factory/infra-<NNN>`
+(`git push origin main:factory/infra-<NNN>`) and open a PR for it right away
+(`<code> <Title>`, no AI attribution); the user merges it like any job PR.
+Before opening a job PR, check `git rev-list --count origin/main..main`; if it
+isn't 0, open/refresh that infra PR first and tell the user to merge it before
+the job PR so the job PR shows only its own commits.
+
 Your own commits on `main` follow the same rule. Factory or tooling changes
 that no backlog task covers get one first: add `- [x] [infra-<next NNN>] <Title>:
 <what changed> → infra-<NNN>` under **Selesai** in `factory/backlog.md` and
-commit with that code. Never commit without a task code.
+commit with that code. Never commit without a task code, and **never add a
+`Co-Authored-By: Claude` (or any AI attribution) trailer** to any commit or
+merge — the user's most important rule.
 
 Agents that open pages also get a port. With `n` the job number (`fe-004` → 4),
 the builder gets `5100 + 10n`, `reviewer-ux` gets `5101 + 10n` and `reviewer-ui`
@@ -169,26 +180,40 @@ When it finishes, read the first line of `decision.md`:
 - `APPROVE`: go to **Merge**.
 - `ESCALATE`: go to **Needs human**.
 
-### Merge
+### Merge (via GitHub pull request)
 
-The merge happens in the main checkout, so it must be clean and on `main`:
-`git status --porcelain -- . ':!factory/backlog.md' ':!factory/requirements'` prints nothing and
-`git branch --show-current` prints `main`. `factory/backlog.md` is exempt: every
-`/factory next` edits it, and job branches never touch it, so a dirty backlog
-cannot conflict with the merge. If not, set `stage: "needs-human"` and tell the
-user the job is approved but the main checkout is busy; they run
-`/factory approve <job-id>` once it is clean. Otherwise:
+Jobs never merge into `main` locally. The user merges every job on GitHub.
 
-```bash
-git merge --no-ff factory/<job-id> -m "<task code> Merge factory/<job-id>"
-git worktree remove <worktree>
-git branch -d factory/<job-id>
-```
+1. Stop the job's preview if one is running.
+2. Push the branch: `git -C <worktree> push -u origin factory/<job-id>`.
+3. Open the PR:
+   ```bash
+   gh pr create --repo carissafarry/umrahub --base main --head factory/<job-id> \
+     --title "<task code> <Title>" --body-file <job folder>/pr-body.md
+   ```
+   Write `pr-body.md` first (it is runtime state): a short summary of what the
+   branch does (from build.md), the acceptance criteria with ✅/❌, the final
+   review verdicts, the approver's `decision.md` "Why" (or "approved by the
+   user" for `/factory approve`), anything the user must do after merging
+   (e.g. `supabase db push`), and the preview link for fe jobs. **No AI
+   attribution of any kind** in the title or body.
+4. Set `stage: "pr"` and add `"pr": "<url>"` to job.json. Tell the user the
+   PR link. Never merge the PR yourself, and never push to `main`.
 
-Set `stage: "merged"`. If the merge fails, run `git merge --abort` (when a merge
-is in progress), set `stage: "needs-human"` and tell the user why. If removing the
-worktree fails, the job is still merged: tell the user what `git worktree remove`
-printed. Never push.
+**When the PR is merged** (the watcher prints `PR <job-id> MERGED <url>`):
+`git fetch origin`, then in the main checkout (clean apart from
+`factory/backlog.md` and `factory/requirements`) `git merge --ff-only origin/main`.
+If that can't fast-forward (local `main` has commits GitHub doesn't), run
+`git merge origin/main -m "<task code> Sync main with merged PR"`. Then
+`git worktree remove <worktree>`, `git branch -d factory/<job-id>` and
+`git push origin --delete factory/<job-id>` (ignore "remote ref does not
+exist"). Set `stage: "merged"`, drop `pr`-only state you no longer need (keep
+the `pr` url), and promote unblocked backlog items. Tell the user, including
+any post-merge step from the PR body.
+
+**When the PR is closed unmerged** (`PR <job-id> CLOSED`): set
+`stage: "needs-human"` and ask the user what to do; keep the branch and
+worktree.
 
 ### Needs human
 
@@ -203,9 +228,13 @@ it answers, and add `"preview": "http://localhost:<port>"` to job.json (the
 dashboard shows it as a "Lihat preview" button). Give the user the link in your
 message, plus the pages to open for this feature.
 
+You may also start the preview earlier (e.g. while a round is waiting on a
+reviewer that doesn't open pages) when the user wants to look; the dashboard
+shows the button whenever `preview` is set.
+
 **Stop the preview** (`kill $(lsof -tiTCP:<port> -sTCP:LISTEN)`) and drop
-`preview` from job.json before **Merge**, before a **rework** builder starts,
-and whenever the job leaves `needs-human`.
+`preview` from job.json before **Merge**, before any builder (resume or rework)
+or a UX/UI reviewer runs in that worktree, and when the job is merged.
 
 ## /factory next
 
@@ -279,16 +308,12 @@ or `/factory run`) keeps a Monitor on the inbox for as long as the session is
 open, re-arming it each time it expires (30 minutes):
 
 ```bash
-# Run through bash: zsh aborts on an unmatched *.json glob.
-mkdir -p factory/inbox/taken && bash -c 'while true; do
-  for f in factory/inbox/*.json; do
-    [ -e "$f" ] || continue
-    b=$(basename "$f")
-    mv "$f" factory/inbox/taken/ && echo "REQUEST $b $(tr -d "\n" < "factory/inbox/taken/$b")"
-  done
-  sleep 2
-done'
+bash factory/watch.sh   # from the repo root
 ```
+
+It emits `REQUEST <file> <json>` for dashboard requests and
+`PR <job-id> MERGED|CLOSED <url>` when a job's pull request leaves the open
+state (see **Merge**).
 
 For each `REQUEST` event with `"kind": "decision"`:
 - `approve`: run `/factory approve <job>`. A non-empty note is only a comment;

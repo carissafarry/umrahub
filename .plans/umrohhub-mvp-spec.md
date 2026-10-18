@@ -1,8 +1,10 @@
-# UmrohHub — MVP Product Specification
+# Umra Hub — MVP Product Specification
+
+> Renamed 2026-10-18 from "UmrohHub" (that domain was taken). Brand in the UI: **Umra Hub**; identifiers and domain: `umrahub`.
 
 ## Overview
 
-**UmrohHub** is an interactive web platform that guides Indonesian pilgrims through the complete Umrah preparation process. Phase 1 focuses on a personalized, step-by-step preparation checklist with progress tracking. Future phases expand into a travel agent marketplace with maps, reviews, and booking integrations.
+**Umra Hub** is an interactive web platform that guides Indonesian pilgrims through the complete Umrah preparation process. Phase 1 focuses on a personalized, step-by-step preparation checklist with progress tracking. Future phases expand into a travel agent marketplace with maps, reviews, and booking integrations.
 
 **Problem Statement:**
 Indonesians wanting to perform independent (mandiri) Umrah face an opaque, fragmented preparation process. They don't know what steps to take, in what order, or what each step costs — leading to confusion, missed requirements, or falling victim to fraudulent agents.
@@ -224,8 +226,10 @@ Separate Next.js application for content management. Deployed independently.
 - Large body text (16px minimum) for readability
 
 ### Layout
-- Mobile-first responsive
-- Bottom navigation bar (mobile)
+- Mobile-first, but **web and mobile are both first-class** (updated 2026-10-18): on desktop the app must look designed for desktop, never like a phone-width column centred on a big screen
+- Breakpoints: phone < 768px, tablet 768–1023px, desktop ≥ 1024px; content max-width around 1200px on desktop
+- Desktop patterns: multi-column layouts (e.g. hero text beside the illustration, cards in 2–3 column grids, checklist with a side summary panel), a top navigation bar instead of the floating bottom nav, larger type scale for headings
+- Bottom navigation bar (mobile only; desktop uses a top nav)
 - Card-based step display
 - Progress visualization (progress bar or stepper for overall journey)
 
@@ -247,7 +251,7 @@ users
 trips
 ├── id (uuid, PK)
 ├── user_id (FK → users)
-├── name (text — e.g., "Umroh Keluarga 2027")
+├── name (text — e.g., "Umrah Keluarga 2027")
 ├── planned_departure_date (date)
 ├── departure_city (text)
 ├── has_disabilities (boolean)
