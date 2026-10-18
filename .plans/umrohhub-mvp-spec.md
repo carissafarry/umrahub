@@ -224,8 +224,10 @@ Separate Next.js application for content management. Deployed independently.
 - Large body text (16px minimum) for readability
 
 ### Layout
-- Mobile-first responsive
-- Bottom navigation bar (mobile)
+- Mobile-first, but **web and mobile are both first-class** (updated 2026-10-18): on desktop the app must look designed for desktop, never like a phone-width column centred on a big screen
+- Breakpoints: phone < 768px, tablet 768–1023px, desktop ≥ 1024px; content max-width around 1200px on desktop
+- Desktop patterns: multi-column layouts (e.g. hero text beside the illustration, cards in 2–3 column grids, checklist with a side summary panel), a top navigation bar instead of the floating bottom nav, larger type scale for headings
+- Bottom navigation bar (mobile only; desktop uses a top nav)
 - Card-based step display
 - Progress visualization (progress bar or stepper for overall journey)
 

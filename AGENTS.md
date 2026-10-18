@@ -66,6 +66,7 @@ All four must pass before a change is ready. Use `build:check`, not `build`, for
 
 - Mobile-first; minimum 44px tap targets; high contrast; one gold accent CTA per screen.
 - UI copy in Bahasa Indonesia by default; once i18n exists, all user-facing strings go through it.
+- Responsive for web and mobile: build mobile-first, then give every screen a real desktop layout at `lg` (≥ 1024px) — wider container (max ~1200px), multi-column grids, hero text beside its illustration, top nav instead of BottomNav. A phone-width column centred on desktop is a bug. Check every UI change at 390px, 768px and 1280px.
 - Server Components by default; add `"use client"` only where interactivity needs it.
 - Every Supabase table gets RLS policies. Never use or commit the service-role key.
 - Never commit `.env*` files except `.env.example`.
