@@ -142,8 +142,8 @@
     display: grid; grid-template-rows: auto 1fr; transform: translateX(100%);
     transition: transform .25s ease;
   }
-  .open .scrim { opacity: 1; pointer-events: auto; }
-  .open .drawer { transform: none; }
+  .open #overlay .scrim, .topen #toverlay .scrim { opacity: 1; pointer-events: auto; }
+  .open #overlay .drawer, .topen #toverlay .drawer { transform: none; }
   .d-head { padding: 20px 24px 16px; border-bottom: 1px solid var(--line); position: relative; }
   .d-head .num { font-size: 12px; }
   .d-head h3 { margin: 4px 40px 6px 0; font-size: 16px; font-weight: 600; line-height: 1.35; }
@@ -241,13 +241,68 @@
   .backlog > summary::-webkit-details-marker { display: none; }
   .backlog > summary .counts { font-family: var(--mono); font-size: 12px; color: var(--muted); font-weight: 400; }
   .bl-body { display: grid; grid-template-columns: minmax(0, 2fr) minmax(260px, 1fr); gap: 20px; padding: 4px 16px 16px; }
-  .bl-group h4 { margin: 10px 0 6px; font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
-  .bl-item { display: flex; gap: 10px; padding: 6px 0; border-top: 1px solid var(--line); font-size: 13px; }
-  .bl-item code { font-family: var(--mono); font-size: 12px; color: var(--active); white-space: nowrap; }
-  .bl-item .t { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text); }
-  .bl-item .needs { font-family: var(--mono); font-size: 11px; color: var(--faint); white-space: nowrap; margin-left: auto; }
-  .bl-item.new code { color: var(--changes); }
-  .bl-item.done .t, .bl-item.done code { color: var(--faint); }
+  .bl-group { margin-bottom: 8px; }
+  .bl-group h4 {
+    margin: 12px 0 0; padding: 0 10px 6px; font-size: 11px; text-transform: uppercase;
+    letter-spacing: .06em; color: var(--muted); border-bottom: 1px solid var(--line);
+  }
+  .task-row {
+    display: grid; grid-template-columns: 78px minmax(0, 1fr) auto 52px 70px; gap: 12px; align-items: center;
+    width: 100%; padding: 9px 10px; border: 0; border-bottom: 1px solid var(--line); background: none;
+    text-align: left; cursor: pointer; font-size: 13px; border-radius: 0;
+  }
+  .task-row:hover, .task-row:focus-visible { background: var(--card-hover); outline: none; }
+  .task-row .ttl { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .task-row .ttl b { font-weight: 600; }
+  .task-row .ttl span { color: var(--muted); }
+  .task-row .wave, .task-row .blk { font-family: var(--mono); font-size: 11px; color: var(--faint); white-space: nowrap; }
+  .task-row .blk.on { color: var(--changes); }
+  .task-row.done .ttl, .task-row.done .ttl span { color: var(--faint); }
+  .code {
+    font-family: var(--mono); font-size: 11px; font-weight: 600; padding: 2px 7px; border-radius: 999px;
+    white-space: nowrap; border: 1px solid currentColor; justify-self: start;
+  }
+  .code.t-fe { color: var(--active); } .code.t-be { color: var(--merged); }
+  .code.t-infra { color: var(--pass); } .code.t-\? { color: var(--changes); }
+  .pill {
+    font-family: var(--mono); font-size: 11px; padding: 2px 8px; border-radius: 999px; white-space: nowrap;
+    background: var(--card); color: var(--muted); border: 1px solid var(--line);
+  }
+  .pill.ready { color: var(--pass); border-color: var(--pass); }
+  .pill.run { color: var(--active); border-color: var(--active); }
+  .pill.human { color: var(--human); border-color: var(--human); }
+  .pill.blocked { color: var(--changes); border-color: var(--changes); }
+  .pill.new { color: var(--changes); border-style: dashed; border-color: var(--changes); }
+  .pill.done { color: var(--merged); border-color: var(--merged); }
+
+  /* Task drawer */
+  #toverlay .drawer { width: min(620px, 100vw); grid-template-rows: auto 1fr; }
+  .t-body { overflow-y: auto; padding: 18px 24px 40px; }
+  .t-meta { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 8px; }
+  .t-back {
+    background: none; border: 0; color: var(--muted); cursor: pointer; padding: 0; font-size: 12px;
+    font-family: var(--mono); margin-bottom: 6px;
+  }
+  .t-back:hover { color: var(--text); }
+  .t-sec { margin: 0 0 22px; }
+  .t-sec h5 { margin: 0 0 8px; font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+  .t-desc { line-height: 1.65; white-space: pre-wrap; margin: 0; }
+  .t-link {
+    display: grid; grid-template-columns: 78px minmax(0, 1fr) auto; gap: 10px; align-items: center;
+    width: 100%; padding: 8px 10px; margin-bottom: 6px; background: var(--card); border: 1px solid var(--line);
+    border-radius: 8px; cursor: pointer; text-align: left; font-size: 13px;
+  }
+  .t-link:hover, .t-link:focus-visible { border-color: var(--muted); outline: none; }
+  .t-link .ttl { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .t-none { color: var(--faint); font-size: 13px; margin: 0; }
+  .t-job {
+    background: var(--active); color: #10121a; border: 0; border-radius: 8px; padding: 8px 14px;
+    font-weight: 600; cursor: pointer;
+  }
+  @media (max-width: 700px) {
+    .task-row { grid-template-columns: 70px minmax(0, 1fr) auto; }
+    .task-row .wave, .task-row .blk { display: none; }
+  }
   .bl-form { display: flex; flex-direction: column; gap: 8px; }
   .bl-form label { font-size: 12px; color: var(--muted); }
   .bl-form input, .bl-form textarea, .bl-form select {
@@ -316,6 +371,20 @@
       <nav class="files" id="d-files"></nav>
       <article class="doc"><div class="md" id="d-doc"></div></article>
     </div>
+  </aside>
+</div>
+
+<div id="toverlay">
+  <div class="scrim" data-tclose></div>
+  <aside class="drawer" role="dialog" aria-modal="true" aria-labelledby="t-title">
+    <div class="d-head">
+      <button class="t-back" id="t-back" hidden>← kembali</button>
+      <div class="num" id="t-num"></div>
+      <h3 id="t-title"></h3>
+      <div class="t-meta" id="t-meta"></div>
+      <button class="close" data-tclose aria-label="Tutup">×</button>
+    </div>
+    <div class="t-body" id="t-body"></div>
   </aside>
 </div>
 
@@ -467,30 +536,113 @@ async function loadJobs() {
 // ---- Backlog -------------------------------------------------------------
 
 let lastBacklog = ''
+let tasks = new Map() // code -> task
+let openTask = null
+const taskTrail = []
+
+// Status shown in the list; job stages come from the job cards' job.json.
+function statusOf(t) {
+  const job = t.job && jobs.find((j) => j.id === t.job)
+  if (t.section.startsWith('Selesai') || job?.stage === 'merged') return { key: 'done', label: 'Selesai' }
+  if (job?.stage === 'needs-human') return { key: 'human', label: 'Butuh kamu' }
+  if (job) return { key: 'run', label: `Berjalan · ${job.stage}` }
+  if (t.checked) return { key: 'run', label: 'Berjalan' }
+  if (t.section.startsWith('Baru')) return { key: 'new', label: 'Perlu dicek' }
+  if (t.section.startsWith('Siap')) return { key: 'ready', label: 'Siap' }
+  const open = openBlockers(t)
+  return open.length ? { key: 'blocked', label: `Diblokir · ${open.length}` } : { key: 'ready', label: 'Siap dipindah' }
+}
+
+const openBlockers = (t) => t.needs.filter((c) => statusOf(tasks.get(c) || { needs: [], section: '' }).key !== 'done')
+const blocking = (t) => [...tasks.values()].filter((o) => o.needs.includes(t.code))
+const codeBadge = (t) => `<span class="code t-${esc(t.type)}">${esc(t.code)}</span>`
+
+function taskRow(t) {
+  const s = statusOf(t)
+  const open = s.key === 'done' ? [] : openBlockers(t)
+  return `<button class="task-row ${s.key === 'done' ? 'done' : ''}" data-task="${esc(t.code)}" type="button">
+    ${codeBadge(t)}
+    <span class="ttl"><b>${esc(t.title)}</b> <span>— ${esc(t.text)}</span></span>
+    <span class="pill ${s.key}">${esc(s.label)}</span>
+    <span class="wave">${t.wave ? `gel. ${t.wave}` : ''}</span>
+    <span class="blk ${open.length ? 'on' : ''}">${open.length ? `⛔ ${open.length} blocker` : ''}</span>
+  </button>`
+}
 
 async function renderBacklog() {
   const res = await fetch('api/backlog', { cache: 'no-store' })
   if (!res.ok) return // served by a plain static server: no backlog API
   const { items } = await res.json()
+  tasks = new Map(items.map((i) => [i.code, i]))
+  const by = (keys) => items.filter((i) => keys.includes(statusOf(i).key))
   const groups = [
-    ['Baru — belum dicek', items.filter((i) => i.section.startsWith('Baru')), 'new'],
-    ['Siap', items.filter((i) => i.section.startsWith('Siap') && !i.checked), ''],
-    ['Berjalan / selesai', items.filter((i) => i.checked), 'done'],
-    ['Menunggu', items.filter((i) => i.section.startsWith('Menunggu')), ''],
+    ['Butuh kamu', by(['human'])],
+    ['Berjalan', by(['run'])],
+    ['Siap dikerjakan', by(['ready'])],
+    ['Baru — perlu dicek', by(['new'])],
+    ['Diblokir', by(['blocked'])],
+    ['Selesai', by(['done'])],
   ]
-  const html = groups.filter(([, list]) => list.length).map(([title, list, cls]) => `
-    <div class="bl-group"><h4>${esc(title)} · ${list.length}</h4>
-    ${list.map((i) => `<div class="bl-item ${cls}" title="${esc(i.text)}"><code>[${esc(i.code)}]</code>
-      <span class="t"><strong>${esc(i.title)}</strong> — ${esc(i.text)}</span>
-      ${i.needs.length ? `<span class="needs">butuh ${esc(i.needs.join(', '))}</span>` : ''}</div>`).join('')}
-    </div>`).join('')
+  const html = groups.filter(([, list]) => list.length).map(([title, list]) => `
+    <div class="bl-group"><h4>${esc(title)} · ${list.length}</h4>${list.map(taskRow).join('')}</div>`).join('')
   if (html !== lastBacklog) {
     lastBacklog = html
     $('bl-list').innerHTML = html
-    const n = (s) => items.filter((i) => i.section.startsWith(s)).length
-    $('bl-counts').textContent = `${n('Baru')} baru · ${groups[1][1].length} siap · ${n('Menunggu')} menunggu`
+    $('bl-counts').textContent = groups.filter(([, l]) => l.length).map(([t, l]) => `${l.length} ${t.split(' ')[0].toLowerCase()}`).join(' · ')
   }
+  if (openTask) renderTask()
 }
+
+function linkList(list, empty) {
+  if (!list.length) return `<p class="t-none">${empty}</p>`
+  return list.map((t) => {
+    const s = statusOf(t)
+    return `<button class="t-link" data-task="${esc(t.code)}" type="button">${codeBadge(t)}
+      <span class="ttl">${esc(t.title)}</span><span class="pill ${s.key}">${esc(s.label)}</span></button>`
+  }).join('')
+}
+
+function renderTask() {
+  const t = tasks.get(openTask)
+  if (!t) { $('t-title').textContent = `${openTask} tidak ditemukan di backlog`; $('t-body').innerHTML = ''; return }
+  const s = statusOf(t)
+  const missing = t.needs.filter((c) => !tasks.has(c))
+  const job = t.job && jobs.find((j) => j.id === t.job)
+  $('t-num').innerHTML = codeBadge(t)
+  $('t-title').textContent = t.title
+  $('t-meta').innerHTML = `<span class="pill ${s.key}">${esc(s.label)}</span>
+    <span class="pill">${esc({ fe: 'frontend', be: 'backend', infra: 'infra', '?': 'tipe belum ditentukan' }[t.type])}</span>
+    ${t.wave ? `<span class="pill">gelombang ${t.wave}</span>` : ''}
+    <span class="pill">${esc(t.section)}</span>`
+  $('t-back').hidden = !taskTrail.length
+  $('t-body').innerHTML = `
+    <section class="t-sec"><h5>Deskripsi</h5><p class="t-desc">${esc(t.text)}</p></section>
+    <section class="t-sec"><h5>Diblokir oleh · ${t.needs.length}</h5>
+      ${linkList(t.needs.map((c) => tasks.get(c)).filter(Boolean), 'Tidak ada — task ini tidak menunggu task lain.')}
+      ${missing.length ? `<p class="t-none">Tidak ada di backlog: ${esc(missing.join(', '))}</p>` : ''}</section>
+    <section class="t-sec"><h5>Memblokir · ${blocking(t).length}</h5>
+      ${linkList(blocking(t), 'Tidak ada task yang menunggu task ini.')}</section>
+    <section class="t-sec"><h5>Job</h5>
+      ${job ? `<button class="t-job" data-job="${esc(job.id)}" type="button">Buka job ${esc(job.id)} →</button>`
+        : `<p class="t-none">${t.job ? `Job ${esc(t.job)} belum terlihat di board.` : 'Belum dijalankan.'} ${s.key === 'new' ? `Minta Claude: <code>/factory run ${esc(t.code)}</code>` : s.key === 'ready' ? `Minta Claude: <code>/factory run ${esc(t.code)}</code>` : ''}</p>`}
+    </section>`
+}
+
+function showTask(code, push = true) {
+  if (push && openTask && openTask !== code) taskTrail.push(openTask)
+  openTask = code
+  document.body.classList.add('topen')
+  renderTask()
+  $('t-body').scrollTop = 0
+}
+
+function closeTask() {
+  openTask = null
+  taskTrail.length = 0
+  document.body.classList.remove('topen')
+}
+
+$('t-back').addEventListener('click', () => showTask(taskTrail.pop(), false))
 
 $('bl-form').addEventListener('submit', async (e) => {
   e.preventDefault()
@@ -613,8 +765,11 @@ function closeDrawer() {
 }
 
 document.addEventListener('click', (e) => {
+  const taskEl = e.target.closest('[data-task]')
+  if (taskEl) return showTask(taskEl.dataset.task)
+  if (e.target.closest('[data-tclose]')) return closeTask()
   const cardEl = e.target.closest('[data-job]')
-  if (cardEl) return openDrawer(cardEl.dataset.job)
+  if (cardEl) { closeTask(); return openDrawer(cardEl.dataset.job) }
   const fileEl = e.target.closest('[data-file]')
   if (fileEl) {
     openPath = fileEl.dataset.file
@@ -624,7 +779,11 @@ document.addEventListener('click', (e) => {
   }
   if (e.target.closest('[data-close]')) closeDrawer()
 })
-document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeDrawer() })
+document.addEventListener('keydown', (e) => {
+  if (e.key !== 'Escape') return
+  if (openTask) closeTask()
+  else closeDrawer()
+})
 
 // ---- Markdown (just enough for the factory's files) ---------------------
 

@@ -24,15 +24,22 @@ const esc = (s) => s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>
 
 function parseBacklog(text) {
   let section = ''
+  let wave = null
   const items = []
   for (const line of text.split('\n')) {
-    if (line.startsWith('## ')) section = line.slice(3).trim()
+    if (line.startsWith('## ')) {
+      section = line.slice(3).trim()
+      const w = section.match(/gelombang (\d+)/i)
+      wave = w ? Number(w[1]) : null
+    }
+    const w = line.match(/^Gelombang (\d+)/)
+    if (w) wave = Number(w[1])
     const m = line.match(ITEM)
     if (!m) continue
     const [, box, type, num, title, rest, job] = m
     const needs = rest.match(/\(butuh: ([^)]*)\)\s*$/)
     items.push({
-      code: `${type}-${num}`, type, title, section, checked: box === 'x', job: job || null,
+      code: `${type}-${num}`, type, title, section, wave, checked: box === 'x', job: job || null,
       needs: needs ? needs[1].split(',').map((s) => s.trim()) : [],
       text: needs ? rest.slice(0, needs.index).trim() : rest,
     })
