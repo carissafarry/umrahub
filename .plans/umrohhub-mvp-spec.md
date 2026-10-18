@@ -251,7 +251,7 @@ users
 trips
 ├── id (uuid, PK)
 ├── user_id (FK → users)
-├── name (text — e.g., "Umroh Keluarga 2027")
+├── name (text — e.g., "Umrah Keluarga 2027")
 ├── planned_departure_date (date)
 ├── departure_city (text)
 ├── has_disabilities (boolean)
