@@ -8,6 +8,7 @@ import {
   SparkleIcon,
   WalletIcon,
 } from "@/components/ui/icons";
+import { signInWithGoogle } from "@/lib/auth/actions";
 
 // `id` is the message key under Home.benefits and the stable React key.
 const benefits: {
@@ -120,7 +121,12 @@ function Hero() {
   );
 }
 
-export default async function Home() {
+export default async function Home({
+  searchParams,
+}: {
+  searchParams: Promise<{ auth_error?: string | string[] }>;
+}) {
+  const authError = (await searchParams).auth_error !== undefined;
   const t = await getTranslations("Home");
   const tFooter = await getTranslations("Footer");
 
@@ -146,7 +152,17 @@ export default async function Home() {
               لَبَّيْكَ اللَّهُمَّ لَبَّيْكَ
             </p>
             <div className="mt-6 flex w-full flex-col gap-3 md:items-center lg:items-start">
-              <Button>{t("signIn")}</Button>
+              <form action={signInWithGoogle} className="contents">
+                <Button type="submit">{t("signIn")}</Button>
+              </form>
+              {authError && (
+                <p
+                  role="alert"
+                  className="rounded-2xl border border-border bg-surface px-4 py-3 text-center font-medium text-foreground shadow-card lg:text-left"
+                >
+                  {t("signInError")}
+                </p>
+              )}
               <p className="text-center text-muted lg:text-left">
                 {t("signInNote")}
               </p>

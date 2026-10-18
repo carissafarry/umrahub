@@ -4,13 +4,16 @@
     "description": "Umra Hub memandu jemaah mempersiapkan Umrah mandiri langkah demi langkah."
   },
   "Header": {
-    "languageLabel": "Ganti bahasa"
+    "languageLabel": "Ganti bahasa",
+    "signOut": "Keluar",
+    "accountLabel": "Akun"
   },
   "Home": {
     "title": "Persiapan Umrah mandiri, lebih tenang dan terarah",
     "description": "Umra Hub memandu Anda langkah demi langkah dalam mempersiapkan Umrah secara mandiri, tanpa biro perjalanan, dari rencana awal hingga hari keberangkatan.",
     "signIn": "Masuk dengan Google",
     "signInNote": "Gratis. Simpan kemajuan persiapan Anda di satu tempat.",
+    "signInError": "Gagal masuk dengan Google. Silakan coba lagi.",
     "benefitsHeading": "Yang Anda dapatkan",
     "benefits": {
       "checklist": {
