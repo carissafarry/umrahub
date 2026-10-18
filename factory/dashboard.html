@@ -137,13 +137,24 @@
     opacity: 0; pointer-events: none; transition: opacity .2s;
   }
   .drawer {
-    position: fixed; top: 0; right: 0; bottom: 0; width: min(920px, 100vw);
+    position: fixed; top: 0; right: 0; bottom: 0; width: min(920px, 100vw); max-width: 100vw;
     background: var(--panel); border-left: 1px solid var(--line);
-    display: grid; grid-template-rows: auto 1fr; transform: translateX(100%);
+    overflow-y: auto; overscroll-behavior: contain; transform: translateX(100%);
     transition: transform .25s ease;
   }
-  .open .scrim { opacity: 1; pointer-events: auto; }
-  .open .drawer { transform: none; }
+  .drawer.resizing { transition: none; user-select: none; }
+  .resizer {
+    position: fixed; top: 0; bottom: 0; width: 12px; cursor: ew-resize; z-index: 3;
+    touch-action: none; display: none;
+  }
+  .open #overlay .resizer, .topen #toverlay .resizer { display: block; }
+  .resizer::after {
+    content: ""; position: absolute; top: 50%; left: 4px; width: 4px; height: 56px; margin-top: -28px;
+    border-radius: 4px; background: var(--muted); opacity: .5; transition: opacity .15s, background .15s;
+  }
+  .resizer:hover::after, .resizer.on::after { opacity: 1; background: var(--active); }
+  .open #overlay .scrim, .topen #toverlay .scrim { opacity: 1; pointer-events: auto; }
+  .open #overlay .drawer, .topen #toverlay .drawer { transform: none; }
   .d-head { padding: 20px 24px 16px; border-bottom: 1px solid var(--line); position: relative; }
   .d-head .num { font-size: 12px; }
   .d-head h3 { margin: 4px 40px 6px 0; font-size: 16px; font-weight: 600; line-height: 1.35; }
@@ -153,8 +164,11 @@
     color: var(--muted); font-size: 18px; line-height: 1;
   }
   .close:hover { color: var(--text); border-color: var(--muted); }
-  .d-body { display: grid; grid-template-columns: 200px 1fr; min-height: 0; }
-  .files { border-right: 1px solid var(--line); padding: 14px 10px; overflow-y: auto; }
+  .d-body { display: grid; grid-template-columns: 200px 1fr; align-items: start; }
+  .files {
+    border-right: 1px solid var(--line); padding: 14px 10px; overflow-y: auto;
+    position: sticky; top: 0; max-height: 100vh; background: var(--panel);
+  }
   .files .group {
     font-size: 10px; text-transform: uppercase; letter-spacing: .08em;
     color: var(--faint); margin: 12px 8px 4px;
@@ -170,10 +184,10 @@
   .file .rn { display: none; }
   .file .v { width: 6px; height: 6px; border-radius: 50%; background: var(--faint); flex: none; }
   .v.good { background: var(--pass); } .v.warn { background: var(--changes); } .v.stop { background: var(--human); }
-  .doc { overflow-y: auto; padding: 22px 28px 60px; min-width: 0; }
+  .doc { padding: 22px 28px 60px; min-width: 0; }
 
   /* Rendered markdown */
-  .md { max-width: 680px; line-height: 1.65; }
+  .md { max-width: 1000px; line-height: 1.65; }
   .md h1, .md h2, .md h3, .md h4 { line-height: 1.3; margin: 1.6em 0 .5em; }
   .md h1 { font-size: 20px; } .md h2 { font-size: 15px; } .md h3 { font-size: 14px; color: var(--muted); }
   .md > :first-child { margin-top: 0; }
@@ -221,28 +235,193 @@
     .board { grid-template-columns: 1fr; padding: 16px 16px 32px; }
     footer { padding: 0 16px 24px; }
     .d-head { padding: 16px; }
-    .d-body { grid-template-columns: 1fr; grid-template-rows: auto 1fr; }
+    .d-body { grid-template-columns: 1fr; }
     .files {
       border-right: 0; border-bottom: 1px solid var(--line); display: flex; gap: 4px;
-      overflow-x: auto; padding: 8px;
+      overflow-x: auto; padding: 8px; max-height: none; z-index: 1;
     }
+    .resizer { display: none; }
     .files .group { display: none; }
     .file { width: auto; white-space: nowrap; }
     .file .rn { display: inline; white-space: pre; }
     .doc { padding: 18px 16px 48px; }
   }
+
+  /* Backlog */
+  .backlog { margin: 16px 32px 0; border: 1px solid var(--line); border-radius: 10px; background: var(--panel); }
+  .backlog > summary {
+    cursor: pointer; padding: 12px 16px; display: flex; gap: 12px; align-items: baseline;
+    list-style: none; font-weight: 600;
+  }
+  .backlog > summary::-webkit-details-marker { display: none; }
+  .backlog > summary .counts { font-family: var(--mono); font-size: 12px; color: var(--muted); font-weight: 400; }
+  .bl-body { display: grid; grid-template-columns: minmax(0, 2fr) minmax(260px, 1fr); gap: 20px; padding: 4px 16px 16px; }
+  .bl-group { margin-bottom: 8px; }
+  .bl-group h4 {
+    margin: 12px 0 0; padding: 0 10px 6px; font-size: 11px; text-transform: uppercase;
+    letter-spacing: .06em; color: var(--muted); border-bottom: 1px solid var(--line);
+  }
+  .task-row {
+    display: grid; grid-template-columns: 78px minmax(0, 1fr) auto 52px 70px; gap: 12px; align-items: center;
+    width: 100%; padding: 9px 10px; border: 0; border-bottom: 1px solid var(--line); background: none;
+    text-align: left; cursor: pointer; font-size: 13px; border-radius: 0;
+  }
+  .task-row:hover, .task-row:focus-visible { background: var(--card-hover); outline: none; }
+  .task-row .ttl { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .task-row .ttl b { font-weight: 600; }
+  .task-row .ttl span { color: var(--muted); }
+  .task-row .wave, .task-row .blk { font-family: var(--mono); font-size: 11px; color: var(--faint); white-space: nowrap; }
+  .task-row .blk.on { color: var(--changes); }
+  .task-row.done .ttl, .task-row.done .ttl span { color: var(--faint); }
+  .code {
+    font-family: var(--mono); font-size: 11px; font-weight: 600; padding: 2px 7px; border-radius: 999px;
+    white-space: nowrap; border: 1px solid currentColor; justify-self: start;
+  }
+  .code.t-fe { color: var(--active); } .code.t-be { color: var(--merged); }
+  .code.t-infra { color: var(--pass); } .code.t-\? { color: var(--changes); }
+  .pill {
+    font-family: var(--mono); font-size: 11px; padding: 2px 8px; border-radius: 999px; white-space: nowrap;
+    background: var(--card); color: var(--muted); border: 1px solid var(--line);
+  }
+  .pill.ready { color: var(--pass); border-color: var(--pass); }
+  .pill.run { color: var(--active); border-color: var(--active); }
+  .pill.human { color: var(--human); border-color: var(--human); }
+  .pill.blocked { color: var(--changes); border-color: var(--changes); }
+  .pill.new { color: var(--changes); border-style: dashed; border-color: var(--changes); }
+  .pill.done { color: var(--merged); border-color: var(--merged); }
+
+  .card .preview {
+    display: inline-block; margin-top: 8px; padding: 4px 10px; border-radius: 999px; cursor: pointer;
+    background: var(--human); color: #10121a; font-family: var(--mono); font-size: 11px; font-weight: 600;
+  }
+  .card .preview:hover { filter: brightness(1.1); }
+
+  /* Decision form */
+  .decide { margin-top: 14px; padding: 12px; border: 1px solid var(--human); border-radius: 10px; background: var(--card); }
+  .decide h4 { margin: 0 0 8px; font-size: 12px; color: var(--human); text-transform: uppercase; letter-spacing: .06em; }
+  .decide textarea {
+    width: 100%; min-height: 84px; resize: vertical; font: inherit; color: var(--text); background: var(--panel);
+    border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px;
+  }
+  .decide .row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; align-items: center; }
+  .decide button { border: 0; border-radius: 8px; padding: 8px 14px; font-weight: 600; cursor: pointer; color: #10121a; }
+  .decide button:disabled { opacity: .5; cursor: default; }
+  .decide .approve { background: var(--pass); }
+  .decide .rework { background: var(--changes); }
+  .decide .msg { font-family: var(--mono); font-size: 12px; color: var(--muted); }
+  .decide .msg.err { color: var(--human); }
+  .decide.sent { border-color: var(--active); }
+  .decide.sent h4 { color: var(--active); }
+  .card .sent { display: inline-block; margin-top: 8px; font-family: var(--mono); font-size: 11px; color: var(--active); }
+
+  /* Requirement editor */
+  .req-tabs { display: flex; gap: 6px; align-items: center; margin-bottom: 8px; }
+  .req-tabs button {
+    background: none; border: 1px solid var(--line); border-radius: 999px; padding: 3px 12px;
+    font-size: 12px; cursor: pointer; color: var(--muted);
+  }
+  .req-tabs button.on { color: var(--text); border-color: var(--active); }
+  .req-status { margin-left: auto; font-family: var(--mono); font-size: 11px; color: var(--faint); }
+  .req-status.err { color: var(--human); }
+  #req-text {
+    width: 100%; min-height: 240px; resize: vertical; font: 13px/1.6 var(--mono); color: var(--text);
+    background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px;
+  }
+  #req-text:focus { outline: none; border-color: var(--active); }
+  .req-preview { background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; max-width: none; }
+  .req-gen { display: flex; gap: 8px; margin-top: 10px; }
+  .req-gen input {
+    flex: 1; min-width: 0; font: inherit; font-size: 13px; color: var(--text); background: var(--card);
+    border: 1px solid var(--line); border-radius: 8px; padding: 7px 10px;
+  }
+  .req-btn {
+    background: var(--merged); color: #10121a; border: 0; border-radius: 8px; padding: 7px 12px;
+    font-weight: 600; cursor: pointer; white-space: nowrap;
+  }
+  .req-pending {
+    padding: 14px; border: 1px dashed var(--merged); border-radius: 8px; color: var(--merged);
+    font-family: var(--mono); font-size: 12px; animation: breathe 1.6s ease-in-out infinite;
+  }
+
+  /* Task drawer */
+  #toverlay .drawer { width: min(620px, 100vw); }
+  .t-body { padding: 18px 24px 40px; }
+  .t-meta { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 8px; }
+  .t-back {
+    background: none; border: 0; color: var(--muted); cursor: pointer; padding: 0; font-size: 12px;
+    font-family: var(--mono); margin-bottom: 6px;
+  }
+  .t-back:hover { color: var(--text); }
+  .t-sec { margin: 0 0 22px; }
+  .t-sec h5 { margin: 0 0 8px; font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+  .t-desc { line-height: 1.65; white-space: pre-wrap; margin: 0; }
+  .t-link {
+    display: grid; grid-template-columns: 78px minmax(0, 1fr) auto; gap: 10px; align-items: center;
+    width: 100%; padding: 8px 10px; margin-bottom: 6px; background: var(--card); border: 1px solid var(--line);
+    border-radius: 8px; cursor: pointer; text-align: left; font-size: 13px;
+  }
+  .t-link:hover, .t-link:focus-visible { border-color: var(--muted); outline: none; }
+  .t-link .ttl { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .t-none { color: var(--faint); font-size: 13px; margin: 0; }
+  .t-job {
+    background: var(--active); color: #10121a; border: 0; border-radius: 8px; padding: 8px 14px;
+    font-weight: 600; cursor: pointer;
+  }
+  @media (max-width: 700px) {
+    .task-row { grid-template-columns: 70px minmax(0, 1fr) auto; }
+    .task-row .wave, .task-row .blk { display: none; }
+  }
+  .bl-form { display: flex; flex-direction: column; gap: 8px; }
+  .bl-form label { font-size: 12px; color: var(--muted); }
+  .bl-form input, .bl-form textarea, .bl-form select {
+    font: inherit; color: var(--text); background: var(--card); border: 1px solid var(--line);
+    border-radius: 8px; padding: 8px 10px; width: 100%;
+  }
+  .bl-form textarea { min-height: 96px; resize: vertical; }
+  .bl-form button {
+    align-self: flex-start; background: var(--active); color: #10121a; border: 0; border-radius: 8px;
+    padding: 8px 14px; font-weight: 600; cursor: pointer; min-height: 36px;
+  }
+  .bl-form button:disabled { opacity: .5; cursor: default; }
+  .bl-msg { font-family: var(--mono); font-size: 12px; color: var(--muted); }
+  .bl-msg.ok { color: var(--pass); }
+  .bl-msg.err { color: var(--human); }
+  @media (max-width: 900px) { .bl-body { grid-template-columns: 1fr; } .backlog { margin: 16px; } }
 </style>
 </head>
 <body>
 <header>
-  <h1>Software factory</h1>
+  <h1>Software factory <a href="graph.html" style="font-size:13px;font-weight:400;color:var(--active);margin-left:12px;text-decoration:none">Task graph →</a></h1>
   <div class="status" id="status">connecting…</div>
 </header>
 <div id="banner"></div>
+<details class="backlog" id="backlog" open>
+  <summary>Backlog <span class="counts" id="bl-counts"></span></summary>
+  <div class="bl-body">
+    <div id="bl-list"></div>
+    <form class="bl-form" id="bl-form">
+      <h4 style="margin:10px 0 2px">+ Task baru</h4>
+      <label for="bl-type">Tipe</label>
+      <select id="bl-type" name="type">
+        <option value="?">Biar Claude tentukan saat dicek</option>
+        <option value="fe">fe — halaman &amp; UI</option>
+        <option value="be">be — database, auth, server</option>
+        <option value="infra">infra — tooling, deploy, factory</option>
+      </select>
+      <label for="bl-title">Judul task (kode [tipe-nomor] dibuat otomatis)</label>
+      <input id="bl-title" name="title" maxlength="80" required placeholder="Contoh: Pengingat masa berlaku paspor">
+      <label for="bl-desc">Deskripsi — apa yang harus terjadi</label>
+      <textarea id="bl-desc" name="description" maxlength="1500" placeholder="Perilaku yang diharapkan, halaman yang terlibat, batasan…"></textarea>
+      <button type="submit">Simpan ke backlog</button>
+      <div class="bl-msg" id="bl-msg">Task baru masuk "Baru — belum dicek". Minta Claude <code>/factory next</code> atau <code>/factory run &lt;kode&gt;</code>: requirement-nya dicek dulu sebelum dieksekusi.</div>
+    </form>
+  </div>
+</details>
 <main class="board" id="board"></main>
 <footer>
   <span>/factory &lt;feature&gt;</span>
-  <span>/factory next</span>
+  <span>/factory next [n]</span>
+  <span>/factory run &lt;code&gt;</span>
   <span>/factory approve &lt;job-id&gt;</span>
   <span>/factory rework &lt;job-id&gt; &lt;note&gt;</span>
 </footer>
@@ -254,6 +433,7 @@
       <div class="num" id="d-num"></div>
       <h3 id="d-title"></h3>
       <div class="branch" id="d-branch"></div>
+      <div id="d-decide"></div>
       <button class="close" data-close aria-label="Close">×</button>
     </div>
     <div class="d-body">
@@ -261,6 +441,22 @@
       <article class="doc"><div class="md" id="d-doc"></div></article>
     </div>
   </aside>
+  <div class="resizer" data-resize="overlay" title="Geser untuk mengubah lebar · klik dua kali untuk lebar penuh"></div>
+</div>
+
+<div id="toverlay">
+  <div class="scrim" data-tclose></div>
+  <aside class="drawer" role="dialog" aria-modal="true" aria-labelledby="t-title">
+    <div class="d-head">
+      <button class="t-back" id="t-back" hidden>← kembali</button>
+      <div class="num" id="t-num"></div>
+      <h3 id="t-title"></h3>
+      <div class="t-meta" id="t-meta"></div>
+      <button class="close" data-tclose aria-label="Tutup">×</button>
+    </div>
+    <div class="t-body" id="t-body"><div id="t-info"></div><section class="t-sec" id="t-req"></section></div>
+  </aside>
+  <div class="resizer" data-resize="toverlay" title="Geser untuk mengubah lebar · klik dua kali untuk lebar penuh"></div>
 </div>
 
 <script>
@@ -353,9 +549,74 @@ function card(job, past) {
       <p class="feature">${esc(job.feature)}</p>
       <div class="branch">${esc(job.branch)}</div>
       ${rows.length ? `<div class="rounds">${rows.join('')}</div>` : ''}
+      ${requestFor(job.id) ? `<span class="sent">📨 ${esc(requestFor(job.id).action)} terkirim · ${requestFor(job.id).state === 'taken' ? 'diproses Claude' : 'menunggu Claude'}</span>` : ''}
+      ${human && previewUrl(job) ? `<span class="preview" data-preview="${esc(previewUrl(job))}" role="link">▶ Lihat preview · ${esc(previewUrl(job).replace('http://', ''))}</span>` : ''}
       ${human ? `<div class="hint">/factory approve ${esc(job.id)}<br>/factory rework ${esc(job.id)} …</div>` : ''}
     </button>`
 }
+
+let requests = []
+const requestFor = (id) => requests.find((r) => r.job === id)
+
+async function loadRequests() {
+  try {
+    const res = await fetch('api/inbox', { cache: 'no-store' })
+    requests = res.ok ? (await res.json()).requests : []
+  } catch { requests = [] }
+}
+
+let lastDecide = ''
+function renderDecide(job) {
+  const req = requestFor(job.id)
+  const key = `${job.id}|${job.stage}|${req ? req.state : ''}`
+  if (key === lastDecide) return
+  lastDecide = key
+  const box = $('d-decide')
+  if (req) {
+    box.innerHTML = `<div class="decide sent"><h4>Keputusan terkirim</h4>
+      <div class="msg">${esc(req.action === 'approve' ? 'Approve & merge' : 'Rework')} · ${req.state === 'taken' ? 'sedang diproses Claude' : 'menunggu Claude mengambilnya'}</div>
+      ${req.note ? `<p class="msg" style="white-space:pre-wrap;margin:6px 0 0">${esc(req.note)}</p>` : ''}</div>`
+    return
+  }
+  if (job.stage !== 'needs-human') { box.innerHTML = ''; return }
+  box.innerHTML = `<form class="decide" id="decide-form"><h4>Keputusanmu</h4>
+    <label for="decide-note" class="msg">Catatan perubahan (wajib untuk rework, opsional untuk approve)</label>
+    <textarea id="decide-note" maxlength="4000" placeholder="Contoh: hapus kartu manfaat, hero lebih kecil, lalu resolve konflik AGENTS.md"></textarea>
+    <div class="row">
+      ${previewUrl(job) ? `<a class="msg" href="${esc(previewUrl(job))}" target="_blank" rel="noopener" style="color:var(--human)">▶ Lihat preview dulu</a>` : ''}
+      <span style="flex:1"></span>
+      <button type="submit" class="rework" data-action="rework">Kirim rework</button>
+      <button type="submit" class="approve" data-action="approve">Approve &amp; merge</button>
+    </div>
+    <div class="msg" id="decide-msg"></div></form>`
+}
+
+document.addEventListener('submit', async (e) => {
+  if (e.target.id !== 'decide-form') return
+  e.preventDefault()
+  const action = e.submitter?.dataset.action
+  const msg = $('decide-msg')
+  const buttons = e.target.querySelectorAll('button')
+  buttons.forEach((b) => (b.disabled = true))
+  try {
+    const res = await fetch(`api/jobs/${encodeURIComponent(openJobId)}/decision`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action, note: $('decide-note').value }),
+    })
+    const data = await res.json().catch(() => ({}))
+    if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`)
+    await loadRequests()
+    lastDecide = ''
+    renderDecide(jobs.find((j) => j.id === openJobId))
+  } catch (err) {
+    msg.className = 'msg err'
+    msg.textContent = `Gagal: ${err.message}`
+    buttons.forEach((b) => (b.disabled = false))
+  }
+})
+
+// Only local dev-server URLs written by the orchestrator are shown.
+const previewUrl = (job) => (/^http:\/\/localhost:\d{2,5}\/?$/.test(job?.preview || '') ? job.preview : null)
 
 async function render() {
   const problems = []
@@ -386,7 +647,9 @@ async function poll() {
   const status = $('status')
   try {
     jobs = await loadJobs()
+    await loadRequests()
     await render()
+    await renderBacklog()
     if (openJobId) await refreshDrawer()
     status.className = 'status'
     status.innerHTML = `<span class="dot"></span>jobs/ · ${new Date().toLocaleTimeString()}`
@@ -406,6 +669,290 @@ async function loadJobs() {
     .sort()
   return Promise.all(ids.map(async (id) => JSON.parse(await fetchText(`jobs/${id}/job.json`))))
 }
+
+// ---- Resizable drawers ---------------------------------------------------
+
+const DRAWER_MIN = 360
+const drawerOf = (id) => document.querySelector(`#${id} .drawer`)
+
+function setDrawerWidth(id, w, persist = false) {
+  const max = window.innerWidth
+  const width = Math.round(Math.min(max, Math.max(Math.min(DRAWER_MIN, max), w)))
+  drawerOf(id).style.width = `${width}px`
+  document.querySelector(`[data-resize="${id}"]`).style.right = `${width - 6}px`
+  if (persist) try { localStorage.setItem(`factory.drawer.${id}`, String(width)) } catch {}
+}
+
+function restoreDrawers() {
+  for (const id of ['overlay', 'toverlay']) {
+    let saved = null
+    try { saved = Number(localStorage.getItem(`factory.drawer.${id}`)) || null } catch {}
+    setDrawerWidth(id, saved || drawerOf(id).getBoundingClientRect().width)
+  }
+}
+
+document.addEventListener('pointerdown', (e) => {
+  const handle = e.target.closest('[data-resize]')
+  if (!handle) return
+  e.preventDefault()
+  const id = handle.dataset.resize
+  const drawer = drawerOf(id)
+  handle.classList.add('on')
+  drawer.classList.add('resizing')
+  handle.setPointerCapture(e.pointerId)
+  const move = (ev) => setDrawerWidth(id, window.innerWidth - ev.clientX)
+  const up = () => {
+    handle.classList.remove('on')
+    drawer.classList.remove('resizing')
+    setDrawerWidth(id, drawer.getBoundingClientRect().width, true)
+    handle.removeEventListener('pointermove', move)
+    handle.removeEventListener('pointerup', up)
+  }
+  handle.addEventListener('pointermove', move)
+  handle.addEventListener('pointerup', up)
+})
+
+document.addEventListener('dblclick', (e) => {
+  const handle = e.target.closest('[data-resize]')
+  if (!handle) return
+  const id = handle.dataset.resize
+  const full = drawerOf(id).getBoundingClientRect().width >= window.innerWidth - 2
+  setDrawerWidth(id, full ? (id === 'overlay' ? 920 : 620) : window.innerWidth, true)
+})
+
+window.addEventListener('resize', restoreDrawers)
+restoreDrawers()
+
+// ---- Backlog -------------------------------------------------------------
+
+let lastBacklog = ''
+let tasks = new Map() // code -> task
+let openTask = null
+const taskTrail = []
+
+// Status shown in the list; job stages come from the job cards' job.json.
+function statusOf(t) {
+  const job = t.job && jobs.find((j) => j.id === t.job)
+  if (t.section.startsWith('Selesai') || job?.stage === 'merged') return { key: 'done', label: 'Selesai' }
+  if (job?.stage === 'needs-human') return { key: 'human', label: 'Butuh kamu' }
+  if (job) return { key: 'run', label: `Berjalan · ${job.stage}` }
+  if (t.checked) return { key: 'run', label: 'Berjalan' }
+  if (t.section.startsWith('Baru')) return { key: 'new', label: 'Perlu dicek' }
+  if (t.section.startsWith('Siap')) return { key: 'ready', label: 'Siap' }
+  const open = openBlockers(t)
+  return open.length ? { key: 'blocked', label: `Diblokir · ${open.length}` } : { key: 'ready', label: 'Siap dipindah' }
+}
+
+const openBlockers = (t) => t.needs.filter((c) => statusOf(tasks.get(c) || { needs: [], section: '' }).key !== 'done')
+const blocking = (t) => [...tasks.values()].filter((o) => o.needs.includes(t.code))
+const codeBadge = (t) => `<span class="code t-${esc(t.type)}">${esc(t.code)}</span>`
+
+function taskRow(t) {
+  const s = statusOf(t)
+  const open = s.key === 'done' ? [] : openBlockers(t)
+  return `<button class="task-row ${s.key === 'done' ? 'done' : ''}" data-task="${esc(t.code)}" type="button">
+    ${codeBadge(t)}
+    <span class="ttl"><b>${esc(t.title)}</b> <span>— ${esc(t.text)}</span></span>
+    <span class="pill ${s.key}">${esc(s.label)}</span>
+    <span class="wave">${t.wave ? `gel. ${t.wave}` : ''}</span>
+    <span class="blk ${open.length ? 'on' : ''}">${open.length ? `⛔ ${open.length} blocker` : ''}</span>
+  </button>`
+}
+
+async function renderBacklog() {
+  const res = await fetch('api/backlog', { cache: 'no-store' })
+  if (!res.ok) return // served by a plain static server: no backlog API
+  const { items } = await res.json()
+  tasks = new Map(items.map((i) => [i.code, i]))
+  const by = (keys) => items.filter((i) => keys.includes(statusOf(i).key))
+  const groups = [
+    ['Butuh kamu', by(['human'])],
+    ['Berjalan', by(['run'])],
+    ['Siap dikerjakan', by(['ready'])],
+    ['Baru — perlu dicek', by(['new'])],
+    ['Diblokir', by(['blocked'])],
+    ['Selesai', by(['done'])],
+  ]
+  const html = groups.filter(([, list]) => list.length).map(([title, list]) => `
+    <div class="bl-group"><h4>${esc(title)} · ${list.length}</h4>${list.map(taskRow).join('')}</div>`).join('')
+  if (html !== lastBacklog) {
+    lastBacklog = html
+    $('bl-list').innerHTML = html
+    $('bl-counts').textContent = groups.filter(([, l]) => l.length).map(([t, l]) => `${l.length} ${t.split(' ')[0].toLowerCase()}`).join(' · ')
+  }
+  if (openTask) { renderTask(); refreshReq() }
+}
+
+function linkList(list, empty) {
+  if (!list.length) return `<p class="t-none">${empty}</p>`
+  return list.map((t) => {
+    const s = statusOf(t)
+    return `<button class="t-link" data-task="${esc(t.code)}" type="button">${codeBadge(t)}
+      <span class="ttl">${esc(t.title)}</span><span class="pill ${s.key}">${esc(s.label)}</span></button>`
+  }).join('')
+}
+
+function renderTask() {
+  const t = tasks.get(openTask)
+  if (!t) { $('t-title').textContent = `${openTask} tidak ditemukan di backlog`; $('t-info').innerHTML = ''; return }
+  const s = statusOf(t)
+  const missing = t.needs.filter((c) => !tasks.has(c))
+  const job = t.job && jobs.find((j) => j.id === t.job)
+  $('t-num').innerHTML = codeBadge(t)
+  $('t-title').textContent = t.title
+  $('t-meta').innerHTML = `<span class="pill ${s.key}">${esc(s.label)}</span>
+    <span class="pill">${esc({ fe: 'frontend', be: 'backend', infra: 'infra', '?': 'tipe belum ditentukan' }[t.type])}</span>
+    ${t.wave ? `<span class="pill">gelombang ${t.wave}</span>` : ''}
+    <span class="pill">${esc(t.section)}</span>`
+  $('t-back').hidden = !taskTrail.length
+  $('t-info').innerHTML = `
+    <section class="t-sec"><h5>Deskripsi</h5><p class="t-desc">${esc(t.text)}</p></section>
+    <section class="t-sec"><h5>Diblokir oleh · ${t.needs.length}</h5>
+      ${linkList(t.needs.map((c) => tasks.get(c)).filter(Boolean), 'Tidak ada — task ini tidak menunggu task lain.')}
+      ${missing.length ? `<p class="t-none">Tidak ada di backlog: ${esc(missing.join(', '))}</p>` : ''}</section>
+    <section class="t-sec"><h5>Memblokir · ${blocking(t).length}</h5>
+      ${linkList(blocking(t), 'Tidak ada task yang menunggu task ini.')}</section>
+    <section class="t-sec"><h5>Job</h5>
+      ${job ? `<button class="t-job" data-job="${esc(job.id)}" type="button">Buka job ${esc(job.id)} →</button>
+        ${previewUrl(job) ? `<a class="t-job" style="display:inline-block;margin-left:8px;text-decoration:none;background:var(--human)" href="${esc(previewUrl(job))}" target="_blank" rel="noopener">▶ Lihat preview</a>` : ''}`
+        : `<p class="t-none">${t.job ? `Job ${esc(t.job)} belum terlihat di board.` : 'Belum dijalankan.'} ${s.key === 'new' ? `Minta Claude: <code>/factory run ${esc(t.code)}</code>` : s.key === 'ready' ? `Minta Claude: <code>/factory run ${esc(t.code)}</code>` : ''}</p>`}
+    </section>`
+}
+
+function showTask(code, push = true) {
+  if (push && openTask && openTask !== code) taskTrail.push(openTask)
+  openTask = code
+  document.body.classList.add('topen')
+  renderTask()
+  refreshReq(true)
+  document.querySelector('#toverlay .drawer').scrollTop = 0
+}
+
+// ---- Requirement doc (AI-generated, editable, autosaved) -------------------
+
+let req = { code: null, exists: false, content: '', mtime: null, dirty: false, pending: null, tab: 'edit' }
+let saveTimer = null
+const reqUrl = (code) => `api/requirements/${encodeURIComponent(code)}`
+const pendingReq = (code) => requests.find((r) => r.kind === 'requirements' && r.task === code)
+
+async function refreshReq(force = false) {
+  const code = openTask
+  if (!code) return
+  const res = await fetch(reqUrl(code), { cache: 'no-store' })
+  if (!res.ok || code !== openTask) return
+  const data = await res.json()
+  const pending = pendingReq(code)?.state || null
+  const changed = force || code !== req.code || pending !== req.pending || (data.mtime !== req.mtime && !req.dirty)
+  if (!changed) return
+  req = { ...req, code, exists: data.exists, content: data.content, mtime: data.mtime, dirty: false, pending }
+  renderReq()
+}
+
+function renderReq(status = '') {
+  const box = $('t-req')
+  const genForm = (label) => `<div class="req-gen">
+      <input id="req-note" maxlength="2000" placeholder="Arahan tambahan untuk Claude (opsional)">
+      <button type="button" class="req-btn" data-req-generate>${label}</button></div>`
+  let body
+  if (req.pending) {
+    body = `<div class="req-pending">✨ Claude sedang menulis requirement… (${req.pending === 'taken' ? 'diproses' : 'antre'})</div>`
+  } else if (!req.exists) {
+    body = `<p class="t-none">Belum ada detail requirement. Claude akan menyusunnya dari deskripsi task, spec produk dan kode yang ada.</p>${genForm('✨ Generate requirement')}`
+  } else {
+    body = `<div class="req-tabs">
+        <button type="button" class="${req.tab === 'edit' ? 'on' : ''}" data-req-tab="edit">Edit</button>
+        <button type="button" class="${req.tab === 'preview' ? 'on' : ''}" data-req-tab="preview">Pratinjau</button>
+        <span class="req-status" id="req-status">${esc(status || 'Tersimpan otomatis')}</span></div>
+      ${req.tab === 'edit'
+        ? `<textarea id="req-text" spellcheck="false" aria-label="Detail requirement">${esc(req.content)}</textarea>`
+        : `<div class="md req-preview">${markdown(req.content)}</div>`}
+      ${genForm('✨ Generate ulang')}
+      <p class="t-none" style="margin-top:6px">Generate ulang menulis versi baru dengan memakai editanmu sebagai masukan; versi lama disimpan sebagai cadangan.</p>`
+  }
+  box.innerHTML = `<h5>Detail requirement</h5>${body}`
+  const ta = $('req-text')
+  if (ta) { ta.style.height = 'auto'; ta.style.height = Math.max(240, ta.scrollHeight + 4) + 'px' }
+}
+
+async function saveReq() {
+  clearTimeout(saveTimer)
+  if (!req.dirty) return
+  const status = $('req-status')
+  try {
+    const res = await fetch(reqUrl(req.code), {
+      method: 'PUT', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ content: req.content, baseMtime: req.mtime }),
+    })
+    const data = await res.json().catch(() => ({}))
+    if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`)
+    req.mtime = data.mtime
+    req.dirty = false
+    if (status) { status.className = 'req-status'; status.textContent = `Tersimpan ${new Date().toLocaleTimeString()}` }
+  } catch (err) {
+    if (status) { status.className = 'req-status err'; status.textContent = `Gagal menyimpan: ${err.message}` }
+  }
+}
+
+document.addEventListener('input', (e) => {
+  if (e.target.id !== 'req-text') return
+  req.content = e.target.value
+  req.dirty = true
+  e.target.style.height = 'auto'
+  e.target.style.height = Math.max(240, e.target.scrollHeight + 4) + 'px'
+  $('req-status').className = 'req-status'
+  $('req-status').textContent = 'Menyimpan…'
+  clearTimeout(saveTimer)
+  saveTimer = setTimeout(saveReq, 800)
+})
+
+document.addEventListener('click', async (e) => {
+  const tab = e.target.closest('[data-req-tab]')
+  if (tab) { await saveReq(); req.tab = tab.dataset.reqTab; return renderReq() }
+  if (!e.target.closest('[data-req-generate]')) return
+  await saveReq()
+  const note = $('req-note')?.value || ''
+  const res = await fetch(`${reqUrl(req.code)}/generate`, {
+    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ note }),
+  })
+  const data = await res.json().catch(() => ({}))
+  if (!res.ok) return renderReq(`Gagal: ${data.error || res.status}`)
+  await loadRequests()
+  refreshReq(true)
+})
+
+function closeTask() {
+  saveReq()
+  openTask = null
+  taskTrail.length = 0
+  document.body.classList.remove('topen')
+}
+
+$('t-back').addEventListener('click', () => showTask(taskTrail.pop(), false))
+
+$('bl-form').addEventListener('submit', async (e) => {
+  e.preventDefault()
+  const form = e.currentTarget
+  const msg = $('bl-msg')
+  const button = form.querySelector('button')
+  button.disabled = true
+  try {
+    const res = await fetch('api/tasks', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ type: form.type.value, title: form.title.value, description: form.description.value }),
+    })
+    const data = await res.json().catch(() => ({}))
+    if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`)
+    msg.className = 'bl-msg ok'
+    msg.textContent = `Tersimpan sebagai [${data.code}]. Minta Claude: /factory run ${data.code}`
+    form.reset()
+    await renderBacklog()
+  } catch (err) {
+    msg.className = 'bl-msg err'
+    msg.textContent = `Gagal menyimpan: ${err.message}`
+  } finally {
+    button.disabled = false
+  }
+})
 
 // ---- Drawer --------------------------------------------------------------
 
@@ -451,6 +998,7 @@ async function refreshDrawer() {
   $('d-num').textContent = `${job.id} · ${job.stage}${job.round ? ` · round ${job.round}` : ''}`
   $('d-title').textContent = job.feature
   $('d-branch').textContent = job.branch
+  renderDecide(job)
 
   const base = `jobs/${job.id}/`
   const files = sortFiles(await listFiles(base))
@@ -503,18 +1051,28 @@ function closeDrawer() {
 }
 
 document.addEventListener('click', (e) => {
+  const previewEl = e.target.closest('[data-preview]')
+  if (previewEl) { e.preventDefault(); return window.open(previewEl.dataset.preview, '_blank', 'noopener') }
+  const taskEl = e.target.closest('[data-task]')
+  if (taskEl) return showTask(taskEl.dataset.task)
+  if (e.target.closest('[data-tclose]')) return closeTask()
   const cardEl = e.target.closest('[data-job]')
-  if (cardEl) return openDrawer(cardEl.dataset.job)
+  if (cardEl) { closeTask(); return openDrawer(cardEl.dataset.job) }
   const fileEl = e.target.closest('[data-file]')
   if (fileEl) {
     openPath = fileEl.dataset.file
     openText = undefined
-    $('d-doc').parentElement.scrollTop = 0
+    const drawer = document.querySelector('#overlay .drawer')
+    drawer.scrollTop = Math.min(drawer.scrollTop, document.querySelector('#overlay .d-body').offsetTop)
     return refreshDrawer()
   }
   if (e.target.closest('[data-close]')) closeDrawer()
 })
-document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeDrawer() })
+document.addEventListener('keydown', (e) => {
+  if (e.key !== 'Escape') return
+  if (openTask) closeTask()
+  else closeDrawer()
+})
 
 // ---- Markdown (just enough for the factory's files) ---------------------
 

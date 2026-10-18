@@ -62,8 +62,12 @@ All four must pass before a change is ready. Use `build:check`, not `build`, for
 
 ## Conventions
 
+- Every commit message is `<type>-<NNN> <message>`: the backlog task code, a space, then the message, no brackets (e.g. `fe-002 Add Card primitive`). Type is `infra`, `be` or `fe`. Every commit belongs to a backlog task — tooling and factory work gets an `infra-NNN` task first; there are no untagged commits.
+- Job branches are `factory/<type>-<NNN>` (e.g. `factory/fe-004`).
+
 - Mobile-first; minimum 44px tap targets; high contrast; one primary (indigo) CTA per screen.
 - UI copy in Bahasa Indonesia by default; once i18n exists, all user-facing strings go through it.
+- Responsive for web and mobile: build mobile-first, then give every screen a real desktop layout at `lg` (≥ 1024px) — wider container (max ~1200px), multi-column grids, hero text beside its illustration, top nav instead of BottomNav. A phone-width column centred on desktop is a bug. Check every UI change at 390px, 768px and 1280px.
 - Server Components by default; add `"use client"` only where interactivity needs it.
 - Every Supabase table gets RLS policies. Never use or commit the service-role key.
 - Never commit `.env*` files except `.env.example`.
