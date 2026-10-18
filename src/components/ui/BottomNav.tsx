@@ -20,6 +20,7 @@ type BottomNavProps = {
   label?: string;
 };
 
+// Mobile only: hidden from `lg` up, where screens use a top nav instead.
 export function BottomNav({
   items,
   activeHref,
@@ -28,7 +29,7 @@ export function BottomNav({
   return (
     <nav
       aria-label={label}
-      className="fixed inset-x-4 bottom-[calc(1rem+env(safe-area-inset-bottom))] mx-auto max-w-md rounded-full border border-border bg-nav p-2 text-nav-foreground shadow-card"
+      className="fixed inset-x-4 bottom-[calc(1rem+env(safe-area-inset-bottom))] mx-auto max-w-md rounded-full border border-border bg-nav p-2 text-nav-foreground shadow-card lg:hidden"
     >
       <ul className="flex items-center justify-around">
         {items.map((item) => {

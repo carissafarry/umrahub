@@ -12,7 +12,7 @@ export function Button({
   return (
     <button
       type={type}
-      className={`tap-target relative flex min-h-14 w-full items-center justify-center rounded-full bg-primary bg-linear-to-r from-primary to-primary-strong py-2 pr-16 pl-16 text-lg font-semibold text-primary-foreground shadow-card focus-visible:outline-3 focus-visible:outline-offset-3 focus-visible:outline-primary disabled:opacity-60 ${className}`}
+      className={`tap-target relative flex min-h-14 w-full items-center md:w-auto md:min-w-80 justify-center rounded-full bg-primary bg-linear-to-r from-primary to-primary-strong py-2 pr-16 pl-16 text-lg font-semibold text-primary-foreground shadow-card focus-visible:outline-3 focus-visible:outline-offset-3 focus-visible:outline-primary disabled:opacity-60 ${className}`}
       {...props}
     >
       {children}

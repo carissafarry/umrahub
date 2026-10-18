@@ -91,7 +91,7 @@ Soft indigo direction (reference: `.plans/design-reference.png`). Tokens are CSS
 | `--tile-*-foreground` | icon colour on the matching tile | `text-tile-amber-foreground`, ... |
 | `--shadow-card` | soft diffuse shadow for cards and floating chips | `shadow-card` |
 
-- `body` paints a `linear-gradient` from `--background-from` to `--background-to` (top to bottom, full viewport) over the `--background` fallback.
+- `body` paints a `linear-gradient` from `--background-from` to `--background-to` (top to bottom, spanning the full page height, not fixed to the viewport) over the `--background` fallback.
 - Cards use `rounded-3xl` (24px); chips, buttons and the nav are `rounded-full` pills.
 - Dark mode follows `prefers-color-scheme` only (the `:root` overrides in the media query); there is no class-based toggle.
 - One primary (indigo) CTA per screen: only the main action is an indigo-filled `Button`. Selected chips and the active nav tab are the only other `bg-primary` uses.
@@ -101,8 +101,8 @@ Soft indigo direction (reference: `.plans/design-reference.png`). Tokens are CSS
   - `Chip` — pill toggle button with `selected` (`aria-pressed`).
   - `SegmentedControl` — row of chips picking one of N options (`radiogroup`); client component.
   - `IconButton` — round white button; required `label` becomes `aria-label`.
-  - `Button` — full-width indigo pill CTA with a white circular arrow badge; defaults to `type="button"`.
-  - `BottomNav` — floating dark pill nav of `next/link` tabs with `activeHref`; its type allows **at most 4 tabs**.
+  - `Button` — indigo pill CTA with a white circular arrow badge; full width on phones, content width (min 20rem) from `md` up; defaults to `type="button"`.
+  - `BottomNav` — floating dark pill nav of `next/link` tabs with `activeHref`; its type allows **at most 4 tabs**. Mobile only: hidden from `lg` up, where screens use a top nav.
   - `icons.tsx` — inline SVG icons.
 - Icons are inline SVG using `currentColor` (in `icons.tsx`); no icon library. Mark them `aria-hidden="true"` when text names the control.
 - Hero and decorative art is CSS and inline SVG only: no raster images, `<img>` or `next/image`. Wrap it in `aria-hidden="true"` with no focusable elements.

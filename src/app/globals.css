@@ -91,7 +91,6 @@ body {
     var(--background-from),
     var(--background-to)
   );
-  background-attachment: fixed;
   color: var(--foreground);
   font-family: var(--font-sans);
   font-size: 1rem;

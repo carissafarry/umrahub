@@ -66,7 +66,7 @@ function Hero() {
   return (
     <div
       aria-hidden="true"
-      className="relative mx-auto aspect-square w-full max-w-80"
+      className="relative mx-auto aspect-square w-full max-w-80 lg:max-w-md"
     >
       <div className="absolute inset-6 rounded-full bg-tile-violet opacity-80 blur-2xl" />
       <div className="absolute top-10 right-4 size-36 rounded-full bg-tile-blue opacity-70 blur-2xl" />
@@ -127,41 +127,54 @@ function Hero() {
 
 export default function Home() {
   return (
-    <div className="mx-auto flex min-h-screen w-full max-w-md flex-col px-5">
-      <header className="py-4">
-        <p className="text-xl font-bold tracking-tight">UmrohHub</p>
+    <div className="mx-auto flex min-h-screen w-full max-w-md flex-col px-5 md:max-w-3xl md:px-8 lg:max-w-6xl lg:px-10">
+      <header className="py-4 lg:py-6">
+        <p className="text-xl font-bold tracking-tight lg:text-2xl">
+          UmrohHub
+        </p>
       </header>
 
-      <main className="flex flex-1 flex-col gap-10 pt-2 pb-10">
-        <section className="flex flex-col items-center gap-4 text-center">
-          <Hero />
-          <h1 className="text-3xl leading-tight font-bold">
-            Persiapan Umrah mandiri, lebih tenang dan terarah
-          </h1>
-          <p className="text-lg text-muted">
-            UmrohHub memandu Anda langkah demi langkah dalam mempersiapkan
-            Umrah secara mandiri, tanpa biro perjalanan, dari rencana awal
-            hingga hari keberangkatan.
-          </p>
-          <p lang="ar" dir="rtl" className="font-arabic text-2xl leading-loose">
-            لَبَّيْكَ اللَّهُمَّ لَبَّيْكَ
-          </p>
-        </section>
-
-        <section className="flex flex-col gap-3">
-          <Button>Masuk dengan Google</Button>
-          <p className="text-center text-muted">
-            Gratis. Simpan kemajuan persiapan Anda di satu tempat.
-          </p>
+      <main className="flex flex-1 flex-col gap-10 pt-2 pb-10 lg:gap-20 lg:pt-8 lg:pb-16">
+        <section className="grid items-center gap-4 lg:grid-cols-2 lg:gap-16">
+          <div className="lg:order-last">
+            <Hero />
+          </div>
+          <div className="flex flex-col items-center gap-4 text-center lg:items-start lg:text-left">
+            <h1 className="text-3xl leading-tight font-bold md:text-4xl lg:text-5xl">
+              Persiapan Umrah mandiri, lebih tenang dan terarah
+            </h1>
+            <p className="text-lg text-muted md:max-w-xl lg:text-xl">
+              UmrohHub memandu Anda langkah demi langkah dalam mempersiapkan
+              Umrah secara mandiri, tanpa biro perjalanan, dari rencana awal
+              hingga hari keberangkatan.
+            </p>
+            <p
+              lang="ar"
+              dir="rtl"
+              className="font-arabic text-2xl leading-loose lg:text-left"
+            >
+              لَبَّيْكَ اللَّهُمَّ لَبَّيْكَ
+            </p>
+            <div className="mt-6 flex w-full flex-col gap-3 md:items-center lg:items-start">
+              <Button>Masuk dengan Google</Button>
+              <p className="text-center text-muted lg:text-left">
+                Gratis. Simpan kemajuan persiapan Anda di satu tempat.
+              </p>
+            </div>
+          </div>
         </section>
 
         <section aria-labelledby="manfaat" className="flex flex-col gap-4">
-          <h2 id="manfaat" className="text-xl font-semibold">
+          <h2 id="manfaat" className="text-xl font-semibold lg:text-2xl">
             Yang Anda dapatkan
           </h2>
-          <ul className="flex flex-col gap-4">
+          <ul className="grid gap-4 md:grid-cols-3 lg:gap-6">
             {benefits.map(({ title, description, icon: Icon, tile }) => (
-              <Card as="li" key={title} className="flex items-start gap-4">
+              <Card
+                as="li"
+                key={title}
+                className="flex items-start gap-4 md:flex-col lg:p-7"
+              >
                 <span
                   aria-hidden="true"
                   className={`flex size-12 shrink-0 items-center justify-center rounded-2xl ${tile}`}
