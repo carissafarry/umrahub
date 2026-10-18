@@ -191,6 +191,17 @@ Set `stage: "needs-human"`. The branch and its worktree stay for the human to
 inspect. Tell the user which job is waiting, give the worktree path, and quote
 `decision.md` (or the BLOCKED reason from `build.md`).
 
+**Preview for fe jobs.** When the task code is `fe-*` and `build.md` says
+`STATUS: READY`, start a preview so the user can look before deciding: in the
+worktree, run `npm run dev -- --port <5103 + 10n>` in the background, wait until
+it answers, and add `"preview": "http://localhost:<port>"` to job.json (the
+dashboard shows it as a "Lihat preview" button). Give the user the link in your
+message, plus the pages to open for this feature.
+
+**Stop the preview** (`kill $(lsof -tiTCP:<port> -sTCP:LISTEN)`) and drop
+`preview` from job.json before **Merge**, before a **rework** builder starts,
+and whenever the job leaves `needs-human`.
+
 ## /factory next
 
 Read `factory/backlog.md` and take the first `- [ ]` item. Claim it with one
