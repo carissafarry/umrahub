@@ -3,8 +3,9 @@
 `/factory next` builds the first unchecked item and checks it off with its job id.
 
 Item format: `- [ ] [<type>-<NNN>] <Title>: <description>`
-- `<type>` is `infra`, `be` or `fe` (`?` until triage decides). `[<type>-<NNN>]` is the task code and the
-  prefix of every commit for that task, e.g. `[fe-004] Add language toggle`.
+- `<type>` is `infra`, `be` or `fe` (`?` until triage decides). `<type>-<NNN>` is the task code and the
+  prefix of every commit for that task, without brackets, e.g. `fe-004 Add language toggle`.
+- Tooling and factory work is an `infra` task too; every commit has a task code.
 - The job id, job folder, branch (`factory/<job-id>`) and worktree folder are `<type>-<NNN>`, e.g. `fe-004`.
   (Jobs 001–003 predate this and keep their old ids.)
 - Every item implements part of `.plans/umrohhub-mvp-spec.md`; read the matching section there.
@@ -16,6 +17,7 @@ the orchestrator moves items whose dependencies are all merged from **Menunggu**
 ## Selesai
 
 - [x] [fe-001] Design foundation: replace the default Next.js page and styles with UmrohHub's design tokens (warm sand/ink light theme, charcoal dark theme via prefers-color-scheme, single gold accent), Inter + Noto Naskh Arabic fonts, 44px minimum tap targets, and a mobile-first landing page in Bahasa Indonesia that explains the app and has one "Masuk dengan Google" CTA (button only, no auth yet) → 001-design-foundation
+- [x] [infra-017] Factory tooling: dashboard task list with detail drawer and clickable blockers, task graph page, task codes and wave backlog, parallel-safe jobs, fe preview servers, dashboard decision inbox, AI requirement docs with autosave → infra-017
 
 ## Siap — gelombang 1
 

@@ -61,7 +61,7 @@ All four must pass before a change is ready. Use `build:check`, not `build`, for
 
 ## Conventions
 
-- Every commit message starts with its backlog task code `[<type>-<NNN>]`, type being `infra`, `be` or `fe` (e.g. `[fe-002] Add Card primitive`). Commits not tied to a task use `[infra] <message>`.
+- Every commit message is `<type>-<NNN> <message>`: the backlog task code, a space, then the message, no brackets (e.g. `fe-002 Add Card primitive`). Type is `infra`, `be` or `fe`. Every commit belongs to a backlog task — tooling and factory work gets an `infra-NNN` task first; there are no untagged commits.
 - Job branches are `factory/<type>-<NNN>` (e.g. `factory/fe-004`).
 
 - Mobile-first; minimum 44px tap targets; high contrast; one gold accent CTA per screen.

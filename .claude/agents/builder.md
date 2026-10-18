@@ -61,7 +61,8 @@ command you ran and its result, or what the page showed.
 
 - Commit on the job branch with short one-line messages in the style of
   `git log --oneline`, prefixed with the task code from your prompt:
-  `[<type>-<NNN>] <message>`, for example `[be-003] Add RLS policies for trips`.
+  `<type>-<NNN> <message>` with no brackets, for example
+  `be-003 Add RLS policies for trips`.
   One commit per distinct piece of work.
 - Stage explicit paths, never `git add -A`. Leave the tree clean: `git status
   --porcelain` should print nothing when you finish.

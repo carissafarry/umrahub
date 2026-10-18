@@ -94,8 +94,13 @@ Every agent prompt starts with the job's absolute paths:
 `Job folder: <repo>/factory/jobs/<job-id>/. Worktree: <worktree>. Branch: factory/<job-id>.`
 Below, `<paths>` stands for that sentence.
 
-Every agent prompt also ends with ` Task code: [<type>-<NNN>].` (for jobs from
-the backlog), which is the prefix of every commit in that job.
+Every agent prompt also ends with ` Task code: <type>-<NNN>.` (for jobs from
+the backlog). Every commit in that job is `<type>-<NNN> <message>`, no brackets.
+
+Your own commits on `main` follow the same rule. Factory or tooling changes
+that no backlog task covers get one first: add `- [x] [infra-<next NNN>] <Title>:
+<what changed> → infra-<NNN>` under **Selesai** in `factory/backlog.md` and
+commit with that code. Never commit without a task code.
 
 Agents that open pages also get a port. With `n` the job number (`fe-004` → 4),
 the builder gets `5100 + 10n`, `reviewer-ux` gets `5101 + 10n` and `reviewer-ui`
@@ -175,7 +180,7 @@ user the job is approved but the main checkout is busy; they run
 `/factory approve <job-id>` once it is clean. Otherwise:
 
 ```bash
-git merge --no-ff factory/<job-id> -m "[<task code>] Merge factory/<job-id>"
+git merge --no-ff factory/<job-id> -m "<task code> Merge factory/<job-id>"
 git worktree remove <worktree>
 git branch -d factory/<job-id>
 ```
@@ -321,7 +326,7 @@ not job work:
    with its open questions.
 
 When a task with a requirement doc is claimed (`/factory next` or `/factory
-run`), commit the doc on `main` first (`[<code>] Add requirements`) so the
+run`), commit the doc on `main` first (`<code> Add requirements`) so the
 worktree has it, and add ` Requirements: factory/requirements/<file>.md (the
 user-approved detail; it overrides the backlog line where they differ).` to the
 spec-writer prompt. `factory/requirements/` is exempt from the clean-checkout
