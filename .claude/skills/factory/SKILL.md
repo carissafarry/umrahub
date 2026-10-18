@@ -262,6 +262,39 @@ Triage the item first if it is still under **Baru**. Then, if it is in
 **Siap**, claim and run it exactly like `/factory next` does. If it is in
 **Menunggu**, list which of its dependencies are not merged yet and stop.
 
+## Dashboard requests and /factory watch
+
+The dashboard's job drawer lets the user approve or rework a `needs-human` job.
+The server writes each decision to `factory/inbox/<epoch>-<job-id>.json`:
+`{ "job", "action": "approve" | "rework", "note", "createdAt" }`. A request is
+the user's own command, exactly as if they had typed it.
+
+`/factory watch` (and every orchestrator session that has run `/factory next`
+or `/factory run`) keeps a Monitor on the inbox for as long as the session is
+open, re-arming it each time it expires (30 minutes):
+
+```bash
+mkdir -p factory/inbox/taken
+while true; do
+  for f in factory/inbox/*.json; do
+    [ -e "$f" ] || continue
+    mv "$f" factory/inbox/taken/ && echo "REQUEST $(basename "$f") $(tr -d '\n' < factory/inbox/taken/$(basename "$f"))"
+  done
+  sleep 2
+done
+```
+
+For each `REQUEST` event:
+- `approve`: run `/factory approve <job>`. A non-empty note is only a comment;
+  put it in the merge report to the user.
+- `rework`: run `/factory rework <job> <note>`.
+- Then delete `factory/inbox/taken/<file>` and tell the user what you started,
+  in one line. If the job is no longer `needs-human`, delete the file and tell
+  the user why nothing ran.
+
+On start, also process any files already in `factory/inbox/taken/` (left by a
+session that closed mid-request) and in `factory/inbox/`.
+
 ## /factory approve <job-id>
 
 The job must be in `needs-human`. Run **Merge** with that job id.

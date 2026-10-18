@@ -2,13 +2,16 @@
 // plus a tiny API so new backlog tasks can be added from the dashboard.
 // Run from the repo root: node factory/server.mjs   (http://localhost:8000/dashboard.html)
 import { createServer } from 'node:http'
-import { readFile, readdir, stat, writeFile } from 'node:fs/promises'
+import { mkdir, readFile, readdir, stat, writeFile } from 'node:fs/promises'
 import { dirname, extname, join, resolve, sep } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const ROOT = dirname(fileURLToPath(import.meta.url))
 const BACKLOG = join(ROOT, 'backlog.md')
 const JOBS = join(ROOT, 'jobs')
+// Dashboard decisions land here; the orchestrator session watches it (see SKILL.md "Dashboard requests").
+const INBOX = join(ROOT, 'inbox')
+const TAKEN = join(INBOX, 'taken')
 const PORT = Number(process.env.PORT || 8000)
 const NEW_SECTION = '## Baru — belum dicek'
 const TYPES = { '.html': 'text/html; charset=utf-8', '.md': 'text/markdown; charset=utf-8', '.json': 'application/json; charset=utf-8', '.mjs': 'text/javascript; charset=utf-8' }
@@ -88,6 +91,34 @@ async function addTask(body) {
   return { code, line }
 }
 
+const fail = (status, message) => Object.assign(new Error(message), { status })
+
+async function listRequests() {
+  const read = async (dir, state) => {
+    let names = []
+    try { names = (await readdir(dir)).filter((n) => n.endsWith('.json')) } catch {}
+    return Promise.all(names.map(async (n) => ({ ...JSON.parse(await readFile(join(dir, n), 'utf8')), state })))
+  }
+  return [...await read(INBOX, 'queued'), ...await read(TAKEN, 'taken')]
+}
+
+async function addDecision(jobId, body) {
+  if (!/^[a-z0-9-]{3,60}$/.test(jobId)) throw fail(400, 'Job id tidak valid.')
+  let job
+  try { job = JSON.parse(await readFile(join(JOBS, jobId, 'job.json'), 'utf8')) } catch { throw fail(404, 'Job tidak ditemukan.') }
+  if (job.stage !== 'needs-human') throw fail(409, `Job sedang di tahap "${job.stage}", bukan menunggu keputusan.`)
+  const action = body.action
+  if (action !== 'approve' && action !== 'rework') throw fail(400, 'Aksi harus approve atau rework.')
+  const note = String(body.note ?? '').trim()
+  if (action === 'rework' && note.length < 5) throw fail(400, 'Tulis catatan perubahan (minimal 5 karakter).')
+  if (note.length > 4000) throw fail(400, 'Catatan maksimal 4000 karakter.')
+  if ((await listRequests()).some((r) => r.job === jobId)) throw fail(409, 'Sudah ada permintaan untuk job ini yang belum diproses.')
+  const request = { job: jobId, action, note, createdAt: new Date().toISOString() }
+  await mkdir(INBOX, { recursive: true })
+  await writeFile(join(INBOX, `${Date.now()}-${jobId}.json`), JSON.stringify(request, null, 2) + '\n')
+  return request
+}
+
 async function readJson(req) {
   let raw = ''
   for await (const chunk of req) {
@@ -118,12 +149,18 @@ createServer(async (req, res) => {
     if (pathname === '/api/backlog' && req.method === 'GET') {
       return send(res, 200, JSON.stringify({ items: parseBacklog(await readFile(BACKLOG, 'utf8')) }), TYPES['.json'])
     }
-    if (pathname === '/api/tasks' && req.method === 'POST') {
+    if (pathname === '/api/inbox' && req.method === 'GET') {
+      return send(res, 200, JSON.stringify({ requests: await listRequests() }), TYPES['.json'])
+    }
+    if (req.method === 'POST') {
       // Only the dashboard itself may write: reject cross-site requests and non-JSON bodies.
       const origin = req.headers.origin
       if (origin && origin !== `http://${req.headers.host}`) return send(res, 403, 'Forbidden origin')
       if (!String(req.headers['content-type']).startsWith('application/json')) return send(res, 415, 'JSON only')
-      return send(res, 201, JSON.stringify(await addTask(await readJson(req))), TYPES['.json'])
+      if (pathname === '/api/tasks') return send(res, 201, JSON.stringify(await addTask(await readJson(req))), TYPES['.json'])
+      const decision = pathname.match(/^\/api\/jobs\/([^/]+)\/decision$/)
+      if (decision) return send(res, 201, JSON.stringify(await addDecision(decision[1], await readJson(req))), TYPES['.json'])
+      return send(res, 404, 'Not found')
     }
     if (req.method !== 'GET' && req.method !== 'HEAD') return send(res, 405, 'Method not allowed')
     await serveStatic(req, res, pathname)

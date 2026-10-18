@@ -281,6 +281,24 @@
   }
   .card .preview:hover { filter: brightness(1.1); }
 
+  /* Decision form */
+  .decide { margin-top: 14px; padding: 12px; border: 1px solid var(--human); border-radius: 10px; background: var(--card); }
+  .decide h4 { margin: 0 0 8px; font-size: 12px; color: var(--human); text-transform: uppercase; letter-spacing: .06em; }
+  .decide textarea {
+    width: 100%; min-height: 84px; resize: vertical; font: inherit; color: var(--text); background: var(--panel);
+    border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px;
+  }
+  .decide .row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; align-items: center; }
+  .decide button { border: 0; border-radius: 8px; padding: 8px 14px; font-weight: 600; cursor: pointer; color: #10121a; }
+  .decide button:disabled { opacity: .5; cursor: default; }
+  .decide .approve { background: var(--pass); }
+  .decide .rework { background: var(--changes); }
+  .decide .msg { font-family: var(--mono); font-size: 12px; color: var(--muted); }
+  .decide .msg.err { color: var(--human); }
+  .decide.sent { border-color: var(--active); }
+  .decide.sent h4 { color: var(--active); }
+  .card .sent { display: inline-block; margin-top: 8px; font-family: var(--mono); font-size: 11px; color: var(--active); }
+
   /* Task drawer */
   #toverlay .drawer { width: min(620px, 100vw); grid-template-rows: auto 1fr; }
   .t-body { overflow-y: auto; padding: 18px 24px 40px; }
@@ -371,6 +389,7 @@
       <div class="num" id="d-num"></div>
       <h3 id="d-title"></h3>
       <div class="branch" id="d-branch"></div>
+      <div id="d-decide"></div>
       <button class="close" data-close aria-label="Close">×</button>
     </div>
     <div class="d-body">
@@ -484,10 +503,71 @@ function card(job, past) {
       <p class="feature">${esc(job.feature)}</p>
       <div class="branch">${esc(job.branch)}</div>
       ${rows.length ? `<div class="rounds">${rows.join('')}</div>` : ''}
+      ${requestFor(job.id) ? `<span class="sent">📨 ${esc(requestFor(job.id).action)} terkirim · ${requestFor(job.id).state === 'taken' ? 'diproses Claude' : 'menunggu Claude'}</span>` : ''}
       ${human && previewUrl(job) ? `<span class="preview" data-preview="${esc(previewUrl(job))}" role="link">▶ Lihat preview · ${esc(previewUrl(job).replace('http://', ''))}</span>` : ''}
       ${human ? `<div class="hint">/factory approve ${esc(job.id)}<br>/factory rework ${esc(job.id)} …</div>` : ''}
     </button>`
 }
+
+let requests = []
+const requestFor = (id) => requests.find((r) => r.job === id)
+
+async function loadRequests() {
+  try {
+    const res = await fetch('api/inbox', { cache: 'no-store' })
+    requests = res.ok ? (await res.json()).requests : []
+  } catch { requests = [] }
+}
+
+let lastDecide = ''
+function renderDecide(job) {
+  const req = requestFor(job.id)
+  const key = `${job.id}|${job.stage}|${req ? req.state : ''}`
+  if (key === lastDecide) return
+  lastDecide = key
+  const box = $('d-decide')
+  if (req) {
+    box.innerHTML = `<div class="decide sent"><h4>Keputusan terkirim</h4>
+      <div class="msg">${esc(req.action === 'approve' ? 'Approve & merge' : 'Rework')} · ${req.state === 'taken' ? 'sedang diproses Claude' : 'menunggu Claude mengambilnya'}</div>
+      ${req.note ? `<p class="msg" style="white-space:pre-wrap;margin:6px 0 0">${esc(req.note)}</p>` : ''}</div>`
+    return
+  }
+  if (job.stage !== 'needs-human') { box.innerHTML = ''; return }
+  box.innerHTML = `<form class="decide" id="decide-form"><h4>Keputusanmu</h4>
+    <label for="decide-note" class="msg">Catatan perubahan (wajib untuk rework, opsional untuk approve)</label>
+    <textarea id="decide-note" maxlength="4000" placeholder="Contoh: hapus kartu manfaat, hero lebih kecil, lalu resolve konflik AGENTS.md"></textarea>
+    <div class="row">
+      ${previewUrl(job) ? `<a class="msg" href="${esc(previewUrl(job))}" target="_blank" rel="noopener" style="color:var(--human)">▶ Lihat preview dulu</a>` : ''}
+      <span style="flex:1"></span>
+      <button type="submit" class="rework" data-action="rework">Kirim rework</button>
+      <button type="submit" class="approve" data-action="approve">Approve &amp; merge</button>
+    </div>
+    <div class="msg" id="decide-msg"></div></form>`
+}
+
+document.addEventListener('submit', async (e) => {
+  if (e.target.id !== 'decide-form') return
+  e.preventDefault()
+  const action = e.submitter?.dataset.action
+  const msg = $('decide-msg')
+  const buttons = e.target.querySelectorAll('button')
+  buttons.forEach((b) => (b.disabled = true))
+  try {
+    const res = await fetch(`api/jobs/${encodeURIComponent(openJobId)}/decision`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action, note: $('decide-note').value }),
+    })
+    const data = await res.json().catch(() => ({}))
+    if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`)
+    await loadRequests()
+    lastDecide = ''
+    renderDecide(jobs.find((j) => j.id === openJobId))
+  } catch (err) {
+    msg.className = 'msg err'
+    msg.textContent = `Gagal: ${err.message}`
+    buttons.forEach((b) => (b.disabled = false))
+  }
+})
 
 // Only local dev-server URLs written by the orchestrator are shown.
 const previewUrl = (job) => (/^http:\/\/localhost:\d{2,5}\/?$/.test(job?.preview || '') ? job.preview : null)
@@ -521,6 +601,7 @@ async function poll() {
   const status = $('status')
   try {
     jobs = await loadJobs()
+    await loadRequests()
     await render()
     await renderBacklog()
     if (openJobId) await refreshDrawer()
@@ -724,6 +805,7 @@ async function refreshDrawer() {
   $('d-num').textContent = `${job.id} · ${job.stage}${job.round ? ` · round ${job.round}` : ''}`
   $('d-title').textContent = job.feature
   $('d-branch').textContent = job.branch
+  renderDecide(job)
 
   const base = `jobs/${job.id}/`
   const files = sortFiles(await listFiles(base))
