@@ -97,6 +97,15 @@ Below, `<paths>` stands for that sentence.
 Every agent prompt also ends with ` Task code: <type>-<NNN>.` (for jobs from
 the backlog). Every commit in that job is `<type>-<NNN> <message>`, no brackets.
 
+Your own commits never pile up unpushed on `main`: job branches start from
+local `main`, and every unpushed `main` commit would show up inside the job's
+PR. After committing infra work on `main`, push it as `factory/infra-<NNN>`
+(`git push origin main:factory/infra-<NNN>`) and open a PR for it right away
+(`<code> <Title>`, no AI attribution); the user merges it like any job PR.
+Before opening a job PR, check `git rev-list --count origin/main..main`; if it
+isn't 0, open/refresh that infra PR first and tell the user to merge it before
+the job PR so the job PR shows only its own commits.
+
 Your own commits on `main` follow the same rule. Factory or tooling changes
 that no backlog task covers get one first: add `- [x] [infra-<next NNN>] <Title>:
 <what changed> → infra-<NNN>` under **Selesai** in `factory/backlog.md` and

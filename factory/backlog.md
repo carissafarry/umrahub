@@ -27,6 +27,7 @@ the orchestrator moves items whose dependencies are all merged from **Menunggu**
 - [x] [infra-024] Vercel Web Analytics: installed by the user from the Vercel dashboard (GitHub PR #1: `@vercel/analytics` and `<Analytics />` in `src/app/layout.tsx`); merged into local main → infra-024
 - [x] [infra-025] Spelling rule: worship term is always "Umrah" in both languages (never "Umroh"); brand is "Umra Hub" — AGENTS.md, spec and fe-004 requirements → infra-025
 - [x] [infra-026] Merge via GitHub PR: approved jobs are pushed and opened as pull requests instead of merging into local main; `factory/watch.sh` streams dashboard requests and PR merged/closed events; dashboard gets a Pull request column and PR links → infra-026
+- [x] [infra-027] Sync main via PR: publish the already-reviewed local main commits (fe-001, fe-002, be-003, infra-017…026) through one PR so job PRs show only their own commits; orchestrator's infra commits now always go through a PR → infra-027
 
 ## Siap — gelombang 1
 
