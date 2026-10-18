@@ -195,8 +195,19 @@ Edit that replaces its exact line with `- [x] <item> → claimed`. If the Edit
 fails because the line changed, another session claimed it: re-read the backlog
 and try the next `- [ ]` item. If none is left, say so and stop.
 
-Run `/factory <item>`, and once step 1 has given it a job id, replace `claimed`
-on its backlog line with the job id.
+An item that starts with a task code (`NNN-slug: <feature>`) already has its job
+id: in step 1 use that code as `<job-id>` instead of picking a number and slug,
+and pass only the text after `: ` as the feature. Run `/factory <item>`, and
+once step 1 has given it a job id, replace `claimed` on its backlog line with
+the job id.
+
+`/factory next <n>` claims the first `n` runnable items and runs them as
+parallel jobs from this session: each job has its own job.json, worktree,
+ports and named builder, and you step each one through the loop as its agents
+finish. Merges still happen one at a time.
+
+After a job merges, move every **Menunggu** item whose `(butuh: ...)` codes are
+all merged into **Siap** as a `- [ ]` line, without the suffix.
 
 ## /factory approve <job-id>
 

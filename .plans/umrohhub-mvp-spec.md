@@ -193,23 +193,29 @@ Separate Next.js application for content management. Deployed independently.
 
 ## Design Direction
 
-### Visual Style
-- **Clean & modern** — minimal, lots of whitespace
-- Inspired by **Taj ul Huda** case study: premium, calm, trustworthy
-- Also draws from **Traveloka/Tiket** familiarity but more refined
-- **Light mode default** (daytime use primary), dark mode supported
+### Visual Style (updated 2026-10-18 — replaces the earlier gold/sand direction)
+- **Reference image: `.plans/design-reference.png`** (soft smart-home app). Match its vibe, not its content.
+- Soft, airy, friendly: pale lavender-to-white gradient page background, white cards with large radii (24–32px) and soft diffuse shadows, generous whitespace
+- Pill-shaped chips and segmented controls; circular white icon buttons (back, close, more, notifications)
+- Colourful pastel icon tiles (amber, green, blue, violet) to tell categories apart
+- Floating dark pill bottom navigation, max 4 tabs, active tab in an indigo circle
+- Primary CTA: wide indigo-violet pill with a white circular arrow badge on the right
+- Simple bar charts and progress bars in indigo for progress and budget
+- Decorative hero art is CSS/SVG composition (soft blobs, floating icon chips), not raster photos
+- **Light mode default**, dark mode supported (deep navy surfaces, same indigo)
 
-### Design Principles (from Taj ul Huda reference):
+### Design Principles (unchanged)
 - **44px minimum tap targets** — many users are older or less tech-savvy
-- **High contrast** — readable in bright daylight (outdoor use in Saudi Arabia)
-- **Gold accent color** for active states and CTAs — one gold element per screen so next action is always obvious
+- **High contrast** — body text ≥ 7:1, secondary text and text on indigo ≥ 4.5:1
+- **One primary (indigo) CTA per screen** so the next action is always obvious
 - **Maximum 4 main navigation tabs** — keep navigation dead simple
 - **"Calm for a nervous first-timer"** — the app should feel reassuring, not overwhelming
 
 ### Color Palette Direction
-- Primary background: warm off-white (light) / deep charcoal (dark)
-- Accent: gold/amber for CTAs and active states
-- Text: high-contrast dark on light / light on dark
+- Background: lavender-white gradient (light) / deep navy (dark)
+- Surfaces: white cards (light) / slightly lighter navy (dark)
+- Primary: indigo-violet (around #5B5BF0 → #4F46E5) for CTAs, active chips and selected states
+- Text: near-black ink on light / near-white on dark
 - Status colors: green (complete), amber (in progress), gray (not started), red (warning/overdue)
 
 ### Typography
