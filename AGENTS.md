@@ -34,16 +34,21 @@ Without real Supabase values the app still builds and pages that don't call Supa
 npm run dev -- --port <port>
 ```
 
+Several jobs and agents run at the same time on this machine, and the user keeps their own dev server on port 3000:
+
+- Start the dev server in the background and stop **only that process**: `kill $(lsof -tiTCP:<port> -sTCP:LISTEN)`. Never use `pkill`, `killall` or anything that matches `next dev` by name.
+- Never touch ports 3000 or 8000.
+
 ## Validation
 
 ```bash
 npx eslint <changed files>   # lint only files you changed
 npm run typecheck
 npm run test
-npm run build
+npm run build:check          # builds into .next-build so it can't corrupt a running dev server's .next
 ```
 
-All four must pass before a change is ready.
+All four must pass before a change is ready. Use `build:check`, not `build`, for validation.
 
 ## Database (Supabase)
 
@@ -51,6 +56,7 @@ All four must pass before a change is ready.
 - Seed/reference content goes in its own migration (idempotent `insert ... on conflict do update`), not in `supabase/seed.sql`.
 - Jobs never touch the remote database: no `supabase db push`, `supabase link` or SQL against the hosted project. A human applies migrations after merge.
 - To check a migration runs, use the local stack if Docker is available: `supabase start` then `supabase db reset --local`. Stop it with `supabase stop` when done.
+- All worktrees share **one** local stack. Before `supabase start`, run `supabase status`: if it is already running, another job owns it. Wait (check every 30s, up to 15 minutes) instead of resetting or stopping it. If it is still busy, skip the local check and say so in your report.
 - Generated types: `supabase gen types typescript --local > src/lib/supabase/database.types.ts` (local stack only).
 
 ## Conventions
