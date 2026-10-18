@@ -209,6 +209,40 @@ finish. Merges still happen one at a time.
 After a job merges, move every **Menunggu** item whose `(butuh: ...)` codes are
 all merged into **Siap** as a `- [ ]` line, without the suffix.
 
+Before claiming anything, `/factory next` runs **Triage** if the backlog has a
+`## Baru — belum dicek` section with items in it.
+
+## Triage
+
+The user adds tasks from the dashboard; the server gives each a code and puts it
+under `## Baru — belum dicek` as `- NNN-slug: <title> — <description>`. Such an
+item is never run until it has been triaged. For each one:
+
+1. Read `.plans/umrohhub-mvp-spec.md`, the rest of the backlog, AGENTS.md and the
+   code the task would touch.
+2. Work out its requirements:
+   - **Dependencies**: which backlog codes must be merged first (the pages,
+     tables, components or auth it builds on), and which running or ready items
+     touch the same files and so must not run alongside it.
+   - **Missing decisions**: product or business choices the text leaves open
+     (copy, pricing, what is free, who can see what).
+   - **External setup**: keys, accounts, provider config or a migration a human
+     must push before it can work.
+   - **Size**: if it is really several jobs, propose the split.
+3. Tell the user, per task, in a few lines: the dependencies, the open
+   decisions and the external setup. Ask about every open decision and wait for
+   the answers; never guess them.
+4. Rewrite the item (with the user's answers folded into its text) and move it:
+   to **Siap** as `- [ ] NNN-slug: <feature>` when every dependency is merged,
+   otherwise to **Menunggu** under the right wave with `(butuh: <codes>)`.
+   Remove the `## Baru — belum dicek` heading once it is empty.
+
+## /factory run <code>
+
+Triage the item first if it is still under **Baru**. Then, if it is in
+**Siap**, claim and run it exactly like `/factory next` does. If it is in
+**Menunggu**, list which of its dependencies are not merged yet and stop.
+
 ## /factory approve <job-id>
 
 The job must be in `needs-human`. Run **Merge** with that job id.

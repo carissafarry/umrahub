@@ -231,6 +231,39 @@
     .file .rn { display: inline; white-space: pre; }
     .doc { padding: 18px 16px 48px; }
   }
+
+  /* Backlog */
+  .backlog { margin: 16px 32px 0; border: 1px solid var(--line); border-radius: 10px; background: var(--panel); }
+  .backlog > summary {
+    cursor: pointer; padding: 12px 16px; display: flex; gap: 12px; align-items: baseline;
+    list-style: none; font-weight: 600;
+  }
+  .backlog > summary::-webkit-details-marker { display: none; }
+  .backlog > summary .counts { font-family: var(--mono); font-size: 12px; color: var(--muted); font-weight: 400; }
+  .bl-body { display: grid; grid-template-columns: minmax(0, 2fr) minmax(260px, 1fr); gap: 20px; padding: 4px 16px 16px; }
+  .bl-group h4 { margin: 10px 0 6px; font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+  .bl-item { display: flex; gap: 10px; padding: 6px 0; border-top: 1px solid var(--line); font-size: 13px; }
+  .bl-item code { font-family: var(--mono); font-size: 12px; color: var(--active); white-space: nowrap; }
+  .bl-item .t { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text); }
+  .bl-item .needs { font-family: var(--mono); font-size: 11px; color: var(--faint); white-space: nowrap; margin-left: auto; }
+  .bl-item.new code { color: var(--changes); }
+  .bl-item.done .t, .bl-item.done code { color: var(--faint); }
+  .bl-form { display: flex; flex-direction: column; gap: 8px; }
+  .bl-form label { font-size: 12px; color: var(--muted); }
+  .bl-form input, .bl-form textarea {
+    font: inherit; color: var(--text); background: var(--card); border: 1px solid var(--line);
+    border-radius: 8px; padding: 8px 10px; width: 100%;
+  }
+  .bl-form textarea { min-height: 96px; resize: vertical; }
+  .bl-form button {
+    align-self: flex-start; background: var(--active); color: #10121a; border: 0; border-radius: 8px;
+    padding: 8px 14px; font-weight: 600; cursor: pointer; min-height: 36px;
+  }
+  .bl-form button:disabled { opacity: .5; cursor: default; }
+  .bl-msg { font-family: var(--mono); font-size: 12px; color: var(--muted); }
+  .bl-msg.ok { color: var(--pass); }
+  .bl-msg.err { color: var(--human); }
+  @media (max-width: 900px) { .bl-body { grid-template-columns: 1fr; } .backlog { margin: 16px; } }
 </style>
 </head>
 <body>
@@ -239,10 +272,26 @@
   <div class="status" id="status">connecting…</div>
 </header>
 <div id="banner"></div>
+<details class="backlog" id="backlog" open>
+  <summary>Backlog <span class="counts" id="bl-counts"></span></summary>
+  <div class="bl-body">
+    <div id="bl-list"></div>
+    <form class="bl-form" id="bl-form">
+      <h4 style="margin:10px 0 2px">+ Task baru</h4>
+      <label for="bl-title">Judul (kode task dibuat otomatis dari sini)</label>
+      <input id="bl-title" name="title" maxlength="80" required placeholder="Contoh: Pengingat masa berlaku paspor">
+      <label for="bl-desc">Deskripsi — apa yang harus terjadi</label>
+      <textarea id="bl-desc" name="description" maxlength="1500" placeholder="Perilaku yang diharapkan, halaman yang terlibat, batasan…"></textarea>
+      <button type="submit">Simpan ke backlog</button>
+      <div class="bl-msg" id="bl-msg">Task baru masuk "Baru — belum dicek". Minta Claude <code>/factory next</code> atau <code>/factory run &lt;kode&gt;</code>: requirement-nya dicek dulu sebelum dieksekusi.</div>
+    </form>
+  </div>
+</details>
 <main class="board" id="board"></main>
 <footer>
   <span>/factory &lt;feature&gt;</span>
-  <span>/factory next</span>
+  <span>/factory next [n]</span>
+  <span>/factory run &lt;code&gt;</span>
   <span>/factory approve &lt;job-id&gt;</span>
   <span>/factory rework &lt;job-id&gt; &lt;note&gt;</span>
 </footer>
@@ -387,6 +436,7 @@ async function poll() {
   try {
     jobs = await loadJobs()
     await render()
+    await renderBacklog()
     if (openJobId) await refreshDrawer()
     status.className = 'status'
     status.innerHTML = `<span class="dot"></span>jobs/ · ${new Date().toLocaleTimeString()}`
@@ -406,6 +456,59 @@ async function loadJobs() {
     .sort()
   return Promise.all(ids.map(async (id) => JSON.parse(await fetchText(`jobs/${id}/job.json`))))
 }
+
+// ---- Backlog -------------------------------------------------------------
+
+let lastBacklog = ''
+
+async function renderBacklog() {
+  const res = await fetch('api/backlog', { cache: 'no-store' })
+  if (!res.ok) return // served by a plain static server: no backlog API
+  const { items } = await res.json()
+  const groups = [
+    ['Baru — belum dicek', items.filter((i) => i.section.startsWith('Baru')), 'new'],
+    ['Siap', items.filter((i) => i.section.startsWith('Siap') && !i.checked), ''],
+    ['Berjalan / selesai', items.filter((i) => i.checked), 'done'],
+    ['Menunggu', items.filter((i) => i.section.startsWith('Menunggu')), ''],
+  ]
+  const html = groups.filter(([, list]) => list.length).map(([title, list, cls]) => `
+    <div class="bl-group"><h4>${esc(title)} · ${list.length}</h4>
+    ${list.map((i) => `<div class="bl-item ${cls}" title="${esc(i.text)}"><code>${esc(i.code)}</code>
+      <span class="t">${esc(i.text)}</span>
+      ${i.needs.length ? `<span class="needs">butuh ${esc(i.needs.join(', '))}</span>` : ''}</div>`).join('')}
+    </div>`).join('')
+  if (html !== lastBacklog) {
+    lastBacklog = html
+    $('bl-list').innerHTML = html
+    const n = (s) => items.filter((i) => i.section.startsWith(s)).length
+    $('bl-counts').textContent = `${n('Baru')} baru · ${groups[1][1].length} siap · ${n('Menunggu')} menunggu`
+  }
+}
+
+$('bl-form').addEventListener('submit', async (e) => {
+  e.preventDefault()
+  const form = e.currentTarget
+  const msg = $('bl-msg')
+  const button = form.querySelector('button')
+  button.disabled = true
+  try {
+    const res = await fetch('api/tasks', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ title: form.title.value, description: form.description.value }),
+    })
+    const data = await res.json().catch(() => ({}))
+    if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`)
+    msg.className = 'bl-msg ok'
+    msg.textContent = `Tersimpan sebagai ${data.code}. Minta Claude: /factory run ${data.code}`
+    form.reset()
+    await renderBacklog()
+  } catch (err) {
+    msg.className = 'bl-msg err'
+    msg.textContent = `Gagal menyimpan: ${err.message}`
+  } finally {
+    button.disabled = false
+  }
+})
 
 // ---- Drawer --------------------------------------------------------------
 
