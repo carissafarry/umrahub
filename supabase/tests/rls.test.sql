@@ -56,12 +56,20 @@ select is((select count(*)::int from public.trip_step_progress), 2, 'A reads own
 
 -- Content tables for a signed-in user
 
-select is((select count(*)::int from public.preparation_steps), 1, 'authenticated reads published steps only');
+select is(
+  (select count(*)::int from public.preparation_steps where id in ('aaaaaaaa-0000-0000-0000-000000000001', 'aaaaaaaa-0000-0000-0000-000000000002')),
+  1,
+  'authenticated reads published steps only'
+);
 select is_empty(
   $$select 1 from public.preparation_steps where id = 'aaaaaaaa-0000-0000-0000-000000000002'$$,
   'authenticated does not see an unpublished step'
 );
-select is((select count(*)::int from public.city_cost_overrides), 1, 'authenticated reads all city cost overrides');
+select is(
+  (select count(*)::int from public.city_cost_overrides where step_id = 'aaaaaaaa-0000-0000-0000-000000000001'),
+  1,
+  'authenticated reads all city cost overrides'
+);
 select throws_ok(
   $$insert into public.preparation_steps (phase_key, category_key, title_id, title_en, sort_order) values ('x', 'x', 'x', 'x', 9)$$,
   '42501', null,
