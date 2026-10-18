@@ -58,6 +58,8 @@ All four must pass before a change is ready. Use `build:check`, not `build`, for
 - To check a migration runs, use the local stack if Docker is available: `supabase start` then `supabase db reset --local`. Stop it with `supabase stop` when done.
 - All worktrees share **one** local stack. Before `supabase start`, run `supabase status`: if it is already running, another job owns it. Wait (check every 30s, up to 15 minutes) instead of resetting or stopping it. If it is still busy, skip the local check and say so in your report.
 - Generated types: `supabase gen types typescript --local > src/lib/supabase/database.types.ts` (local stack only).
+- MVP tables: `trips`, `travelers`, `trip_step_config`, `trip_step_progress` are trip-owned (signed-in users read/write only rows of their own trips); `preparation_steps` (published only) and `city_cost_overrides` are read-only for any signed-in user. `anon` gets nothing.
+- Database tests are pgTAP files in `supabase/tests/`; run them with `supabase test db` (local stack only).
 
 ## Conventions
 
