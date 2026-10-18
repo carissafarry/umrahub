@@ -1,0 +1,33 @@
+{
+  "Metadata": {
+    "title": "Umra Hub",
+    "description": "Umra Hub memandu jemaah mempersiapkan Umrah mandiri langkah demi langkah."
+  },
+  "Header": {
+    "languageLabel": "Ganti bahasa"
+  },
+  "Home": {
+    "title": "Persiapan Umrah mandiri, lebih tenang dan terarah",
+    "description": "Umra Hub memandu Anda langkah demi langkah dalam mempersiapkan Umrah secara mandiri, tanpa biro perjalanan, dari rencana awal hingga hari keberangkatan.",
+    "signIn": "Masuk dengan Google",
+    "signInNote": "Gratis. Simpan kemajuan persiapan Anda di satu tempat.",
+    "benefitsHeading": "Yang Anda dapatkan",
+    "benefits": {
+      "checklist": {
+        "title": "Checklist persiapan pribadi",
+        "description": "Daftar tugas yang disesuaikan dengan tanggal keberangkatan dan kebutuhan Anda."
+      },
+      "costs": {
+        "title": "Perkiraan biaya dalam Rupiah",
+        "description": "Hitung perkiraan tiket, visa, hotel, dan biaya lainnya sebelum berangkat."
+      },
+      "guide": {
+        "title": "Panduan langkah demi langkah",
+        "description": "Penjelasan jelas untuk setiap tahap, dari mengurus dokumen hingga ibadah di Tanah Suci."
+      }
+    }
+  },
+  "Footer": {
+    "text": "© {year} Umra Hub · Teman persiapan Umrah mandiri"
+  }
+}

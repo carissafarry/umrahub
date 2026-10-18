@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
 import { Inter, Noto_Naskh_Arabic } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
+import { NextIntlClientProvider } from "next-intl";
+import { getLocale, getTranslations } from "next-intl/server";
+import { SiteHeader } from "@/components/SiteHeader";
 import "./globals.css";
 
 const inter = Inter({
@@ -13,24 +16,31 @@ const notoNaskhArabic = Noto_Naskh_Arabic({
   subsets: ["arabic"],
 });
 
-export const metadata: Metadata = {
-  title: "UmrohHub",
-  description:
-    "UmrohHub memandu jemaah mempersiapkan Umrah mandiri langkah demi langkah.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("Metadata");
+  return {
+    title: t("title"),
+    description: t("description"),
+  };
+}
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const locale = await getLocale();
+
   return (
     <html
-      lang="id"
+      lang={locale}
       className={`${inter.variable} ${notoNaskhArabic.variable}`}
     >
-      <body className="antialiased">
-        {children}
+      <body className="flex min-h-screen flex-col antialiased">
+        <NextIntlClientProvider>
+          <SiteHeader />
+          {children}
+        </NextIntlClientProvider>
         <Analytics />
       </body>
     </html>
