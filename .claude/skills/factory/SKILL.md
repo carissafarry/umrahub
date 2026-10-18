@@ -274,14 +274,15 @@ or `/factory run`) keeps a Monitor on the inbox for as long as the session is
 open, re-arming it each time it expires (30 minutes):
 
 ```bash
-mkdir -p factory/inbox/taken
-while true; do
+# Run through bash: zsh aborts on an unmatched *.json glob.
+mkdir -p factory/inbox/taken && bash -c 'while true; do
   for f in factory/inbox/*.json; do
     [ -e "$f" ] || continue
-    mv "$f" factory/inbox/taken/ && echo "REQUEST $(basename "$f") $(tr -d '\n' < factory/inbox/taken/$(basename "$f"))"
+    b=$(basename "$f")
+    mv "$f" factory/inbox/taken/ && echo "REQUEST $b $(tr -d "\n" < "factory/inbox/taken/$b")"
   done
   sleep 2
-done
+done'
 ```
 
 For each `REQUEST` event:
