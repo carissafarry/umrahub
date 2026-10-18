@@ -100,7 +100,9 @@ the backlog). Every commit in that job is `<type>-<NNN> <message>`, no brackets.
 Your own commits on `main` follow the same rule. Factory or tooling changes
 that no backlog task covers get one first: add `- [x] [infra-<next NNN>] <Title>:
 <what changed> → infra-<NNN>` under **Selesai** in `factory/backlog.md` and
-commit with that code. Never commit without a task code.
+commit with that code. Never commit without a task code, and **never add a
+`Co-Authored-By: Claude` (or any AI attribution) trailer** to any commit or
+merge — the user's most important rule.
 
 Agents that open pages also get a port. With `n` the job number (`fe-004` → 4),
 the builder gets `5100 + 10n`, `reviewer-ux` gets `5101 + 10n` and `reviewer-ui`

@@ -66,6 +66,8 @@ All four must pass before a change is ready. Use `build:check`, not `build`, for
 
 ## Conventions
 
+- **Most important rule: no AI attribution in git.** Never add `Co-Authored-By: Claude …`, "Generated with Claude Code" or any AI co-author/trailer to a commit, merge commit, amend or PR description.
+
 - Every commit message is `<type>-<NNN> <message>`: the backlog task code, a space, then the message, no brackets (e.g. `fe-002 Add Card primitive`). Type is `infra`, `be` or `fe`. Every commit belongs to a backlog task — tooling and factory work gets an `infra-NNN` task first; there are no untagged commits.
 - Job branches are `factory/<type>-<NNN>` (e.g. `factory/fe-004`).
 

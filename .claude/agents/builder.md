@@ -64,6 +64,8 @@ command you ran and its result, or what the page showed.
   `<type>-<NNN> <message>` with no brackets, for example
   `be-003 Add RLS policies for trips`.
   One commit per distinct piece of work.
+- **Never add `Co-Authored-By: Claude` or any AI attribution trailer** to a
+  commit or merge message. This is the repo's most important rule.
 - Stage explicit paths, never `git add -A`. Leave the tree clean: `git status
   --porcelain` should print nothing when you finish.
 
