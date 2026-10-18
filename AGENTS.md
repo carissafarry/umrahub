@@ -2,6 +2,8 @@
 
 Brand name: **Umra Hub** — with a space — in every user-facing text (UI, metadata, copy, alt text). Use `umrahub` (lowercase, no space) for identifiers, package names and domains. The old name "UmrohHub" is retired; folder and file names that still contain it are only historical.
 
+Worship term: always **"Umrah"** — in Indonesian and English copy, seed content, tests and docs. Never "Umroh". ("Umra Hub" is the brand; "Umrah" is the pilgrimage.)
+
 Mobile-first web app guiding Indonesian pilgrims through independent (mandiri) Umrah preparation.
 Product spec: `.plans/umrohhub-mvp-spec.md` — read it before building any feature.
 Scope now: user-facing app only. Admin CMS is out of scope; content is edited via Supabase Studio.
