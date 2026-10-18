@@ -1,4 +1,5 @@
 import type { ComponentType } from "react";
+import { getTranslations } from "next-intl/server";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import {
@@ -8,30 +9,24 @@ import {
   WalletIcon,
 } from "@/components/ui/icons";
 
+// `id` is the message key under Home.benefits and the stable React key.
 const benefits: {
-  title: string;
-  description: string;
+  id: "checklist" | "costs" | "guide";
   icon: ComponentType<{ className?: string }>;
   tile: string;
 }[] = [
   {
-    title: "Checklist persiapan pribadi",
-    description:
-      "Daftar tugas yang disesuaikan dengan tanggal keberangkatan dan kebutuhan Anda.",
+    id: "checklist",
     icon: ChecklistIcon,
     tile: "bg-tile-green text-tile-green-foreground",
   },
   {
-    title: "Perkiraan biaya dalam Rupiah",
-    description:
-      "Hitung perkiraan tiket, visa, hotel, dan biaya lainnya sebelum berangkat.",
+    id: "costs",
     icon: WalletIcon,
     tile: "bg-tile-amber text-tile-amber-foreground",
   },
   {
-    title: "Panduan langkah demi langkah",
-    description:
-      "Penjelasan jelas untuk setiap tahap, dari mengurus dokumen hingga ibadah di Tanah Suci.",
+    id: "guide",
     icon: BookIcon,
     tile: "bg-tile-blue text-tile-blue-foreground",
   },
@@ -125,15 +120,12 @@ function Hero() {
   );
 }
 
-export default function Home() {
-  return (
-    <div className="mx-auto flex min-h-screen w-full max-w-md flex-col px-5 md:max-w-3xl md:px-8 lg:max-w-6xl lg:px-10">
-      <header className="py-4 lg:py-6">
-        <p className="text-xl font-bold tracking-tight lg:text-2xl">
-          UmrohHub
-        </p>
-      </header>
+export default async function Home() {
+  const t = await getTranslations("Home");
+  const tFooter = await getTranslations("Footer");
 
+  return (
+    <div className="mx-auto flex w-full max-w-md flex-1 flex-col px-5 md:max-w-3xl md:px-8 lg:max-w-6xl lg:px-10">
       <main className="flex flex-1 flex-col gap-10 pt-2 pb-10 lg:gap-20 lg:pt-8 lg:pb-16">
         <section className="grid items-center gap-4 lg:grid-cols-2 lg:gap-16">
           <div className="lg:order-last">
@@ -141,12 +133,10 @@ export default function Home() {
           </div>
           <div className="flex flex-col items-center gap-4 text-center lg:items-start lg:text-left">
             <h1 className="text-3xl leading-tight font-bold md:text-4xl lg:text-5xl">
-              Persiapan Umrah mandiri, lebih tenang dan terarah
+              {t("title")}
             </h1>
             <p className="text-lg text-muted md:max-w-xl lg:text-xl">
-              UmrohHub memandu Anda langkah demi langkah dalam mempersiapkan
-              Umrah secara mandiri, tanpa biro perjalanan, dari rencana awal
-              hingga hari keberangkatan.
+              {t("description")}
             </p>
             <p
               lang="ar"
@@ -156,9 +146,9 @@ export default function Home() {
               لَبَّيْكَ اللَّهُمَّ لَبَّيْكَ
             </p>
             <div className="mt-6 flex w-full flex-col gap-3 md:items-center lg:items-start">
-              <Button>Masuk dengan Google</Button>
+              <Button>{t("signIn")}</Button>
               <p className="text-center text-muted lg:text-left">
-                Gratis. Simpan kemajuan persiapan Anda di satu tempat.
+                {t("signInNote")}
               </p>
             </div>
           </div>
@@ -166,13 +156,13 @@ export default function Home() {
 
         <section aria-labelledby="manfaat" className="flex flex-col gap-4">
           <h2 id="manfaat" className="text-xl font-semibold lg:text-2xl">
-            Yang Anda dapatkan
+            {t("benefitsHeading")}
           </h2>
           <ul className="grid gap-4 md:grid-cols-3 lg:gap-6">
-            {benefits.map(({ title, description, icon: Icon, tile }) => (
+            {benefits.map(({ id, icon: Icon, tile }) => (
               <Card
                 as="li"
-                key={title}
+                key={id}
                 className="flex items-start gap-4 md:flex-col lg:p-7"
               >
                 <span
@@ -182,8 +172,12 @@ export default function Home() {
                   <Icon className="size-6" />
                 </span>
                 <div>
-                  <h3 className="font-semibold">{title}</h3>
-                  <p className="mt-1 text-muted">{description}</p>
+                  <h3 className="font-semibold">
+                    {t(`benefits.${id}.title`)}
+                  </h3>
+                  <p className="mt-1 text-muted">
+                    {t(`benefits.${id}.description`)}
+                  </p>
                 </div>
               </Card>
             ))}
@@ -192,7 +186,7 @@ export default function Home() {
       </main>
 
       <footer className="border-t border-border py-6 text-center text-muted">
-        © 2026 UmrohHub · Teman persiapan Umrah mandiri
+        {tFooter("text", { year: new Date().getFullYear() })}
       </footer>
     </div>
   );
