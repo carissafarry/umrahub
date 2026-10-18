@@ -45,6 +45,14 @@ npm run build
 
 All four must pass before a change is ready.
 
+## Database (Supabase)
+
+- Schema lives in `supabase/migrations/`. Create a file with `supabase migration new <snake_case_name>`; never edit a migration that is already on `main`.
+- Seed/reference content goes in its own migration (idempotent `insert ... on conflict do update`), not in `supabase/seed.sql`.
+- Jobs never touch the remote database: no `supabase db push`, `supabase link` or SQL against the hosted project. A human applies migrations after merge.
+- To check a migration runs, use the local stack if Docker is available: `supabase start` then `supabase db reset --local`. Stop it with `supabase stop` when done.
+- Generated types: `supabase gen types typescript --local > src/lib/supabase/database.types.ts` (local stack only).
+
 ## Conventions
 
 - Mobile-first; minimum 44px tap targets; high contrast; one gold accent CTA per screen.
