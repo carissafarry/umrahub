@@ -66,6 +66,15 @@ export function BookIcon({ className }: IconProps) {
   );
 }
 
+export function SignOutIcon({ className }: IconProps) {
+  return (
+    <Svg className={className}>
+      <path d="M10 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h4" />
+      <path d="M14 8l4 4-4 4M18 12H9" />
+    </Svg>
+  );
+}
+
 export function SparkleIcon({ className }: IconProps) {
   return (
     <Svg className={className}>

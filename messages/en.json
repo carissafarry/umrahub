@@ -4,13 +4,16 @@
     "description": "Umra Hub guides pilgrims step by step as they prepare for an independent Umrah."
   },
   "Header": {
-    "languageLabel": "Change language"
+    "languageLabel": "Change language",
+    "signOut": "Sign out",
+    "accountLabel": "Account"
   },
   "Home": {
     "title": "Prepare for your independent Umrah, calmly and step by step",
     "description": "Umra Hub guides you step by step as you prepare for Umrah on your own, without a travel agency, from your first plans to departure day.",
     "signIn": "Sign in with Google",
     "signInNote": "Free. Keep all your preparation progress in one place.",
+    "signInError": "Couldn't sign in with Google. Please try again.",
     "benefitsHeading": "What you get",
     "benefits": {
       "checklist": {
