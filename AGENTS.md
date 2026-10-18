@@ -63,6 +63,14 @@ All four must pass before a change is ready. Use `build:check`, not `build`, for
 - Generated types: `supabase gen types typescript --local > src/lib/supabase/database.types.ts` (local stack only).
 - MVP tables: `trips`, `travelers`, `trip_step_config`, `trip_step_progress` are trip-owned (signed-in users read/write only rows of their own trips); `preparation_steps` (published only) and `city_cost_overrides` are read-only for any signed-in user. `anon` gets nothing.
 - Database tests are pgTAP files in `supabase/tests/`; run them with `supabase test db` (local stack only).
+- Preparation-step content is seeded by `supabase/migrations/20261018150410_seed_preparation_steps.sql`:
+  - Step ids are fixed: `5eed0000-0000-4000-8000-0000000000NN` (`NN` = step 01–22); `sort_order` is `NN * 10`.
+  - `phase_key` in order: `3_6_months_before`, `2_3_months_before`, `1_month_before`, `1_week_before`, `departure_day`.
+  - `category_key`: `documents`, `health`, `financial`, `booking`, `preparation`, `final_checks`, `spiritual`, `checklist`.
+  - `city_cost_overrides.city` spellings: `Jakarta`, `Surabaya`, `Medan`, `Makassar`, `Yogyakarta`. The wizard's departure-city values must match them exactly.
+  - All costs are per person, in whole rupiah (IDR). Flights (09) and accommodation (10) are individual steps (`is_shared_step = false`), so the budget multiplies them by traveler count.
+  - Copy spells the pilgrimage "Umrah" in both Indonesian and English, never "Umroh".
+  - Content changes after merge go in a new upsert migration (or Studio); never edit this one.
 
 ## Conventions
 
