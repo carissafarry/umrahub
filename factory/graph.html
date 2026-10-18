@@ -1,0 +1,311 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Task Graph</title>
+<style>
+  :root {
+    --bg: #14151b; --panel: #1a1c24; --card: #20222c; --card-hover: #252835; --line: #2b2e3b;
+    --text: #e4e5ea; --muted: #868ba0; --faint: #5b6075;
+    --active: #8be9fd; --pass: #50fa7b; --changes: #ffb86c; --human: #ff79c6; --merged: #bd93f9;
+    --up: #f1fa8c; --down: #8be9fd;
+    --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; }
+  body {
+    background: var(--bg); color: var(--text); display: grid; grid-template-rows: auto 1fr;
+    font: 14px/1.5 -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  button { font: inherit; color: inherit; }
+  header {
+    display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px; padding: 20px 28px 14px;
+    border-bottom: 1px solid var(--line);
+  }
+  h1 { margin: 0; font-size: 18px; font-weight: 600; }
+  header a { color: var(--muted); font-size: 13px; text-decoration: none; }
+  header a:hover { color: var(--text); }
+  .legend { display: flex; flex-wrap: wrap; gap: 12px; font-family: var(--mono); font-size: 11px; color: var(--muted); margin-left: auto; align-items: center; }
+  .legend i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 5px; vertical-align: -1px; }
+  .legend label { display: flex; gap: 6px; align-items: center; cursor: pointer; }
+  .status { font-family: var(--mono); font-size: 11px; color: var(--faint); }
+
+  .layout { display: grid; grid-template-columns: 1fr; min-height: 0; }
+  .layout.with-panel { grid-template-columns: 1fr min(420px, 92vw); }
+  .canvas { overflow: auto; position: relative; min-height: 0; }
+  .stage { position: relative; }
+  svg.edges { position: absolute; inset: 0; pointer-events: none; overflow: visible; }
+  .edge { fill: none; stroke: var(--line); stroke-width: 1.6; transition: stroke .15s, opacity .15s; }
+  .edge.open { stroke: #4a4f63; }
+  .edge.up { stroke: var(--up); stroke-width: 2.2; }
+  .edge.down { stroke: var(--down); stroke-width: 2.2; }
+  .dim .edge:not(.up):not(.down) { opacity: .15; }
+  .col-label {
+    position: absolute; top: 14px; font-family: var(--mono); font-size: 11px; color: var(--faint);
+    text-transform: uppercase; letter-spacing: .06em;
+  }
+
+  .node {
+    position: absolute; width: 210px; height: 66px; padding: 8px 10px; text-align: left; cursor: pointer;
+    background: var(--card); border: 1px solid var(--line); border-left: 4px solid var(--st);
+    border-radius: 10px; display: grid; grid-template-rows: auto 1fr; gap: 2px;
+    transition: opacity .15s, border-color .15s, transform .15s;
+  }
+  .node:hover, .node:focus-visible { background: var(--card-hover); outline: none; }
+  .node .top { display: flex; justify-content: space-between; align-items: center; gap: 6px; }
+  .node .code { font-family: var(--mono); font-size: 11px; font-weight: 600; color: var(--tc); }
+  .node .st { font-family: var(--mono); font-size: 10px; color: var(--st); white-space: nowrap; }
+  .node .ttl { font-size: 13px; font-weight: 600; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; line-height: 1.3; }
+  .node.done .ttl { color: var(--muted); }
+  .dim .node { opacity: .28; }
+  .dim .node.sel, .dim .node.up, .dim .node.down { opacity: 1; }
+  .node.sel { box-shadow: 0 0 0 2px var(--text); }
+  .node.up { border-color: var(--up); }
+  .node.down { border-color: var(--down); }
+  .t-fe { --tc: var(--active); } .t-be { --tc: var(--merged); } .t-infra { --tc: var(--pass); } .t-q { --tc: var(--changes); }
+  .s-done { --st: var(--merged); } .s-run { --st: var(--active); } .s-human { --st: var(--human); }
+  .s-ready { --st: var(--pass); } .s-blocked { --st: var(--changes); } .s-new { --st: var(--faint); }
+
+  aside.panel { border-left: 1px solid var(--line); background: var(--panel); overflow-y: auto; padding: 18px 20px 40px; position: relative; }
+  .panel[hidden] { display: none; }
+  .close {
+    position: absolute; top: 14px; right: 14px; width: 30px; height: 30px; border-radius: 8px;
+    border: 1px solid var(--line); background: none; cursor: pointer; color: var(--muted); font-size: 17px;
+  }
+  .panel h2 { margin: 6px 40px 8px 0; font-size: 16px; }
+  .pill {
+    display: inline-block; font-family: var(--mono); font-size: 11px; padding: 2px 8px; border-radius: 999px;
+    border: 1px solid var(--line); color: var(--muted); margin: 0 6px 6px 0;
+  }
+  .pill.s { color: var(--st); border-color: var(--st); }
+  .panel h5 { margin: 18px 0 8px; font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+  .panel p { margin: 0; line-height: 1.6; }
+  .lnk {
+    display: flex; gap: 10px; align-items: center; width: 100%; padding: 7px 10px; margin-bottom: 6px;
+    background: var(--card); border: 1px solid var(--line); border-left: 4px solid var(--st);
+    border-radius: 8px; cursor: pointer; text-align: left; font-size: 13px;
+  }
+  .lnk:hover { border-color: var(--muted); border-left-color: var(--st); }
+  .lnk .code { font-family: var(--mono); font-size: 11px; font-weight: 600; color: var(--tc); }
+  .none { color: var(--faint); font-size: 13px; }
+  .empty { padding: 40px 28px; color: var(--muted); }
+  @media (max-width: 800px) { .layout.with-panel { grid-template-columns: 1fr; grid-template-rows: 1fr 50vh; } aside.panel { border-left: 0; border-top: 1px solid var(--line); } }
+</style>
+</head>
+<body>
+<header>
+  <h1>Task graph</h1>
+  <a href="dashboard.html">← dashboard</a>
+  <span class="status" id="status">memuat…</span>
+  <div class="legend">
+    <span><i style="background:var(--merged)"></i>selesai</span>
+    <span><i style="background:var(--active)"></i>berjalan</span>
+    <span><i style="background:var(--human)"></i>butuh kamu</span>
+    <span><i style="background:var(--pass)"></i>siap</span>
+    <span><i style="background:var(--changes)"></i>diblokir</span>
+    <span><i style="background:var(--faint)"></i>baru</span>
+    <span><i style="background:var(--up)"></i>memblokir task terpilih</span>
+    <span><i style="background:var(--down)"></i>diblokir task terpilih</span>
+    <label><input type="checkbox" id="hide-done"> sembunyikan selesai</label>
+  </div>
+</header>
+<div class="layout" id="layout">
+  <div class="canvas" id="canvas"><div class="stage" id="stage"></div></div>
+  <aside class="panel" id="panel" hidden></aside>
+</div>
+
+<script>
+const POLL_MS = 3000
+const NODE_W = 210, NODE_H = 66, COL_GAP = 90, ROW_GAP = 18, PAD = 28, TOP = 44
+const $ = (id) => document.getElementById(id)
+const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c])
+
+let tasks = new Map(), jobs = [], selected = null, hovered = null, lastData = ''
+
+async function loadJobs() {
+  const res = await fetch('jobs/', { cache: 'no-store' })
+  if (!res.ok) return []
+  const doc = new DOMParser().parseFromString(await res.text(), 'text/html')
+  const ids = [...doc.querySelectorAll('a')].map((a) => decodeURIComponent(a.getAttribute('href'))).filter((h) => h.endsWith('/')).map((h) => h.slice(0, -1))
+  const out = await Promise.all(ids.map(async (id) => {
+    try { return await (await fetch(`jobs/${id}/job.json`, { cache: 'no-store' })).json() } catch { return null }
+  }))
+  return out.filter(Boolean)
+}
+
+function statusOf(t, seen = new Set()) {
+  const job = t.job && jobs.find((j) => j.id === t.job)
+  if (t.section.startsWith('Selesai') || job?.stage === 'merged') return { key: 'done', label: 'selesai' }
+  if (job?.stage === 'needs-human') return { key: 'human', label: 'butuh kamu' }
+  if (job) return { key: 'run', label: job.stage }
+  if (t.checked) return { key: 'run', label: 'berjalan' }
+  if (t.section.startsWith('Baru')) return { key: 'new', label: 'perlu dicek' }
+  if (t.section.startsWith('Siap')) return { key: 'ready', label: 'siap' }
+  return openBlockers(t, seen).length ? { key: 'blocked', label: 'diblokir' } : { key: 'ready', label: 'siap dipindah' }
+}
+function openBlockers(t, seen = new Set()) {
+  if (seen.has(t.code)) return []
+  seen.add(t.code)
+  return t.needs.filter((c) => tasks.has(c) && statusOf(tasks.get(c), seen).key !== 'done')
+}
+const children = (code) => [...tasks.values()].filter((t) => t.needs.includes(code))
+function closure(code, step) {
+  const out = new Set(), stack = [code]
+  while (stack.length) for (const n of step(stack.pop())) if (!out.has(n)) { out.add(n); stack.push(n) }
+  return out
+}
+const ancestors = (code) => closure(code, (c) => (tasks.get(c)?.needs || []).filter((n) => tasks.has(n)))
+const descendants = (code) => closure(code, (c) => children(c).map((t) => t.code))
+const typeCls = (t) => `t-${t.type === '?' ? 'q' : t.type}`
+
+function layout(list) {
+  const visible = new Set(list.map((t) => t.code))
+  const depth = new Map()
+  const depthOf = (t, path = new Set()) => {
+    if (depth.has(t.code)) return depth.get(t.code)
+    if (path.has(t.code)) return 0 // cycle guard
+    path.add(t.code)
+    const parents = t.needs.filter((c) => visible.has(c)).map((c) => tasks.get(c))
+    const d = parents.length ? 1 + Math.max(...parents.map((p) => depthOf(p, path))) : 0
+    depth.set(t.code, d)
+    return d
+  }
+  list.forEach((t) => depthOf(t))
+  const cols = []
+  for (const t of list) (cols[depth.get(t.code)] ||= []).push(t)
+  const pos = new Map()
+  cols.forEach((col, i) => {
+    if (i > 0) {
+      const bary = (t) => {
+        const ys = t.needs.filter((c) => pos.has(c)).map((c) => pos.get(c).y)
+        return ys.length ? ys.reduce((a, b) => a + b, 0) / ys.length : Infinity
+      }
+      col.sort((a, b) => bary(a) - bary(b) || a.code.localeCompare(b.code))
+    } else col.sort((a, b) => a.code.slice(-3).localeCompare(b.code.slice(-3)))
+    col.forEach((t, r) => pos.set(t.code, { x: PAD + i * (NODE_W + COL_GAP), y: TOP + r * (NODE_H + ROW_GAP) }))
+  })
+  return { cols, pos }
+}
+
+function render() {
+  const hideDone = $('hide-done').checked
+  const list = [...tasks.values()].filter((t) => !hideDone || statusOf(t).key !== 'done')
+  if (!list.length) { $('stage').innerHTML = '<div class="empty">Backlog kosong.</div>'; return }
+  const { cols, pos } = layout(list)
+  const width = PAD * 2 + cols.length * NODE_W + (cols.length - 1) * COL_GAP
+  const height = TOP + Math.max(...cols.map((c) => c.length)) * (NODE_H + ROW_GAP) + PAD
+  const edges = []
+  for (const t of list) for (const c of t.needs) if (pos.has(c)) {
+    const a = pos.get(c), b = pos.get(t.code)
+    const x1 = a.x + NODE_W, y1 = a.y + NODE_H / 2, x2 = b.x, y2 = b.y + NODE_H / 2, mx = (x1 + x2) / 2
+    const open = statusOf(tasks.get(c)).key !== 'done'
+    edges.push(`<path class="edge ${open ? 'open' : ''}" data-from="${esc(c)}" data-to="${esc(t.code)}" d="M${x1},${y1} C${mx},${y1} ${mx},${y2} ${x2 - 6},${y2}" marker-end="url(#arrow)"/>`)
+  }
+  const labels = cols.map((_, i) => `<div class="col-label" style="left:${PAD + i * (NODE_W + COL_GAP)}px">${i === 0 ? 'tanpa blocker' : `langkah ${i + 1}`}</div>`).join('')
+  const nodes = list.map((t) => {
+    const p = pos.get(t.code), s = statusOf(t)
+    return `<button class="node ${typeCls(t)} s-${s.key} ${s.key === 'done' ? 'done' : ''}" data-code="${esc(t.code)}" type="button"
+      style="left:${p.x}px;top:${p.y}px" title="${esc(t.text)}">
+      <span class="top"><span class="code">${esc(t.code)}</span><span class="st">${esc(s.label)}</span></span>
+      <span class="ttl">${esc(t.title)}</span></button>`
+  }).join('')
+  $('stage').style.width = width + 'px'
+  $('stage').style.height = height + 'px'
+  $('stage').innerHTML = `<svg class="edges" width="${width}" height="${height}">
+    <defs><marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+    <path d="M0,0 L10,5 L0,10 z" fill="#4a4f63"/></marker></defs>${edges.join('')}</svg>${labels}${nodes}`
+  highlight()
+}
+
+function highlight() {
+  const focus = hovered || selected
+  const stage = $('stage')
+  stage.classList.toggle('dim', !!focus)
+  const up = focus ? ancestors(focus) : new Set(), down = focus ? descendants(focus) : new Set()
+  stage.querySelectorAll('.node').forEach((n) => {
+    const c = n.dataset.code
+    n.classList.toggle('sel', c === focus)
+    n.classList.toggle('up', up.has(c))
+    n.classList.toggle('down', down.has(c))
+  })
+  stage.querySelectorAll('.edge').forEach((e) => {
+    const { from, to } = e.dataset
+    e.classList.toggle('up', !!focus && (to === focus || up.has(to)) && (up.has(from)))
+    e.classList.toggle('down', !!focus && (from === focus || down.has(from)) && down.has(to))
+  })
+}
+
+function link(t) {
+  const s = statusOf(t)
+  return `<button class="lnk ${typeCls(t)} s-${s.key}" data-select="${esc(t.code)}" type="button">
+    <span class="code">${esc(t.code)}</span><span>${esc(t.title)}</span></button>`
+}
+
+function renderPanel() {
+  const panel = $('panel'), t = selected && tasks.get(selected)
+  $('layout').classList.toggle('with-panel', !!t)
+  panel.hidden = !t
+  if (!t) return
+  const s = statusOf(t)
+  const blockers = t.needs.map((c) => tasks.get(c)).filter(Boolean)
+  const blocks = children(t.code)
+  const allUp = [...ancestors(t.code)].filter((c) => !t.needs.includes(c)).map((c) => tasks.get(c))
+  panel.innerHTML = `<button class="close" data-unselect aria-label="Tutup">×</button>
+    <div class="${typeCls(t)}"><span class="code" style="font-family:var(--mono);font-weight:600;color:var(--tc)">${esc(t.code)}</span></div>
+    <h2>${esc(t.title)}</h2>
+    <span class="pill s s-${s.key}">${esc(s.label)}</span><span class="pill">${esc(t.section)}</span>
+    <h5>Deskripsi</h5><p>${esc(t.text)}</p>
+    <h5>Diblokir oleh · ${blockers.length}</h5>${blockers.map(link).join('') || '<p class="none">Tidak ada.</p>'}
+    ${allUp.length ? `<h5>Blocker tidak langsung · ${allUp.length}</h5>${allUp.map(link).join('')}` : ''}
+    <h5>Memblokir · ${blocks.length}</h5>${blocks.map(link).join('') || '<p class="none">Tidak ada.</p>'}`
+}
+
+function select(code) {
+  selected = code
+  renderPanel()
+  highlight()
+  const n = document.querySelector(`.node[data-code="${CSS.escape(code)}"]`)
+  n?.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'smooth' })
+}
+
+document.addEventListener('click', (e) => {
+  const n = e.target.closest('[data-code]')
+  if (n) return select(n.dataset.code === selected ? null : n.dataset.code)
+  const l = e.target.closest('[data-select]')
+  if (l) return select(l.dataset.select)
+  if (e.target.closest('[data-unselect]')) return select(null)
+})
+$('stage').addEventListener('mouseover', (e) => {
+  const n = e.target.closest('.node')
+  if ((n?.dataset.code || null) !== hovered) { hovered = n?.dataset.code || null; highlight() }
+})
+$('stage').addEventListener('mouseleave', () => { hovered = null; highlight() })
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape') select(null) })
+$('hide-done').addEventListener('change', render)
+
+async function poll() {
+  try {
+    const res = await fetch('api/backlog', { cache: 'no-store' })
+    if (!res.ok) throw new Error('api/backlog tidak tersedia — jalankan node factory/server.mjs')
+    const { items } = await res.json()
+    jobs = await loadJobs()
+    const data = JSON.stringify([items, jobs.map((j) => [j.id, j.stage])])
+    if (data !== lastData) {
+      lastData = data
+      tasks = new Map(items.map((i) => [i.code, i]))
+      if (selected && !tasks.has(selected)) selected = null
+      render()
+      renderPanel()
+    }
+    $('status').textContent = `${items.length} task · ${new Date().toLocaleTimeString()}`
+  } catch (err) {
+    $('status').textContent = err.message
+  }
+}
+poll()
+setInterval(poll, POLL_MS)
+</script>
+</body>
+</html>
