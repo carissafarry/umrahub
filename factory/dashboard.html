@@ -137,11 +137,22 @@
     opacity: 0; pointer-events: none; transition: opacity .2s;
   }
   .drawer {
-    position: fixed; top: 0; right: 0; bottom: 0; width: min(920px, 100vw);
+    position: fixed; top: 0; right: 0; bottom: 0; width: min(920px, 100vw); max-width: 100vw;
     background: var(--panel); border-left: 1px solid var(--line);
-    display: grid; grid-template-rows: auto 1fr; transform: translateX(100%);
+    overflow-y: auto; overscroll-behavior: contain; transform: translateX(100%);
     transition: transform .25s ease;
   }
+  .drawer.resizing { transition: none; user-select: none; }
+  .resizer {
+    position: fixed; top: 0; bottom: 0; width: 12px; cursor: ew-resize; z-index: 3;
+    touch-action: none; display: none;
+  }
+  .open #overlay .resizer, .topen #toverlay .resizer { display: block; }
+  .resizer::after {
+    content: ""; position: absolute; top: 50%; left: 4px; width: 4px; height: 56px; margin-top: -28px;
+    border-radius: 4px; background: var(--muted); opacity: .5; transition: opacity .15s, background .15s;
+  }
+  .resizer:hover::after, .resizer.on::after { opacity: 1; background: var(--active); }
   .open #overlay .scrim, .topen #toverlay .scrim { opacity: 1; pointer-events: auto; }
   .open #overlay .drawer, .topen #toverlay .drawer { transform: none; }
   .d-head { padding: 20px 24px 16px; border-bottom: 1px solid var(--line); position: relative; }
@@ -153,8 +164,11 @@
     color: var(--muted); font-size: 18px; line-height: 1;
   }
   .close:hover { color: var(--text); border-color: var(--muted); }
-  .d-body { display: grid; grid-template-columns: 200px 1fr; min-height: 0; }
-  .files { border-right: 1px solid var(--line); padding: 14px 10px; overflow-y: auto; }
+  .d-body { display: grid; grid-template-columns: 200px 1fr; align-items: start; }
+  .files {
+    border-right: 1px solid var(--line); padding: 14px 10px; overflow-y: auto;
+    position: sticky; top: 0; max-height: 100vh; background: var(--panel);
+  }
   .files .group {
     font-size: 10px; text-transform: uppercase; letter-spacing: .08em;
     color: var(--faint); margin: 12px 8px 4px;
@@ -170,10 +184,10 @@
   .file .rn { display: none; }
   .file .v { width: 6px; height: 6px; border-radius: 50%; background: var(--faint); flex: none; }
   .v.good { background: var(--pass); } .v.warn { background: var(--changes); } .v.stop { background: var(--human); }
-  .doc { overflow-y: auto; padding: 22px 28px 60px; min-width: 0; }
+  .doc { padding: 22px 28px 60px; min-width: 0; }
 
   /* Rendered markdown */
-  .md { max-width: 680px; line-height: 1.65; }
+  .md { max-width: 1000px; line-height: 1.65; }
   .md h1, .md h2, .md h3, .md h4 { line-height: 1.3; margin: 1.6em 0 .5em; }
   .md h1 { font-size: 20px; } .md h2 { font-size: 15px; } .md h3 { font-size: 14px; color: var(--muted); }
   .md > :first-child { margin-top: 0; }
@@ -221,11 +235,12 @@
     .board { grid-template-columns: 1fr; padding: 16px 16px 32px; }
     footer { padding: 0 16px 24px; }
     .d-head { padding: 16px; }
-    .d-body { grid-template-columns: 1fr; grid-template-rows: auto 1fr; }
+    .d-body { grid-template-columns: 1fr; }
     .files {
       border-right: 0; border-bottom: 1px solid var(--line); display: flex; gap: 4px;
-      overflow-x: auto; padding: 8px;
+      overflow-x: auto; padding: 8px; max-height: none; z-index: 1;
     }
+    .resizer { display: none; }
     .files .group { display: none; }
     .file { width: auto; white-space: nowrap; }
     .file .rn { display: inline; white-space: pre; }
@@ -329,8 +344,8 @@
   }
 
   /* Task drawer */
-  #toverlay .drawer { width: min(620px, 100vw); grid-template-rows: auto 1fr; }
-  .t-body { overflow-y: auto; padding: 18px 24px 40px; }
+  #toverlay .drawer { width: min(620px, 100vw); }
+  .t-body { padding: 18px 24px 40px; }
   .t-meta { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 8px; }
   .t-back {
     background: none; border: 0; color: var(--muted); cursor: pointer; padding: 0; font-size: 12px;
@@ -426,6 +441,7 @@
       <article class="doc"><div class="md" id="d-doc"></div></article>
     </div>
   </aside>
+  <div class="resizer" data-resize="overlay" title="Geser untuk mengubah lebar · klik dua kali untuk lebar penuh"></div>
 </div>
 
 <div id="toverlay">
@@ -440,6 +456,7 @@
     </div>
     <div class="t-body" id="t-body"><div id="t-info"></div><section class="t-sec" id="t-req"></section></div>
   </aside>
+  <div class="resizer" data-resize="toverlay" title="Geser untuk mengubah lebar · klik dua kali untuk lebar penuh"></div>
 </div>
 
 <script>
@@ -653,6 +670,59 @@ async function loadJobs() {
   return Promise.all(ids.map(async (id) => JSON.parse(await fetchText(`jobs/${id}/job.json`))))
 }
 
+// ---- Resizable drawers ---------------------------------------------------
+
+const DRAWER_MIN = 360
+const drawerOf = (id) => document.querySelector(`#${id} .drawer`)
+
+function setDrawerWidth(id, w, persist = false) {
+  const max = window.innerWidth
+  const width = Math.round(Math.min(max, Math.max(Math.min(DRAWER_MIN, max), w)))
+  drawerOf(id).style.width = `${width}px`
+  document.querySelector(`[data-resize="${id}"]`).style.right = `${width - 6}px`
+  if (persist) try { localStorage.setItem(`factory.drawer.${id}`, String(width)) } catch {}
+}
+
+function restoreDrawers() {
+  for (const id of ['overlay', 'toverlay']) {
+    let saved = null
+    try { saved = Number(localStorage.getItem(`factory.drawer.${id}`)) || null } catch {}
+    setDrawerWidth(id, saved || drawerOf(id).getBoundingClientRect().width)
+  }
+}
+
+document.addEventListener('pointerdown', (e) => {
+  const handle = e.target.closest('[data-resize]')
+  if (!handle) return
+  e.preventDefault()
+  const id = handle.dataset.resize
+  const drawer = drawerOf(id)
+  handle.classList.add('on')
+  drawer.classList.add('resizing')
+  handle.setPointerCapture(e.pointerId)
+  const move = (ev) => setDrawerWidth(id, window.innerWidth - ev.clientX)
+  const up = () => {
+    handle.classList.remove('on')
+    drawer.classList.remove('resizing')
+    setDrawerWidth(id, drawer.getBoundingClientRect().width, true)
+    handle.removeEventListener('pointermove', move)
+    handle.removeEventListener('pointerup', up)
+  }
+  handle.addEventListener('pointermove', move)
+  handle.addEventListener('pointerup', up)
+})
+
+document.addEventListener('dblclick', (e) => {
+  const handle = e.target.closest('[data-resize]')
+  if (!handle) return
+  const id = handle.dataset.resize
+  const full = drawerOf(id).getBoundingClientRect().width >= window.innerWidth - 2
+  setDrawerWidth(id, full ? (id === 'overlay' ? 920 : 620) : window.innerWidth, true)
+})
+
+window.addEventListener('resize', restoreDrawers)
+restoreDrawers()
+
 // ---- Backlog -------------------------------------------------------------
 
 let lastBacklog = ''
@@ -755,7 +825,7 @@ function showTask(code, push = true) {
   document.body.classList.add('topen')
   renderTask()
   refreshReq(true)
-  $('t-body').scrollTop = 0
+  document.querySelector('#toverlay .drawer').scrollTop = 0
 }
 
 // ---- Requirement doc (AI-generated, editable, autosaved) -------------------
@@ -992,7 +1062,8 @@ document.addEventListener('click', (e) => {
   if (fileEl) {
     openPath = fileEl.dataset.file
     openText = undefined
-    $('d-doc').parentElement.scrollTop = 0
+    const drawer = document.querySelector('#overlay .drawer')
+    drawer.scrollTop = Math.min(drawer.scrollTop, document.querySelector('#overlay .d-body').offsetTop)
     return refreshDrawer()
   }
   if (e.target.closest('[data-close]')) closeDrawer()
