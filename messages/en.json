@@ -1,0 +1,33 @@
+{
+  "Metadata": {
+    "title": "Umra Hub",
+    "description": "Umra Hub guides pilgrims step by step as they prepare for an independent Umrah."
+  },
+  "Header": {
+    "languageLabel": "Change language"
+  },
+  "Home": {
+    "title": "Prepare for your independent Umrah, calmly and step by step",
+    "description": "Umra Hub guides you step by step as you prepare for Umrah on your own, without a travel agency, from your first plans to departure day.",
+    "signIn": "Sign in with Google",
+    "signInNote": "Free. Keep all your preparation progress in one place.",
+    "benefitsHeading": "What you get",
+    "benefits": {
+      "checklist": {
+        "title": "Your personal preparation checklist",
+        "description": "A task list tailored to your departure date and your needs."
+      },
+      "costs": {
+        "title": "Cost estimates in Rupiah",
+        "description": "Estimate flights, visa, hotel and other costs before you travel."
+      },
+      "guide": {
+        "title": "Step-by-step guidance",
+        "description": "Clear explanations for every stage, from sorting out documents to worship in the Holy Land."
+      }
+    }
+  },
+  "Footer": {
+    "text": "© {year} Umra Hub · Your companion for an independent Umrah"
+  }
+}
