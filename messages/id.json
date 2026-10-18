@@ -1,14 +1,14 @@
 {
   "Metadata": {
     "title": "Umra Hub",
-    "description": "Umra Hub memandu jemaah mempersiapkan Umroh mandiri langkah demi langkah."
+    "description": "Umra Hub memandu jemaah mempersiapkan Umrah mandiri langkah demi langkah."
   },
   "Header": {
     "languageLabel": "Ganti bahasa"
   },
   "Home": {
-    "title": "Persiapan Umroh mandiri, lebih tenang dan terarah",
-    "description": "Umra Hub memandu Anda langkah demi langkah dalam mempersiapkan Umroh secara mandiri, tanpa biro perjalanan, dari rencana awal hingga hari keberangkatan.",
+    "title": "Persiapan Umrah mandiri, lebih tenang dan terarah",
+    "description": "Umra Hub memandu Anda langkah demi langkah dalam mempersiapkan Umrah secara mandiri, tanpa biro perjalanan, dari rencana awal hingga hari keberangkatan.",
     "signIn": "Masuk dengan Google",
     "signInNote": "Gratis. Simpan kemajuan persiapan Anda di satu tempat.",
     "benefitsHeading": "Yang Anda dapatkan",
@@ -28,6 +28,6 @@
     }
   },
   "Footer": {
-    "text": "© {year} Umra Hub · Teman persiapan Umroh mandiri"
+    "text": "© {year} Umra Hub · Teman persiapan Umrah mandiri"
   }
 }

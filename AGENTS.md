@@ -87,7 +87,7 @@ All four must pass before a change is ready. Use `build:check`, not `build`, for
 
 - Locales are `id` (default) and `en`. The active locale comes from the `NEXT_LOCALE` cookie (unknown or missing → `id`); `Accept-Language` is ignored. There are no per-locale URLs, no `[locale]` segment and no middleware.
 - To add copy, add the key to **both** `messages/id.json` and `messages/en.json`, grouped by namespace (`Metadata`, `Header`, `Home`, `Footer`, ...). Use `getTranslations` from `next-intl/server` in Server Components and `useTranslations` from `next-intl` in Client Components. `src/i18n/messages.test.ts` fails if the two files' keys differ.
-- Spelling: "Umroh" in Indonesian, "Umrah" in English. The brand "Umra Hub" is never translated. Arabic text stays untranslated with `lang="ar" dir="rtl"`.
+- Spelling: the pilgrimage is "Umrah" in both languages (see Worship term above). The brand "Umra Hub" is never translated. Arabic text stays untranslated with `lang="ar" dir="rtl"`.
 - The root layout renders `SiteHeader` (wordmark + language toggle) on every page. New pages get the header automatically and must not render their own `<header>`.
 
 ## Design system
