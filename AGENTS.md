@@ -68,7 +68,7 @@ All four must pass before a change is ready. Use `build:check`, not `build`, for
   - `phase_key` in order: `3_6_months_before`, `2_3_months_before`, `1_month_before`, `1_week_before`, `departure_day`.
   - `category_key`: `documents`, `health`, `financial`, `booking`, `preparation`, `final_checks`, `spiritual`, `checklist`.
   - `city_cost_overrides.city` spellings: `Jakarta`, `Surabaya`, `Medan`, `Makassar`, `Yogyakarta`. The wizard's departure-city values must match them exactly.
-  - All costs are per person, in whole rupiah (IDR). Flights (09) and accommodation (10) are individual steps (`is_shared_step = false`), so the budget multiplies them by traveler count.
+  - All costs are per person, in whole rupiah (IDR). Flights (09), accommodation (10) and confirming those bookings (16) are individual steps (`is_shared_step = false`), so the budget multiplies them by traveler count.
   - Copy spells the pilgrimage "Umrah" in both Indonesian and English, never "Umroh".
   - Content changes after merge go in a new upsert migration (or Studio); never edit this one.
 
