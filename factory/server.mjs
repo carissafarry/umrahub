@@ -12,6 +12,10 @@ const JOBS = join(ROOT, 'jobs')
 // Dashboard decisions land here; the orchestrator session watches it (see SKILL.md "Dashboard requests").
 const INBOX = join(ROOT, 'inbox')
 const TAKEN = join(INBOX, 'taken')
+// AI-generated, user-editable requirement docs per backlog task.
+const REQS = join(ROOT, 'requirements')
+const TASK_CODE = /^(infra|be|fe|\?)-\d{3}$/
+const reqFile = (code) => join(REQS, `${code.replace('?', 'q')}.md`)
 const PORT = Number(process.env.PORT || 8000)
 const NEW_SECTION = '## Baru — belum dicek'
 const TYPES = { '.html': 'text/html; charset=utf-8', '.md': 'text/markdown; charset=utf-8', '.json': 'application/json; charset=utf-8', '.mjs': 'text/javascript; charset=utf-8' }
@@ -113,9 +117,38 @@ async function addDecision(jobId, body) {
   if (action === 'rework' && note.length < 5) throw fail(400, 'Tulis catatan perubahan (minimal 5 karakter).')
   if (note.length > 4000) throw fail(400, 'Catatan maksimal 4000 karakter.')
   if ((await listRequests()).some((r) => r.job === jobId)) throw fail(409, 'Sudah ada permintaan untuk job ini yang belum diproses.')
-  const request = { job: jobId, action, note, createdAt: new Date().toISOString() }
+  const request = { kind: 'decision', job: jobId, action, note, createdAt: new Date().toISOString() }
   await mkdir(INBOX, { recursive: true })
   await writeFile(join(INBOX, `${Date.now()}-${jobId}.json`), JSON.stringify(request, null, 2) + '\n')
+  return request
+}
+
+async function getRequirement(code) {
+  try {
+    const [content, info] = await Promise.all([readFile(reqFile(code), 'utf8'), stat(reqFile(code))])
+    return { exists: true, content, mtime: info.mtimeMs }
+  } catch {
+    return { exists: false, content: '', mtime: null }
+  }
+}
+
+async function saveRequirement(code, body) {
+  const content = String(body.content ?? '')
+  if (content.length > 50_000) throw fail(413, 'Dokumen maksimal 50.000 karakter.')
+  const current = await getRequirement(code)
+  // Reject a stale editor overwriting a newer (re)generated version.
+  if (current.exists && body.baseMtime !== current.mtime) throw fail(409, 'Dokumen berubah di tempat lain (mungkin baru di-generate ulang). Muat ulang dulu.')
+  await mkdir(REQS, { recursive: true })
+  await writeFile(reqFile(code), content)
+  return { mtime: (await stat(reqFile(code))).mtimeMs }
+}
+
+async function requestRequirement(code, body) {
+  if ((await listRequests()).some((r) => r.task === code)) throw fail(409, 'Claude sedang menulis requirement untuk task ini.')
+  const note = String(body.note ?? '').trim().slice(0, 2000)
+  const request = { kind: 'requirements', task: code, note, createdAt: new Date().toISOString() }
+  await mkdir(INBOX, { recursive: true })
+  await writeFile(join(INBOX, `${Date.now()}-req-${code.replace('?', 'q')}.json`), JSON.stringify(request, null, 2) + '\n')
   return request
 }
 
@@ -152,11 +185,21 @@ createServer(async (req, res) => {
     if (pathname === '/api/inbox' && req.method === 'GET') {
       return send(res, 200, JSON.stringify({ requests: await listRequests() }), TYPES['.json'])
     }
-    if (req.method === 'POST') {
+    const reqMatch = pathname.match(/^\/api\/requirements\/([^/]+)(\/generate)?$/)
+    if (reqMatch) {
+      const code = decodeURIComponent(reqMatch[1])
+      if (!TASK_CODE.test(code)) return send(res, 400, JSON.stringify({ error: 'Kode task tidak valid.' }), TYPES['.json'])
+      if (req.method === 'GET' && !reqMatch[2]) return send(res, 200, JSON.stringify(await getRequirement(code)), TYPES['.json'])
+      if (req.method !== 'PUT' && req.method !== 'POST') return send(res, 405, 'Method not allowed')
+    }
+    if (req.method === 'POST' || req.method === 'PUT') {
       // Only the dashboard itself may write: reject cross-site requests and non-JSON bodies.
       const origin = req.headers.origin
       if (origin && origin !== `http://${req.headers.host}`) return send(res, 403, 'Forbidden origin')
       if (!String(req.headers['content-type']).startsWith('application/json')) return send(res, 415, 'JSON only')
+      if (reqMatch && req.method === 'PUT' && !reqMatch[2]) return send(res, 200, JSON.stringify(await saveRequirement(decodeURIComponent(reqMatch[1]), await readJson(req))), TYPES['.json'])
+      if (reqMatch && req.method === 'POST' && reqMatch[2]) return send(res, 201, JSON.stringify(await requestRequirement(decodeURIComponent(reqMatch[1]), await readJson(req))), TYPES['.json'])
+      if (req.method !== 'POST') return send(res, 405, 'Method not allowed')
       if (pathname === '/api/tasks') return send(res, 201, JSON.stringify(await addTask(await readJson(req))), TYPES['.json'])
       const decision = pathname.match(/^\/api\/jobs\/([^/]+)\/decision$/)
       if (decision) return send(res, 201, JSON.stringify(await addDecision(decision[1], await readJson(req))), TYPES['.json'])

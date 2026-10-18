@@ -299,6 +299,35 @@
   .decide.sent h4 { color: var(--active); }
   .card .sent { display: inline-block; margin-top: 8px; font-family: var(--mono); font-size: 11px; color: var(--active); }
 
+  /* Requirement editor */
+  .req-tabs { display: flex; gap: 6px; align-items: center; margin-bottom: 8px; }
+  .req-tabs button {
+    background: none; border: 1px solid var(--line); border-radius: 999px; padding: 3px 12px;
+    font-size: 12px; cursor: pointer; color: var(--muted);
+  }
+  .req-tabs button.on { color: var(--text); border-color: var(--active); }
+  .req-status { margin-left: auto; font-family: var(--mono); font-size: 11px; color: var(--faint); }
+  .req-status.err { color: var(--human); }
+  #req-text {
+    width: 100%; min-height: 240px; resize: vertical; font: 13px/1.6 var(--mono); color: var(--text);
+    background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px;
+  }
+  #req-text:focus { outline: none; border-color: var(--active); }
+  .req-preview { background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; max-width: none; }
+  .req-gen { display: flex; gap: 8px; margin-top: 10px; }
+  .req-gen input {
+    flex: 1; min-width: 0; font: inherit; font-size: 13px; color: var(--text); background: var(--card);
+    border: 1px solid var(--line); border-radius: 8px; padding: 7px 10px;
+  }
+  .req-btn {
+    background: var(--merged); color: #10121a; border: 0; border-radius: 8px; padding: 7px 12px;
+    font-weight: 600; cursor: pointer; white-space: nowrap;
+  }
+  .req-pending {
+    padding: 14px; border: 1px dashed var(--merged); border-radius: 8px; color: var(--merged);
+    font-family: var(--mono); font-size: 12px; animation: breathe 1.6s ease-in-out infinite;
+  }
+
   /* Task drawer */
   #toverlay .drawer { width: min(620px, 100vw); grid-template-rows: auto 1fr; }
   .t-body { overflow-y: auto; padding: 18px 24px 40px; }
@@ -409,7 +438,7 @@
       <div class="t-meta" id="t-meta"></div>
       <button class="close" data-tclose aria-label="Tutup">×</button>
     </div>
-    <div class="t-body" id="t-body"></div>
+    <div class="t-body" id="t-body"><div id="t-info"></div><section class="t-sec" id="t-req"></section></div>
   </aside>
 </div>
 
@@ -681,7 +710,7 @@ async function renderBacklog() {
     $('bl-list').innerHTML = html
     $('bl-counts').textContent = groups.filter(([, l]) => l.length).map(([t, l]) => `${l.length} ${t.split(' ')[0].toLowerCase()}`).join(' · ')
   }
-  if (openTask) renderTask()
+  if (openTask) { renderTask(); refreshReq() }
 }
 
 function linkList(list, empty) {
@@ -695,7 +724,7 @@ function linkList(list, empty) {
 
 function renderTask() {
   const t = tasks.get(openTask)
-  if (!t) { $('t-title').textContent = `${openTask} tidak ditemukan di backlog`; $('t-body').innerHTML = ''; return }
+  if (!t) { $('t-title').textContent = `${openTask} tidak ditemukan di backlog`; $('t-info').innerHTML = ''; return }
   const s = statusOf(t)
   const missing = t.needs.filter((c) => !tasks.has(c))
   const job = t.job && jobs.find((j) => j.id === t.job)
@@ -706,7 +735,7 @@ function renderTask() {
     ${t.wave ? `<span class="pill">gelombang ${t.wave}</span>` : ''}
     <span class="pill">${esc(t.section)}</span>`
   $('t-back').hidden = !taskTrail.length
-  $('t-body').innerHTML = `
+  $('t-info').innerHTML = `
     <section class="t-sec"><h5>Deskripsi</h5><p class="t-desc">${esc(t.text)}</p></section>
     <section class="t-sec"><h5>Diblokir oleh · ${t.needs.length}</h5>
       ${linkList(t.needs.map((c) => tasks.get(c)).filter(Boolean), 'Tidak ada — task ini tidak menunggu task lain.')}
@@ -725,10 +754,104 @@ function showTask(code, push = true) {
   openTask = code
   document.body.classList.add('topen')
   renderTask()
+  refreshReq(true)
   $('t-body').scrollTop = 0
 }
 
+// ---- Requirement doc (AI-generated, editable, autosaved) -------------------
+
+let req = { code: null, exists: false, content: '', mtime: null, dirty: false, pending: null, tab: 'edit' }
+let saveTimer = null
+const reqUrl = (code) => `api/requirements/${encodeURIComponent(code)}`
+const pendingReq = (code) => requests.find((r) => r.kind === 'requirements' && r.task === code)
+
+async function refreshReq(force = false) {
+  const code = openTask
+  if (!code) return
+  const res = await fetch(reqUrl(code), { cache: 'no-store' })
+  if (!res.ok || code !== openTask) return
+  const data = await res.json()
+  const pending = pendingReq(code)?.state || null
+  const changed = force || code !== req.code || pending !== req.pending || (data.mtime !== req.mtime && !req.dirty)
+  if (!changed) return
+  req = { ...req, code, exists: data.exists, content: data.content, mtime: data.mtime, dirty: false, pending }
+  renderReq()
+}
+
+function renderReq(status = '') {
+  const box = $('t-req')
+  const genForm = (label) => `<div class="req-gen">
+      <input id="req-note" maxlength="2000" placeholder="Arahan tambahan untuk Claude (opsional)">
+      <button type="button" class="req-btn" data-req-generate>${label}</button></div>`
+  let body
+  if (req.pending) {
+    body = `<div class="req-pending">✨ Claude sedang menulis requirement… (${req.pending === 'taken' ? 'diproses' : 'antre'})</div>`
+  } else if (!req.exists) {
+    body = `<p class="t-none">Belum ada detail requirement. Claude akan menyusunnya dari deskripsi task, spec produk dan kode yang ada.</p>${genForm('✨ Generate requirement')}`
+  } else {
+    body = `<div class="req-tabs">
+        <button type="button" class="${req.tab === 'edit' ? 'on' : ''}" data-req-tab="edit">Edit</button>
+        <button type="button" class="${req.tab === 'preview' ? 'on' : ''}" data-req-tab="preview">Pratinjau</button>
+        <span class="req-status" id="req-status">${esc(status || 'Tersimpan otomatis')}</span></div>
+      ${req.tab === 'edit'
+        ? `<textarea id="req-text" spellcheck="false" aria-label="Detail requirement">${esc(req.content)}</textarea>`
+        : `<div class="md req-preview">${markdown(req.content)}</div>`}
+      ${genForm('✨ Generate ulang')}
+      <p class="t-none" style="margin-top:6px">Generate ulang menulis versi baru dengan memakai editanmu sebagai masukan; versi lama disimpan sebagai cadangan.</p>`
+  }
+  box.innerHTML = `<h5>Detail requirement</h5>${body}`
+  const ta = $('req-text')
+  if (ta) { ta.style.height = 'auto'; ta.style.height = Math.max(240, ta.scrollHeight + 4) + 'px' }
+}
+
+async function saveReq() {
+  clearTimeout(saveTimer)
+  if (!req.dirty) return
+  const status = $('req-status')
+  try {
+    const res = await fetch(reqUrl(req.code), {
+      method: 'PUT', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ content: req.content, baseMtime: req.mtime }),
+    })
+    const data = await res.json().catch(() => ({}))
+    if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`)
+    req.mtime = data.mtime
+    req.dirty = false
+    if (status) { status.className = 'req-status'; status.textContent = `Tersimpan ${new Date().toLocaleTimeString()}` }
+  } catch (err) {
+    if (status) { status.className = 'req-status err'; status.textContent = `Gagal menyimpan: ${err.message}` }
+  }
+}
+
+document.addEventListener('input', (e) => {
+  if (e.target.id !== 'req-text') return
+  req.content = e.target.value
+  req.dirty = true
+  e.target.style.height = 'auto'
+  e.target.style.height = Math.max(240, e.target.scrollHeight + 4) + 'px'
+  $('req-status').className = 'req-status'
+  $('req-status').textContent = 'Menyimpan…'
+  clearTimeout(saveTimer)
+  saveTimer = setTimeout(saveReq, 800)
+})
+
+document.addEventListener('click', async (e) => {
+  const tab = e.target.closest('[data-req-tab]')
+  if (tab) { await saveReq(); req.tab = tab.dataset.reqTab; return renderReq() }
+  if (!e.target.closest('[data-req-generate]')) return
+  await saveReq()
+  const note = $('req-note')?.value || ''
+  const res = await fetch(`${reqUrl(req.code)}/generate`, {
+    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ note }),
+  })
+  const data = await res.json().catch(() => ({}))
+  if (!res.ok) return renderReq(`Gagal: ${data.error || res.status}`)
+  await loadRequests()
+  refreshReq(true)
+})
+
 function closeTask() {
+  saveReq()
   openTask = null
   taskTrail.length = 0
   document.body.classList.remove('topen')

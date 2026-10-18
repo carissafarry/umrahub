@@ -167,7 +167,7 @@ When it finishes, read the first line of `decision.md`:
 ### Merge
 
 The merge happens in the main checkout, so it must be clean and on `main`:
-`git status --porcelain -- . ':!factory/backlog.md'` prints nothing and
+`git status --porcelain -- . ':!factory/backlog.md' ':!factory/requirements'` prints nothing and
 `git branch --show-current` prints `main`. `factory/backlog.md` is exempt: every
 `/factory next` edits it, and job branches never touch it, so a dirty backlog
 cannot conflict with the merge. If not, set `stage: "needs-human"` and tell the
@@ -285,13 +285,47 @@ mkdir -p factory/inbox/taken && bash -c 'while true; do
 done'
 ```
 
-For each `REQUEST` event:
+For each `REQUEST` event with `"kind": "decision"`:
 - `approve`: run `/factory approve <job>`. A non-empty note is only a comment;
   put it in the merge report to the user.
 - `rework`: run `/factory rework <job> <note>`.
 - Then delete `factory/inbox/taken/<file>` and tell the user what you started,
   in one line. If the job is no longer `needs-human`, delete the file and tell
   the user why nothing ran.
+
+For each `REQUEST` with `"kind": "requirements"` (the "Generate requirement"
+button), write the task's requirement doc yourself; this is backlog grooming,
+not job work:
+1. Read the backlog item, `.plans/umrohhub-mvp-spec.md`, AGENTS.md, the docs of
+   the tasks it depends on (`factory/requirements/<code>.md` where they exist)
+   and the code it would touch. If the doc already exists, it may hold the
+   user's edits: copy it to `factory/requirements/<file>.prev.md` and treat it
+   as input — keep every decision the user wrote unless the request's `note`
+   says otherwise. Follow the `note` as the user's instruction.
+2. Write `factory/requirements/<code with ? as q>.md` in Bahasa Indonesia:
+   ```markdown
+   # [<code>] <Title>
+   ## Ringkasan            — 2–3 kalimat: masalah dan hasil yang diinginkan
+   ## User story           — "Sebagai …, saya ingin …, supaya …"
+   ## Alur pengguna        — langkah bernomor, termasuk jalur gagal
+   ## Kebutuhan fungsional — daftar bernomor, masing-masing bisa diuji
+   ## Kasus tepi           — data kosong, error, belum login, mobile, dll.
+   ## Data & backend       — tabel/kolom/RLS/endpoint yang dipakai atau dibuat
+   ## UI & copy            — halaman, komponen dari src/components/ui, teks kunci
+   ## Kriteria selesai     — checklist yang bisa dicek reviewer
+   ## Di luar cakupan
+   ## Pertanyaan terbuka   — keputusan produk yang belum jelas (jangan ditebak)
+   ## Dependensi           — kode task yang harus selesai dulu
+   ```
+3. Delete the inbox file and tell the user in one line that the doc is ready,
+   with its open questions.
+
+When a task with a requirement doc is claimed (`/factory next` or `/factory
+run`), commit the doc on `main` first (`[<code>] Add requirements`) so the
+worktree has it, and add ` Requirements: factory/requirements/<file>.md (the
+user-approved detail; it overrides the backlog line where they differ).` to the
+spec-writer prompt. `factory/requirements/` is exempt from the clean-checkout
+check in **Merge**, like `factory/backlog.md`.
 
 On start, also process any files already in `factory/inbox/taken/` (left by a
 session that closed mid-request) and in `factory/inbox/`.
