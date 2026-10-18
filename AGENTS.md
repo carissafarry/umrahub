@@ -1,4 +1,6 @@
-# UmrohHub
+# Umra Hub
+
+Brand name: **Umra Hub** — with a space — in every user-facing text (UI, metadata, copy, alt text). Use `umrahub` (lowercase, no space) for identifiers, package names and domains. The old name "UmrohHub" is retired; folder and file names that still contain it are only historical.
 
 Mobile-first web app guiding Indonesian pilgrims through independent (mandiri) Umrah preparation.
 Product spec: `.plans/umrohhub-mvp-spec.md` — read it before building any feature.

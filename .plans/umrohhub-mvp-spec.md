@@ -1,8 +1,10 @@
-# UmrohHub — MVP Product Specification
+# Umra Hub — MVP Product Specification
+
+> Renamed 2026-10-18 from "UmrohHub" (that domain was taken). Brand in the UI: **Umra Hub**; identifiers and domain: `umrahub`.
 
 ## Overview
 
-**UmrohHub** is an interactive web platform that guides Indonesian pilgrims through the complete Umrah preparation process. Phase 1 focuses on a personalized, step-by-step preparation checklist with progress tracking. Future phases expand into a travel agent marketplace with maps, reviews, and booking integrations.
+**Umra Hub** is an interactive web platform that guides Indonesian pilgrims through the complete Umrah preparation process. Phase 1 focuses on a personalized, step-by-step preparation checklist with progress tracking. Future phases expand into a travel agent marketplace with maps, reviews, and booking integrations.
 
 **Problem Statement:**
 Indonesians wanting to perform independent (mandiri) Umrah face an opaque, fragmented preparation process. They don't know what steps to take, in what order, or what each step costs — leading to confusion, missed requirements, or falling victim to fraudulent agents.
