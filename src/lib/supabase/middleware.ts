@@ -8,6 +8,9 @@ import { hasSupabaseEnv } from "./env";
 export async function updateSession(request: NextRequest) {
   let response = NextResponse.next({ request });
   let signedIn = false;
+  // No-store headers that must travel with auth cookies so no cache serves
+  // one user's session to another. Supabase passes them only on the first write.
+  const cacheHeaders: Record<string, string> = {};
 
   if (hasSupabaseEnv()) {
     const supabase = createServerClient(
@@ -18,13 +21,17 @@ export async function updateSession(request: NextRequest) {
           getAll() {
             return request.cookies.getAll();
           },
-          setAll(cookiesToSet) {
+          setAll(cookiesToSet, headers) {
             cookiesToSet.forEach(({ name, value }) =>
               request.cookies.set(name, value),
             );
+            Object.assign(cacheHeaders, headers);
             response = NextResponse.next({ request });
             cookiesToSet.forEach(({ name, value, options }) =>
               response.cookies.set(name, value, options),
+            );
+            Object.entries(cacheHeaders).forEach(([key, value]) =>
+              response.headers.set(key, value),
             );
           },
         },
@@ -46,6 +53,9 @@ export async function updateSession(request: NextRequest) {
     response.cookies
       .getAll()
       .forEach((cookie) => redirect.cookies.set(cookie));
+    Object.entries(cacheHeaders).forEach(([key, value]) =>
+      redirect.headers.set(key, value),
+    );
     return redirect;
   }
 
