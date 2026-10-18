@@ -60,3 +60,22 @@ All four must pass before a change is ready.
 - Server Components by default; add `"use client"` only where interactivity needs it.
 - Every Supabase table gets RLS policies. Never use or commit the service-role key.
 - Never commit `.env*` files except `.env.example`.
+
+## Design system
+
+Tokens are CSS variables in `src/app/globals.css`, mapped to Tailwind in `@theme inline`. New UI uses these tokens, never raw hex values or Tailwind palette colours (`bg-amber-500`, `text-gray-700`, ...).
+
+| Token | Use | Utilities |
+| --- | --- | --- |
+| `--background` | page background (warm sand / charcoal) | `bg-background` |
+| `--surface` | cards and sections | `bg-surface` |
+| `--foreground` | primary ink text | `text-foreground` |
+| `--muted` | secondary text | `text-muted` |
+| `--border` | borders and dividers | `border-border` |
+| `--accent` | gold, the only accent hue | `bg-accent` |
+| `--accent-foreground` | text on gold | `text-accent-foreground` |
+
+- Dark mode follows `prefers-color-scheme` only (the `:root` overrides in the media query); there is no class-based toggle.
+- One gold element per screen: only the primary CTA uses `bg-accent`/`text-accent*`.
+- `tap-target` utility gives `min-height`/`min-width` of 2.75rem (44px); put it on every interactive element.
+- `font-sans` is Inter (default body font). `font-arabic` is Noto Naskh Arabic; use it with `lang="ar" dir="rtl"` on Arabic text.
