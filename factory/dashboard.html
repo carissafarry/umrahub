@@ -51,7 +51,7 @@
 
   /* Board */
   .board {
-    display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 12px;
+    display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 12px;
     padding: 20px 32px 40px; align-items: start;
   }
   .col { min-width: 0; }
@@ -466,6 +466,7 @@ const STAGES = [
   { key: 'build', label: 'Build', who: 'builder · opus' },
   { key: 'review', label: 'Review', who: 'sec · ux · ui · code' },
   { key: 'approve', label: 'Approve', who: 'approver · opus' },
+  { key: 'pr', label: 'Pull request', who: 'merge di GitHub', cls: 'human' },
   { key: 'merged', label: 'Merged', who: 'main', cls: 'merged-col' },
   { key: 'needs-human', label: 'Needs human', who: 'approve · rework', cls: 'human' },
 ]
@@ -550,6 +551,7 @@ function card(job, past) {
       <div class="branch">${esc(job.branch)}</div>
       ${rows.length ? `<div class="rounds">${rows.join('')}</div>` : ''}
       ${requestFor(job.id) ? `<span class="sent">📨 ${esc(requestFor(job.id).action)} terkirim · ${requestFor(job.id).state === 'taken' ? 'diproses Claude' : 'menunggu Claude'}</span>` : ''}
+      ${prUrl(job) ? `<span class="preview" data-preview="${esc(prUrl(job))}" role="link" style="background:var(--merged)">⇄ Buka PR #${esc(prUrl(job).split('/').pop())}</span>` : ''}
       ${previewUrl(job) ? `<span class="preview" data-preview="${esc(previewUrl(job))}" role="link">▶ Lihat preview · ${esc(previewUrl(job).replace('http://', ''))}</span>` : ''}
       ${human ? `<div class="hint">/factory approve ${esc(job.id)}<br>/factory rework ${esc(job.id)} …</div>` : ''}
     </button>`
@@ -574,7 +576,7 @@ function renderDecide(job) {
   const box = $('d-decide')
   if (req) {
     box.innerHTML = `<div class="decide sent"><h4>Keputusan terkirim</h4>
-      <div class="msg">${esc(req.action === 'approve' ? 'Approve & merge' : 'Rework')} · ${req.state === 'taken' ? 'sedang diproses Claude' : 'menunggu Claude mengambilnya'}</div>
+      <div class="msg">${esc(req.action === 'approve' ? 'Approve & buat PR' : 'Rework')} · ${req.state === 'taken' ? 'sedang diproses Claude' : 'menunggu Claude mengambilnya'}</div>
       ${req.note ? `<p class="msg" style="white-space:pre-wrap;margin:6px 0 0">${esc(req.note)}</p>` : ''}</div>`
     return
   }
@@ -586,7 +588,7 @@ function renderDecide(job) {
       ${previewUrl(job) ? `<a class="msg" href="${esc(previewUrl(job))}" target="_blank" rel="noopener" style="color:var(--human)">▶ Lihat preview dulu</a>` : ''}
       <span style="flex:1"></span>
       <button type="submit" class="rework" data-action="rework">Kirim rework</button>
-      <button type="submit" class="approve" data-action="approve">Approve &amp; merge</button>
+      <button type="submit" class="approve" data-action="approve">Approve &amp; buat PR</button>
     </div>
     <div class="msg" id="decide-msg"></div></form>`
 }
@@ -617,6 +619,7 @@ document.addEventListener('submit', async (e) => {
 
 // Only local dev-server URLs written by the orchestrator are shown.
 const previewUrl = (job) => (/^http:\/\/localhost:\d{2,5}\/?$/.test(job?.preview || '') ? job.preview : null)
+const prUrl = (job) => (/^https:\/\/github\.com\/[\w.-]+\/[\w.-]+\/pull\/\d+$/.test(job?.pr || '') ? job.pr : null)
 
 async function render() {
   const problems = []
@@ -735,6 +738,7 @@ function statusOf(t) {
   const job = t.job && jobs.find((j) => j.id === t.job)
   if (t.section.startsWith('Selesai') || job?.stage === 'merged') return { key: 'done', label: 'Selesai' }
   if (job?.stage === 'needs-human') return { key: 'human', label: 'Butuh kamu' }
+  if (job?.stage === 'pr') return { key: 'human', label: 'Merge PR di GitHub' }
   if (job) return { key: 'run', label: `Berjalan · ${job.stage}` }
   if (t.checked) return { key: 'run', label: 'Berjalan' }
   if (t.section.startsWith('Baru')) return { key: 'new', label: 'Perlu dicek' }

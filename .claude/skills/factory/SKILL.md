@@ -171,26 +171,40 @@ When it finishes, read the first line of `decision.md`:
 - `APPROVE`: go to **Merge**.
 - `ESCALATE`: go to **Needs human**.
 
-### Merge
+### Merge (via GitHub pull request)
 
-The merge happens in the main checkout, so it must be clean and on `main`:
-`git status --porcelain -- . ':!factory/backlog.md' ':!factory/requirements'` prints nothing and
-`git branch --show-current` prints `main`. `factory/backlog.md` is exempt: every
-`/factory next` edits it, and job branches never touch it, so a dirty backlog
-cannot conflict with the merge. If not, set `stage: "needs-human"` and tell the
-user the job is approved but the main checkout is busy; they run
-`/factory approve <job-id>` once it is clean. Otherwise:
+Jobs never merge into `main` locally. The user merges every job on GitHub.
 
-```bash
-git merge --no-ff factory/<job-id> -m "<task code> Merge factory/<job-id>"
-git worktree remove <worktree>
-git branch -d factory/<job-id>
-```
+1. Stop the job's preview if one is running.
+2. Push the branch: `git -C <worktree> push -u origin factory/<job-id>`.
+3. Open the PR:
+   ```bash
+   gh pr create --repo carissafarry/umrahub --base main --head factory/<job-id> \
+     --title "<task code> <Title>" --body-file <job folder>/pr-body.md
+   ```
+   Write `pr-body.md` first (it is runtime state): a short summary of what the
+   branch does (from build.md), the acceptance criteria with ✅/❌, the final
+   review verdicts, the approver's `decision.md` "Why" (or "approved by the
+   user" for `/factory approve`), anything the user must do after merging
+   (e.g. `supabase db push`), and the preview link for fe jobs. **No AI
+   attribution of any kind** in the title or body.
+4. Set `stage: "pr"` and add `"pr": "<url>"` to job.json. Tell the user the
+   PR link. Never merge the PR yourself, and never push to `main`.
 
-Set `stage: "merged"`. If the merge fails, run `git merge --abort` (when a merge
-is in progress), set `stage: "needs-human"` and tell the user why. If removing the
-worktree fails, the job is still merged: tell the user what `git worktree remove`
-printed. Never push.
+**When the PR is merged** (the watcher prints `PR <job-id> MERGED <url>`):
+`git fetch origin`, then in the main checkout (clean apart from
+`factory/backlog.md` and `factory/requirements`) `git merge --ff-only origin/main`.
+If that can't fast-forward (local `main` has commits GitHub doesn't), run
+`git merge origin/main -m "<task code> Sync main with merged PR"`. Then
+`git worktree remove <worktree>`, `git branch -d factory/<job-id>` and
+`git push origin --delete factory/<job-id>` (ignore "remote ref does not
+exist"). Set `stage: "merged"`, drop `pr`-only state you no longer need (keep
+the `pr` url), and promote unblocked backlog items. Tell the user, including
+any post-merge step from the PR body.
+
+**When the PR is closed unmerged** (`PR <job-id> CLOSED`): set
+`stage: "needs-human"` and ask the user what to do; keep the branch and
+worktree.
 
 ### Needs human
 
@@ -285,16 +299,12 @@ or `/factory run`) keeps a Monitor on the inbox for as long as the session is
 open, re-arming it each time it expires (30 minutes):
 
 ```bash
-# Run through bash: zsh aborts on an unmatched *.json glob.
-mkdir -p factory/inbox/taken && bash -c 'while true; do
-  for f in factory/inbox/*.json; do
-    [ -e "$f" ] || continue
-    b=$(basename "$f")
-    mv "$f" factory/inbox/taken/ && echo "REQUEST $b $(tr -d "\n" < "factory/inbox/taken/$b")"
-  done
-  sleep 2
-done'
+bash factory/watch.sh   # from the repo root
 ```
+
+It emits `REQUEST <file> <json>` for dashboard requests and
+`PR <job-id> MERGED|CLOSED <url>` when a job's pull request leaves the open
+state (see **Merge**).
 
 For each `REQUEST` event with `"kind": "decision"`:
 - `approve`: run `/factory approve <job>`. A non-empty note is only a comment;
