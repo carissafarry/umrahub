@@ -22,6 +22,8 @@ Scope now: user-facing app only. Admin CMS is out of scope; content is edited vi
 - `src/app/` — routes (App Router)
 - `src/components/ui/` — shared UI primitives (see Design system)
 - `src/lib/` — shared helpers
+- `src/lib/auth/` — auth Server Actions, public-path check, user profile mapping (see Auth)
+- `src/middleware.ts` — auth session refresh and route protection (see Auth)
 - `src/i18n/` — next-intl setup: locales (`config.ts`), request config (`request.ts`), language Server Action (`actions.ts`)
 - `messages/` — UI copy: `id.json` and `en.json`
 - `.plans/` — product specs
@@ -93,10 +95,19 @@ All four must pass before a change is ready. Use `build:check`, not `build`, for
 
 ## i18n
 
-- Locales are `id` (default) and `en`. The active locale comes from the `NEXT_LOCALE` cookie (unknown or missing → `id`); `Accept-Language` is ignored. There are no per-locale URLs, no `[locale]` segment and no middleware.
+- Locales are `id` (default) and `en`. The active locale comes from the `NEXT_LOCALE` cookie (unknown or missing → `id`); `Accept-Language` is ignored. There are no per-locale URLs and no `[locale]` segment. `src/middleware.ts` exists for auth session refresh only and does no locale handling.
 - To add copy, add the key to **both** `messages/id.json` and `messages/en.json`, grouped by namespace (`Metadata`, `Header`, `Home`, `Footer`, ...). Use `getTranslations` from `next-intl/server` in Server Components and `useTranslations` from `next-intl` in Client Components. `src/i18n/messages.test.ts` fails if the two files' keys differ.
 - Spelling: the pilgrimage is "Umrah" in both languages (see Worship term above). The brand "Umra Hub" is never translated. Arabic text stays untranslated with `lang="ar" dir="rtl"`.
-- The root layout renders `SiteHeader` (wordmark + language toggle) on every page. New pages get the header automatically and must not render their own `<header>`.
+- The root layout renders `SiteHeader` (wordmark + language toggle, plus the user block when signed in) on every page. New pages get the header automatically and must not render their own `<header>`.
+
+## Auth
+
+- Google OAuth only, via Supabase Auth. Sign-in and sign-out are Server Actions in `src/lib/auth/actions.ts` (`signInWithGoogle`, `signOut`). The OAuth `redirectTo` is `<request origin>/auth/callback`, derived from the request headers (no env var).
+- `src/app/auth/callback/route.ts` exchanges the code for a session and redirects to `/`; any failure redirects to `/?auth_error=1`.
+- `src/middleware.ts` (via `updateSession` in `src/lib/supabase/middleware.ts`) refreshes the session cookies on every request and redirects signed-out users to `/` for every path except `/` and `/auth/*`. New pages are protected automatically; a page that must be public needs `isPublicPath` in `src/lib/auth/paths.ts` changed.
+- Read the user in server code with `createClient()` from `src/lib/supabase/server.ts` + `supabase.auth.getUser()`; never trust `getSession()` alone. Profile data (name, avatar) comes from `user_metadata` via `getUserProfile` in `src/lib/auth/profile.ts`.
+- Without Supabase env values the middleware and header treat everyone as signed out.
+- The Supabase project's Redirect URLs allow-list must include `<origin>/auth/callback` for every deploy origin (localhost, Vercel previews, production).
 
 ## Design system
 
