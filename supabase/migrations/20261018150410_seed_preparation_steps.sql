@@ -384,7 +384,6 @@ $md$,
 - **Paspor** yang masih berlaku minimal 6 bulan
 - **Sertifikat vaksin meningitis** (ICV)
 - Pas foto digital sesuai ketentuan
-- Rencana perjalanan dan alamat akomodasi
 - Kartu debit atau kredit untuk pembayaran online
 
 ## Tips
@@ -406,7 +405,6 @@ $md$,
 - A **passport** valid for at least 6 months
 - Your **meningitis vaccination certificate** (ICV)
 - A digital photo that meets the requirements
-- Your travel plan and accommodation address
 - A debit or credit card for online payment
 
 ## Tips
@@ -557,7 +555,6 @@ $md$,
 
 - Hotel yang dekat masjid lebih mahal, tetapi menghemat tenaga, terutama untuk lansia.
 - Cek apakah harga sudah termasuk sarapan dan pajak.
-- Alamat hotel juga dibutuhkan saat mengajukan visa.
 $md$,
   $md$## Steps
 
@@ -576,7 +573,6 @@ $md$,
 
 - Hotels near the mosques cost more but save energy, especially for elderly pilgrims.
 - Check whether the price includes breakfast and taxes.
-- You also need a hotel address for the visa application.
 $md$,
   3000000,
   12000000,
@@ -656,14 +652,14 @@ $md$,
 
 1. Laki-laki: beli dua set kain ihram (satu cadangan) dan sabuk ihram.
 2. Perempuan: siapkan gamis dan kerudung longgar yang nyaman.
-3. Beli sandal yang tidak menutup mata kaki dan nyaman untuk berjalan jauh.
-4. Lengkapi perlengkapan ibadah dan kebutuhan pribadi.
+3. Laki-laki: beli sandal yang tidak menutup mata kaki dan nyaman untuk berjalan jauh.
+4. Perempuan: siapkan alas kaki yang nyaman untuk berjalan jauh; kaus kaki boleh dipakai.
+5. Lengkapi perlengkapan ibadah dan kebutuhan pribadi.
 
 ## Yang perlu disiapkan
 
-- Kain ihram dan sabuk (laki-laki)
-- Gamis dan kerudung (perempuan)
-- Sandal dan kaus kaki
+- Kain ihram, sabuk dan sandal terbuka (laki-laki)
+- Gamis, kerudung, alas kaki nyaman dan kaus kaki (perempuan)
 - Sabun dan sampo tanpa pewangi untuk dipakai saat ihram
 - Sajadah lipat, buku du'a dan tas kecil
 
@@ -676,14 +672,14 @@ $md$,
 
 1. Men: buy two sets of ihram cloth (one spare) and an ihram belt.
 2. Women: prepare a loose, comfortable dress (gamis) and headscarf.
-3. Buy sandals that leave the ankles uncovered and are comfortable for long walks.
-4. Complete your worship supplies and personal items.
+3. Men: buy sandals that leave the ankles uncovered and are comfortable for long walks.
+4. Women: prepare comfortable footwear for long walks; socks are allowed.
+5. Complete your worship supplies and personal items.
 
 ## What you need
 
-- Ihram cloth and belt (men)
-- Dress and headscarf (women)
-- Sandals and socks
+- Ihram cloth, belt and open sandals (men)
+- Dress (gamis), headscarf, comfortable footwear and socks (women)
 - Unscented soap and shampoo for use while in ihram
 - A foldable prayer mat, a du'a book and a small bag
 
@@ -705,7 +701,7 @@ $md$,
   '1_month_before',
   'preparation',
   'Kemas barang sesuai daftar',
-  'Pack your essentials checklist',
+  'Pack your essentials',
   'Susun daftar barang bawaan dan mulai mengemas. Pisahkan barang untuk koper dan tas kabin.',
   'Make a packing list and start packing. Split items between your suitcase and carry-on bag.',
   $md$## Langkah-langkah
@@ -766,7 +762,11 @@ $md$,
   'Learn the order of the Umrah rites, from ihram, tawaf and sa''i to tahallul, so you feel confident performing them.',
   $md$## Langkah-langkah
 
-1. Pelajari rukun Umrah: niat ihram di miqat, tawaf, sa'i dan tahallul.
+1. Pelajari rukun Umrah:
+   - **Ihram**: niat memulai ibadah, diucapkan di **miqat** (batas tempat memulai ihram).
+   - **Tawaf**: mengelilingi Ka'bah sebanyak tujuh kali.
+   - **Sa'i**: berjalan tujuh kali antara bukit Shafa dan Marwah.
+   - **Tahallul**: memotong sebagian rambut sebagai tanda selesainya ibadah.
 2. Pahami larangan selama ihram.
 3. Hafalkan bacaan dan du'a pokok, atau siapkan buku du'a.
 4. Ulangi tata cara wudhu dan shalat agar lancar.
@@ -783,7 +783,11 @@ $md$,
 $md$,
   $md$## Steps
 
-1. Learn the pillars of Umrah: the ihram intention at the miqat, tawaf, sa'i and tahallul.
+1. Learn the pillars of Umrah:
+   - **Ihram**: the intention to begin the rites, made at the **miqat** (the boundary where ihram starts).
+   - **Tawaf**: walking seven times around the Kaaba.
+   - **Sa'i**: walking seven times between the hills of Safa and Marwah.
+   - **Tahallul**: cutting some hair to mark the end of the rites.
 2. Understand what is forbidden while in ihram.
 3. Memorise the key recitations and du'a, or prepare a du'a book.
 4. Review wudhu and prayer so they come naturally.
@@ -915,7 +919,7 @@ $md$,
   null,
   null,
   false,
-  true,
+  false,
   array['5eed0000-0000-4000-8000-000000000009', '5eed0000-0000-4000-8000-000000000010']::uuid[],
   160,
   true
