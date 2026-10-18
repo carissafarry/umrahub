@@ -60,7 +60,9 @@ command you ran and its result, or what the page showed.
 ## Commit
 
 - Commit on the job branch with short one-line messages in the style of
-  `git log --oneline`. One commit per distinct piece of work.
+  `git log --oneline`, prefixed with the job id: `<job-id>: <message>`, for
+  example `003-db-schema: Add RLS policies for trips`. One commit per distinct
+  piece of work.
 - Stage explicit paths, never `git add -A`. Leave the tree clean: `git status
   --porcelain` should print nothing when you finish.
 

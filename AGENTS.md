@@ -61,6 +61,8 @@ All four must pass before a change is ready. Use `build:check`, not `build`, for
 
 ## Conventions
 
+- Every commit message starts with its backlog task code: `<task-code>: <message>` (e.g. `002-design-refresh: Add Card primitive`). Commits not tied to a task use `chore: <message>`.
+
 - Mobile-first; minimum 44px tap targets; high contrast; one gold accent CTA per screen.
 - UI copy in Bahasa Indonesia by default; once i18n exists, all user-facing strings go through it.
 - Server Components by default; add `"use client"` only where interactivity needs it.

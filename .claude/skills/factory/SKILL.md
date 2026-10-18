@@ -172,7 +172,7 @@ user the job is approved but the main checkout is busy; they run
 `/factory approve <job-id>` once it is clean. Otherwise:
 
 ```bash
-git merge --no-ff factory/<job-id> -m "Merge factory/<job-id>"
+git merge --no-ff factory/<job-id> -m "<job-id>: Merge factory/<job-id>"
 git worktree remove <worktree>
 git branch -d factory/<job-id>
 ```
