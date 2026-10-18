@@ -203,9 +203,13 @@ it answers, and add `"preview": "http://localhost:<port>"` to job.json (the
 dashboard shows it as a "Lihat preview" button). Give the user the link in your
 message, plus the pages to open for this feature.
 
+You may also start the preview earlier (e.g. while a round is waiting on a
+reviewer that doesn't open pages) when the user wants to look; the dashboard
+shows the button whenever `preview` is set.
+
 **Stop the preview** (`kill $(lsof -tiTCP:<port> -sTCP:LISTEN)`) and drop
-`preview` from job.json before **Merge**, before a **rework** builder starts,
-and whenever the job leaves `needs-human`.
+`preview` from job.json before **Merge**, before any builder (resume or rework)
+or a UX/UI reviewer runs in that worktree, and when the job is merged.
 
 ## /factory next
 

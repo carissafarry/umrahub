@@ -550,7 +550,7 @@ function card(job, past) {
       <div class="branch">${esc(job.branch)}</div>
       ${rows.length ? `<div class="rounds">${rows.join('')}</div>` : ''}
       ${requestFor(job.id) ? `<span class="sent">📨 ${esc(requestFor(job.id).action)} terkirim · ${requestFor(job.id).state === 'taken' ? 'diproses Claude' : 'menunggu Claude'}</span>` : ''}
-      ${human && previewUrl(job) ? `<span class="preview" data-preview="${esc(previewUrl(job))}" role="link">▶ Lihat preview · ${esc(previewUrl(job).replace('http://', ''))}</span>` : ''}
+      ${previewUrl(job) ? `<span class="preview" data-preview="${esc(previewUrl(job))}" role="link">▶ Lihat preview · ${esc(previewUrl(job).replace('http://', ''))}</span>` : ''}
       ${human ? `<div class="hint">/factory approve ${esc(job.id)}<br>/factory rework ${esc(job.id)} …</div>` : ''}
     </button>`
 }
