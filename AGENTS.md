@@ -11,6 +11,7 @@ Scope now: user-facing app only. Admin CMS is out of scope; content is edited vi
 - Next.js 15 (App Router, TypeScript, `src/` dir, `@/*` import alias), React 19
 - Tailwind CSS v4 (`src/app/globals.css`, no tailwind.config file)
 - Supabase via `@supabase/ssr`: browser client `src/lib/supabase/client.ts`, server client `src/lib/supabase/server.ts`
+- `next-intl` for i18n, without i18n routing (see i18n)
 - Vitest for unit tests (`*.test.ts` next to the code)
 - Node 20, npm (never pnpm/yarn — `package-lock.json` is the lockfile)
 
@@ -19,6 +20,8 @@ Scope now: user-facing app only. Admin CMS is out of scope; content is edited vi
 - `src/app/` — routes (App Router)
 - `src/components/ui/` — shared UI primitives (see Design system)
 - `src/lib/` — shared helpers
+- `src/i18n/` — next-intl setup: locales (`config.ts`), request config (`request.ts`), language Server Action (`actions.ts`)
+- `messages/` — UI copy: `id.json` and `en.json`
 - `.plans/` — product specs
 - `factory/` — software factory state (see `.claude/skills/factory/SKILL.md`)
 
@@ -72,11 +75,18 @@ All four must pass before a change is ready. Use `build:check`, not `build`, for
 - Job branches are `factory/<type>-<NNN>` (e.g. `factory/fe-004`).
 
 - Mobile-first; minimum 44px tap targets; high contrast; one primary (indigo) CTA per screen.
-- UI copy in Bahasa Indonesia by default; once i18n exists, all user-facing strings go through it.
+- UI copy in Bahasa Indonesia by default; all user-facing strings go through i18n (see below).
 - Responsive for web and mobile: build mobile-first, then give every screen a real desktop layout at `lg` (≥ 1024px) — wider container (max ~1200px), multi-column grids, hero text beside its illustration, top nav instead of BottomNav. A phone-width column centred on desktop is a bug. Check every UI change at 390px, 768px and 1280px.
 - Server Components by default; add `"use client"` only where interactivity needs it.
 - Every Supabase table gets RLS policies. Never use or commit the service-role key.
 - Never commit `.env*` files except `.env.example`.
+
+## i18n
+
+- Locales are `id` (default) and `en`. The active locale comes from the `NEXT_LOCALE` cookie (unknown or missing → `id`); `Accept-Language` is ignored. There are no per-locale URLs, no `[locale]` segment and no middleware.
+- To add copy, add the key to **both** `messages/id.json` and `messages/en.json`, grouped by namespace (`Metadata`, `Header`, `Home`, `Footer`, ...). Use `getTranslations` from `next-intl/server` in Server Components and `useTranslations` from `next-intl` in Client Components. `src/i18n/messages.test.ts` fails if the two files' keys differ.
+- Spelling: "Umroh" in Indonesian, "Umrah" in English. The brand "Umra Hub" is never translated. Arabic text stays untranslated with `lang="ar" dir="rtl"`.
+- The root layout renders `SiteHeader` (wordmark + language toggle) on every page. New pages get the header automatically and must not render their own `<header>`.
 
 ## Design system
 
