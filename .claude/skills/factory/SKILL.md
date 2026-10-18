@@ -94,7 +94,10 @@ Every agent prompt starts with the job's absolute paths:
 `Job folder: <repo>/factory/jobs/<job-id>/. Worktree: <worktree>. Branch: factory/<job-id>.`
 Below, `<paths>` stands for that sentence.
 
-Agents that open pages also get a port. With `n` the job number (`003` → 3),
+Every agent prompt also ends with ` Task code: [<type>-<NNN>].` (for jobs from
+the backlog), which is the prefix of every commit in that job.
+
+Agents that open pages also get a port. With `n` the job number (`fe-004` → 4),
 the builder gets `5100 + 10n`, `reviewer-ux` gets `5101 + 10n` and `reviewer-ui`
 gets `5102 + 10n`, appended as ` Port: <port>.`
 
@@ -172,7 +175,7 @@ user the job is approved but the main checkout is busy; they run
 `/factory approve <job-id>` once it is clean. Otherwise:
 
 ```bash
-git merge --no-ff factory/<job-id> -m "<job-id>: Merge factory/<job-id>"
+git merge --no-ff factory/<job-id> -m "[<task code>] Merge factory/<job-id>"
 git worktree remove <worktree>
 git branch -d factory/<job-id>
 ```
@@ -195,11 +198,13 @@ Edit that replaces its exact line with `- [x] <item> → claimed`. If the Edit
 fails because the line changed, another session claimed it: re-read the backlog
 and try the next `- [ ]` item. If none is left, say so and stop.
 
-An item that starts with a task code (`NNN-slug: <feature>`) already has its job
-id: in step 1 use that code as `<job-id>` instead of picking a number and slug,
-and pass only the text after `: ` as the feature. Run `/factory <item>`, and
-once step 1 has given it a job id, replace `claimed` on its backlog line with
-the job id.
+Backlog items look like `[<type>-<NNN>] <Title>: <description>`. The task code
+`[<type>-<NNN>]` fixes the job id: in step 1 use `<type>-<NNN>` (e.g. `fe-004`)
+as `<job-id>` instead of picking a number and slug, so the branch is
+`factory/fe-004`, and pass `<Title>: <description>` as the feature. An item
+whose type is still `?` must be triaged first. Run `/factory <item>`, and once
+step 1 has given it a job id, replace `claimed` on its backlog line with the
+job id.
 
 `/factory next <n>` claims the first `n` runnable items and runs them as
 parallel jobs from this session: each job has its own job.json, worktree,
@@ -215,8 +220,9 @@ Before claiming anything, `/factory next` runs **Triage** if the backlog has a
 ## Triage
 
 The user adds tasks from the dashboard; the server gives each a code and puts it
-under `## Baru — belum dicek` as `- NNN-slug: <title> — <description>`. Such an
-item is never run until it has been triaged. For each one:
+under `## Baru — belum dicek` as `- [<type>-NNN] <Title>: <description>`, with
+type `?` when the user left it to you. Such an item is never run until it has
+been triaged. For each one:
 
 1. Read `.plans/umrohhub-mvp-spec.md`, the rest of the backlog, AGENTS.md and the
    code the task would touch.
@@ -229,11 +235,13 @@ item is never run until it has been triaged. For each one:
    - **External setup**: keys, accounts, provider config or a migration a human
      must push before it can work.
    - **Size**: if it is really several jobs, propose the split.
+   - **Type**: `infra` (tooling, CI, deploy, factory), `be` (database, auth,
+     server logic) or `fe` (pages and UI). Replace `?` with it.
 3. Tell the user, per task, in a few lines: the dependencies, the open
    decisions and the external setup. Ask about every open decision and wait for
    the answers; never guess them.
 4. Rewrite the item (with the user's answers folded into its text) and move it:
-   to **Siap** as `- [ ] NNN-slug: <feature>` when every dependency is merged,
+   to **Siap** as `- [ ] [<type>-NNN] <Title>: <feature>` when every dependency is merged,
    otherwise to **Menunggu** under the right wave with `(butuh: <codes>)`.
    Remove the `## Baru — belum dicek` heading once it is empty.
 

@@ -250,7 +250,7 @@
   .bl-item.done .t, .bl-item.done code { color: var(--faint); }
   .bl-form { display: flex; flex-direction: column; gap: 8px; }
   .bl-form label { font-size: 12px; color: var(--muted); }
-  .bl-form input, .bl-form textarea {
+  .bl-form input, .bl-form textarea, .bl-form select {
     font: inherit; color: var(--text); background: var(--card); border: 1px solid var(--line);
     border-radius: 8px; padding: 8px 10px; width: 100%;
   }
@@ -278,7 +278,14 @@
     <div id="bl-list"></div>
     <form class="bl-form" id="bl-form">
       <h4 style="margin:10px 0 2px">+ Task baru</h4>
-      <label for="bl-title">Judul (kode task dibuat otomatis dari sini)</label>
+      <label for="bl-type">Tipe</label>
+      <select id="bl-type" name="type">
+        <option value="?">Biar Claude tentukan saat dicek</option>
+        <option value="fe">fe — halaman &amp; UI</option>
+        <option value="be">be — database, auth, server</option>
+        <option value="infra">infra — tooling, deploy, factory</option>
+      </select>
+      <label for="bl-title">Judul task (kode [tipe-nomor] dibuat otomatis)</label>
       <input id="bl-title" name="title" maxlength="80" required placeholder="Contoh: Pengingat masa berlaku paspor">
       <label for="bl-desc">Deskripsi — apa yang harus terjadi</label>
       <textarea id="bl-desc" name="description" maxlength="1500" placeholder="Perilaku yang diharapkan, halaman yang terlibat, batasan…"></textarea>
@@ -473,8 +480,8 @@ async function renderBacklog() {
   ]
   const html = groups.filter(([, list]) => list.length).map(([title, list, cls]) => `
     <div class="bl-group"><h4>${esc(title)} · ${list.length}</h4>
-    ${list.map((i) => `<div class="bl-item ${cls}" title="${esc(i.text)}"><code>${esc(i.code)}</code>
-      <span class="t">${esc(i.text)}</span>
+    ${list.map((i) => `<div class="bl-item ${cls}" title="${esc(i.text)}"><code>[${esc(i.code)}]</code>
+      <span class="t"><strong>${esc(i.title)}</strong> — ${esc(i.text)}</span>
       ${i.needs.length ? `<span class="needs">butuh ${esc(i.needs.join(', '))}</span>` : ''}</div>`).join('')}
     </div>`).join('')
   if (html !== lastBacklog) {
@@ -494,12 +501,12 @@ $('bl-form').addEventListener('submit', async (e) => {
   try {
     const res = await fetch('api/tasks', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ title: form.title.value, description: form.description.value }),
+      body: JSON.stringify({ type: form.type.value, title: form.title.value, description: form.description.value }),
     })
     const data = await res.json().catch(() => ({}))
     if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`)
     msg.className = 'bl-msg ok'
-    msg.textContent = `Tersimpan sebagai ${data.code}. Minta Claude: /factory run ${data.code}`
+    msg.textContent = `Tersimpan sebagai [${data.code}]. Minta Claude: /factory run ${data.code}`
     form.reset()
     await renderBacklog()
   } catch (err) {

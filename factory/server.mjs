@@ -12,7 +12,8 @@ const JOBS = join(ROOT, 'jobs')
 const PORT = Number(process.env.PORT || 8000)
 const NEW_SECTION = '## Baru — belum dicek'
 const TYPES = { '.html': 'text/html; charset=utf-8', '.md': 'text/markdown; charset=utf-8', '.json': 'application/json; charset=utf-8', '.mjs': 'text/javascript; charset=utf-8' }
-const ITEM = /^- (?:\[( |x)\] )?(\d{3})-([a-z0-9-]+): (.*?)(?: → (\S+))?$/
+const TYPES_TASK = ['infra', 'be', 'fe', '?']
+const ITEM = /^- (?:\[( |x)\] )?\[(infra|be|fe|\?)-(\d{3})\] (.+?): (.*?)(?: → (\S+))?$/
 
 function send(res, status, body, type = 'text/plain; charset=utf-8') {
   res.writeHead(status, { 'Content-Type': type, 'Cache-Control': 'no-store' })
@@ -28,10 +29,10 @@ function parseBacklog(text) {
     if (line.startsWith('## ')) section = line.slice(3).trim()
     const m = line.match(ITEM)
     if (!m) continue
-    const [, box, num, slug, rest, job] = m
+    const [, box, type, num, title, rest, job] = m
     const needs = rest.match(/\(butuh: ([^)]*)\)\s*$/)
     items.push({
-      code: `${num}-${slug}`, section, checked: box === 'x', job: job || null,
+      code: `${type}-${num}`, type, title, section, checked: box === 'x', job: job || null,
       needs: needs ? needs[1].split(',').map((s) => s.trim()) : [],
       text: needs ? rest.slice(0, needs.index).trim() : rest,
     })
@@ -40,27 +41,28 @@ function parseBacklog(text) {
 }
 
 async function nextNumber(text) {
-  const nums = [...text.matchAll(/\b(\d{3})-[a-z0-9-]+/g)].map((m) => Number(m[1]))
-  try { for (const d of await readdir(JOBS)) if (/^\d{3}-/.test(d)) nums.push(Number(d.slice(0, 3))) } catch {}
+  const nums = [...text.matchAll(/\[(?:infra|be|fe|\?)-(\d{3})\]/g)].map((m) => Number(m[1]))
+  try {
+    for (const d of await readdir(JOBS)) {
+      const m = d.match(/^(?:[a-z]+-)?(\d{3})(?:-|$)/)
+      if (m) nums.push(Number(m[1]))
+    }
+  } catch {}
   return String(Math.max(0, ...nums) + 1).padStart(3, '0')
-}
-
-function slugify(title) {
-  return title.normalize('NFKD').toLowerCase().replace(/[^a-z0-9\s-]/g, ' ')
-    .split(/[\s-]+/).filter(Boolean).slice(0, 4).join('-') || 'task'
 }
 
 const oneLine = (s) => String(s ?? '').replace(/\s+/g, ' ').replace(/→/g, '->').trim()
 
 async function addTask(body) {
-  const title = oneLine(body.title)
+  const type = TYPES_TASK.includes(body.type) ? body.type : '?'
+  const title = oneLine(body.title).replace(/:/g, ' -')
   const description = oneLine(body.description)
   if (title.length < 3 || title.length > 80) throw Object.assign(new Error('Judul harus 3–80 karakter.'), { status: 400 })
   if (description.length > 1500) throw Object.assign(new Error('Deskripsi maksimal 1500 karakter.'), { status: 400 })
 
   const text = await readFile(BACKLOG, 'utf8')
-  const code = `${await nextNumber(text)}-${slugify(title)}`
-  const line = `- ${code}: ${description ? `${title} — ${description}` : title}`
+  const code = `${type}-${await nextNumber(text)}`
+  const line = `- [${code}] ${title}: ${description || title}`
 
   const lines = text.replace(/\n+$/, '').split('\n')
   let at = lines.indexOf(NEW_SECTION)
