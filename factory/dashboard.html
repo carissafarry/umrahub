@@ -424,11 +424,13 @@
 </details>
 <main class="board" id="board"></main>
 <footer>
-  <span>/factory &lt;feature&gt;</span>
-  <span>/factory next [n]</span>
-  <span>/factory run &lt;code&gt;</span>
-  <span>/factory approve &lt;job-id&gt;</span>
-  <span>/factory rework &lt;job-id&gt; &lt;note&gt;</span>
+  <span title="Jalankan fitur baru dari satu kalimat">/factory &lt;feature&gt;</span>
+  <span title="Ambil n item Siap pertama dari backlog dan jalankan paralel (default 1)">/factory next [n]</span>
+  <span title="Jalankan satu task backlog berdasarkan kodenya">/factory run &lt;code&gt;</span>
+  <span title="Lanjutkan factory setelah sesi baru: nyalakan server dan watcher, tangani request, PR merge, dan job yang terhenti">/factory resume</span>
+  <span title="Pantau inbox dashboard dan event PR merged/closed">/factory watch</span>
+  <span title="Setujui job yang butuh kamu dan buka PR-nya">/factory approve &lt;job-id&gt;</span>
+  <span title="Kembalikan job yang butuh kamu ke builder dengan catatan">/factory rework &lt;job-id&gt; &lt;note&gt;</span>
 </footer>
 
 <div id="overlay">

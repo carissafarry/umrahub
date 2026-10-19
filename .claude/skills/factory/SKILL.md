@@ -1,6 +1,6 @@
 ---
 name: factory
-description: Run the software factory. Use when the user types /factory <feature>, /factory next, /factory approve <job-id>, or /factory rework <job-id> <note>. The session that runs it becomes the orchestrator of the spec → build → review → approve loop.
+description: Run the software factory. Use when the user types /factory <feature>, /factory next [n], /factory run <code>, /factory resume, /factory watch, /factory approve <job-id>, or /factory rework <job-id> <note>. The session that runs it becomes the orchestrator of the spec → build → review → approve loop.
 ---
 
 # Factory
