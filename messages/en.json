@@ -30,6 +30,54 @@
       }
     }
   },
+  "Checklist": {
+    "departureCity": "Departing from {city}",
+    "progressTitle": "Preparation progress",
+    "progressText": "{done} of {total} steps done",
+    "progressPercent": "{percent}%",
+    "progressLabel": "Umrah preparation progress",
+    "perPersonNote": "All costs are shown per person.",
+    "disclaimer": "Estimated prices, subject to change",
+    "empty": "No preparation steps yet.",
+    "phases": {
+      "3_6_months_before": "3–6 months before departure",
+      "2_3_months_before": "2–3 months before departure",
+      "1_month_before": "1 month before departure",
+      "1_week_before": "1 week before departure",
+      "departure_day": "Departure day"
+    },
+    "categories": {
+      "documents": "Documents",
+      "health": "Health",
+      "financial": "Finances",
+      "booking": "Bookings",
+      "preparation": "Preparation",
+      "final_checks": "Final checks",
+      "spiritual": "Spiritual preparation",
+      "checklist": "Checklist"
+    },
+    "status": {
+      "not_started": "Not started",
+      "in_progress": "In progress",
+      "completed": "Done"
+    },
+    "statusControlLabel": "Step status: {title}",
+    "costLabel": "Estimated cost",
+    "perPerson": "per person",
+    "cost": {
+      "range": "{min} – {max}",
+      "from": "from {min}",
+      "upTo": "up to {max}",
+      "single": "{amount}",
+      "none": "No cost estimate"
+    },
+    "saveFailed": "The status wasn't saved. Please try again.",
+    "error": {
+      "title": "We couldn't load your checklist",
+      "description": "Don't worry, your data is safe. Please try again in a moment.",
+      "retry": "Try again"
+    }
+  },
   "Footer": {
     "text": "© {year} Umra Hub · Your companion for an independent Umrah"
   },
