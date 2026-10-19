@@ -1014,7 +1014,7 @@ const firstLines = new Map()
 // The long-lived infra job carries many tasks in one PR: list each one as a button that opens its task detail.
 async function renderJobTasks(job) {
   const el = $('d-tasks')
-  if (job.id !== 'infra') { el.innerHTML = ''; return }
+  if (!/^infra(-pr\d+)?$/.test(job.id)) { el.innerHTML = ''; return }
   let codes = []
   try { codes = (await (await fetch(`api/jobs/${job.id}/tasks`, { cache: 'no-store' })).json()).tasks || [] } catch {}
   if (openJobId !== job.id) return
