@@ -136,8 +136,55 @@
       "names": "Enter a name for every traveler (1–80 characters).",
       "notes": "Notes can be up to 500 characters.",
       "invalid": "Some answers aren't valid. Please check them and try again.",
-      "failed": "Couldn't create your trip. Please try again."
+      "failed": "Couldn't create your trip. Please try again.",
+      "limit": "You already have 20 trips. Delete one to create a new one."
     },
     "defaultTripName": "Umrah {month} {year}"
+  },
+  "Dashboard": {
+    "metaTitle": "My trips · Umra Hub",
+    "title": "My trips",
+    "intro": "Choose a trip to continue preparing for your Umrah.",
+    "create": "Create new trip",
+    "departureCity": "Departing from {city}",
+    "departureMonth": "Planned departure {date}",
+    "progressText": "{done} of {total} steps done",
+    "progressPercent": "{percent}%",
+    "progressLabel": "{name} preparation progress",
+    "cancel": "Cancel",
+    "rename": {
+      "open": "Rename {name}",
+      "title": "Rename trip",
+      "label": "Trip name",
+      "save": "Save",
+      "saving": "Saving…",
+      "errors": {
+        "invalid": "Enter a trip name (1–80 characters).",
+        "failed": "Couldn't save the trip name. Please try again."
+      }
+    },
+    "delete": {
+      "open": "Delete {name}",
+      "title": "Delete this trip?",
+      "body": "“{name}” and all of its travelers and checklist progress will be permanently deleted. This cannot be undone.",
+      "confirm": "Delete trip",
+      "deleting": "Deleting…",
+      "failed": "Couldn't delete the trip. Please try again."
+    },
+    "error": {
+      "title": "We couldn't load your trips",
+      "description": "Don't worry, your data is safe. Please try again in a moment.",
+      "retry": "Try again"
+    },
+    "newTrip": {
+      "metaTitle": "Create new trip · Umra Hub",
+      "title": "Create a new trip",
+      "intro": "Answer 5 short questions so this trip's checklist fits your group. Nothing is saved until you tap Create my trip."
+    }
+  },
+  "Navigation": {
+    "label": "Main navigation",
+    "home": "Home",
+    "newTrip": "New trip"
   }
 }

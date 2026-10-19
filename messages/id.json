@@ -136,8 +136,55 @@
       "names": "Isi nama setiap jemaah (1–80 karakter).",
       "notes": "Catatan maksimal 500 karakter.",
       "invalid": "Ada jawaban yang belum sesuai. Periksa kembali lalu coba lagi.",
-      "failed": "Perjalanan gagal dibuat. Silakan coba lagi."
+      "failed": "Perjalanan gagal dibuat. Silakan coba lagi.",
+      "limit": "Anda sudah memiliki 20 trip. Hapus satu trip untuk membuat yang baru."
     },
     "defaultTripName": "Umrah {month} {year}"
+  },
+  "Dashboard": {
+    "metaTitle": "Trip saya · Umra Hub",
+    "title": "Trip saya",
+    "intro": "Pilih trip untuk melanjutkan persiapan Umrah Anda.",
+    "create": "Buat trip baru",
+    "departureCity": "Berangkat dari {city}",
+    "departureMonth": "Rencana berangkat {date}",
+    "progressText": "{done} dari {total} langkah selesai",
+    "progressPercent": "{percent}%",
+    "progressLabel": "Progres persiapan {name}",
+    "cancel": "Batal",
+    "rename": {
+      "open": "Ubah nama {name}",
+      "title": "Ubah nama trip",
+      "label": "Nama trip",
+      "save": "Simpan",
+      "saving": "Menyimpan…",
+      "errors": {
+        "invalid": "Isi nama trip (1–80 karakter).",
+        "failed": "Nama trip gagal disimpan. Silakan coba lagi."
+      }
+    },
+    "delete": {
+      "open": "Hapus {name}",
+      "title": "Hapus trip ini?",
+      "body": "Trip “{name}” beserta semua data jemaah dan progres checklist-nya akan dihapus permanen. Tindakan ini tidak dapat dibatalkan.",
+      "confirm": "Hapus trip",
+      "deleting": "Menghapus…",
+      "failed": "Trip gagal dihapus. Silakan coba lagi."
+    },
+    "error": {
+      "title": "Daftar trip Anda tidak dapat dimuat",
+      "description": "Jangan khawatir, data Anda aman. Silakan coba lagi sebentar lagi.",
+      "retry": "Coba lagi"
+    },
+    "newTrip": {
+      "metaTitle": "Buat trip baru · Umra Hub",
+      "title": "Buat trip baru",
+      "intro": "Jawab 5 pertanyaan singkat agar checklist trip ini sesuai dengan rombongan Anda. Tidak ada yang disimpan sebelum Anda menekan Buat perjalanan saya."
+    }
+  },
+  "Navigation": {
+    "label": "Navigasi utama",
+    "home": "Beranda",
+    "newTrip": "Trip baru"
   }
 }
