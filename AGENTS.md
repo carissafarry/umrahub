@@ -24,6 +24,8 @@ Scope now: user-facing app only. Admin CMS is out of scope; content is edited vi
 - `src/lib/` — shared helpers
 - `src/lib/auth/` — auth Server Actions, public-path check, user profile mapping (see Auth)
 - `src/middleware.ts` — auth session refresh and route protection (see Auth)
+- `src/lib/trips/` — trip checklist logic (grouping, progress, costs), page data loader and the `updateStepStatus` Server Action (see Trip checklist)
+- `src/components/trips/` — trip checklist UI (step accordion, progress card)
 - `src/i18n/` — next-intl setup: locales (`config.ts`), request config (`request.ts`), language Server Action (`actions.ts`)
 - `messages/` — UI copy: `id.json` and `en.json`
 - `.plans/` — product specs
@@ -78,6 +80,14 @@ All four must pass before a change is ready. Use `build:check`, not `build`, for
   - All costs are per person, in whole rupiah (IDR). Flights (09), accommodation (10) and confirming those bookings (16) are individual steps (`is_shared_step = false`), so the budget multiplies them by traveler count.
   - Copy spells the pilgrimage "Umrah" in both Indonesian and English, never "Umroh".
   - Content changes after merge go in a new upsert migration (or Studio); never edit this one.
+
+## Trip checklist
+
+- `/trips/[id]` (`src/app/trips/[id]/`) loads through `loadTripChecklist` in `src/lib/trips/queries.ts`: signed out → `/`, a non-UUID id or a trip RLS doesn't return → `notFound()`.
+- A step's status lives in its trip-level `trip_step_progress` row (`traveler_id` null). A missing row means `not_started`; progress is `completed` steps ÷ all published steps.
+- Status writes go only through `updateStepStatus` in `src/lib/trips/actions.ts`, which validates input, re-checks trip ownership and upserts on `trip_id,step_id,traveler_id`.
+- Costs use the `city_cost_overrides` row whose `city` equals `trips.departure_city` exactly, else the step's own range; they are shown per person.
+- Ordering is by `sort_order` only: phases and categories by their smallest `sort_order`, steps by `sort_order` then `id`. Phase and category labels are `Checklist.phases.*` / `Checklist.categories.*`; an unknown key shows the raw key.
 
 ## Conventions
 
