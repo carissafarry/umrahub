@@ -37,7 +37,7 @@ describe("parseTripName", () => {
 });
 
 describe("maxTripsPerUser", () => {
-  it("is 20", () => {
-    expect(maxTripsPerUser).toBe(20);
+  it("is 10", () => {
+    expect(maxTripsPerUser).toBe(10);
   });
 });

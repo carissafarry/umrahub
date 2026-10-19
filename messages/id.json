@@ -137,7 +137,7 @@
       "notes": "Catatan maksimal 500 karakter.",
       "invalid": "Ada jawaban yang belum sesuai. Periksa kembali lalu coba lagi.",
       "failed": "Perjalanan gagal dibuat. Silakan coba lagi.",
-      "limit": "Anda sudah memiliki 20 trip. Hapus satu trip untuk membuat yang baru."
+      "limit": "Anda sudah memiliki 10 trip. Hapus satu trip untuk membuat yang baru."
     },
     "defaultTripName": "Umrah {month} {year}"
   },
@@ -179,7 +179,7 @@
     "newTrip": {
       "metaTitle": "Buat trip baru · Umra Hub",
       "title": "Buat trip baru",
-      "intro": "Jawab 5 pertanyaan singkat agar checklist trip ini sesuai dengan rombongan Anda. Tidak ada yang disimpan sebelum Anda menekan Buat perjalanan saya."
+      "intro": "Jawab 5 pertanyaan singkat untuk membuat trip baru dengan checklist yang sesuai dengan rombongan Anda. Tidak ada yang disimpan sebelum langkah terakhir."
     }
   },
   "Navigation": {

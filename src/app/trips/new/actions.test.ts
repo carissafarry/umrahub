@@ -66,7 +66,7 @@ describe("createAdditionalTrip", () => {
     expect(fake.from).not.toHaveBeenCalled();
   });
 
-  it.each([20, 21])("returns limit at %i trips without creating one", async (n) => {
+  it.each([10, 11])("returns limit at %i trips without creating one", async (n) => {
     fake = fakeSupabase({ tables: tripCount(n) });
     expect(await createAdditionalTrip(input)).toEqual({ error: "limit" });
     const count = fake.builders[0].builder;
@@ -89,7 +89,7 @@ describe("createAdditionalTrip", () => {
   });
 
   it("creates the trip for a user who already has trips and opens it", async () => {
-    fake = fakeSupabase({ tables: tripCount(19) });
+    fake = fakeSupabase({ tables: tripCount(9) });
     createOnboardingTrip.mockResolvedValue({ ok: true, tripId: newTripId });
 
     await expect(createAdditionalTrip(input)).rejects.toThrow(

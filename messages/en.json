@@ -137,7 +137,7 @@
       "notes": "Notes can be up to 500 characters.",
       "invalid": "Some answers aren't valid. Please check them and try again.",
       "failed": "Couldn't create your trip. Please try again.",
-      "limit": "You already have 20 trips. Delete one to create a new one."
+      "limit": "You already have 10 trips. Delete one to create a new one."
     },
     "defaultTripName": "Umrah {month} {year}"
   },
@@ -179,7 +179,7 @@
     "newTrip": {
       "metaTitle": "Create new trip · Umra Hub",
       "title": "Create a new trip",
-      "intro": "Answer 5 short questions so this trip's checklist fits your group. Nothing is saved until you tap Create my trip."
+      "intro": "Answer 5 short questions to create a new trip with a checklist that fits your group. Nothing is saved until the last step."
     }
   },
   "Navigation": {

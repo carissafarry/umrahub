@@ -3,7 +3,7 @@
 export const maxTripNameLength = 80;
 
 // App-level cap, checked only when creating an additional trip.
-export const maxTripsPerUser = 20;
+export const maxTripsPerUser = 10;
 
 // A fixed code only: errors never carry the submitted value.
 export type TripNameResult =
