@@ -15,7 +15,14 @@ ahead=$(git rev-list --count origin/main..main 2>/dev/null || echo "?")
 behind=$(git rev-list --count main..origin/main 2>/dev/null || echo "?")
 branch=$(git branch --show-current)
 echo "main: ahead $ahead, behind $behind (checked out: $branch)"
-[ "$ahead" != "0" ] && [ "$ahead" != "?" ] && need "main has $ahead commit(s) GitHub doesn't: ship them through an infra PR before opening job PRs"
+if [ "$ahead" != "0" ] && [ "$ahead" != "?" ]; then
+  shipped=$(git branch -r --contains main 2>/dev/null | grep -c 'origin/factory/infra-')
+  if [ "$shipped" -gt 0 ]; then
+    note "main has $ahead commit(s) GitHub's main doesn't, already shipped in an open infra PR (waiting for the user to merge it)"
+  else
+    need "main has $ahead commit(s) GitHub doesn't: ship them through an infra PR before opening job PRs"
+  fi
+fi
 [ "$behind" != "0" ] && [ "$behind" != "?" ] && need "main is $behind commit(s) behind origin/main: merge --ff-only origin/main"
 
 echo "dashboard requests:"
