@@ -74,8 +74,26 @@
     "saveFailed": "Status belum tersimpan. Silakan coba lagi.",
     "learnMore": "Pelajari lebih lanjut",
     "learnMoreLabel": "Pelajari lebih lanjut: {title}",
+    "budgetLink": "Lihat perkiraan anggaran",
     "error": {
       "title": "Checklist belum bisa dimuat",
+      "description": "Tenang, data Anda aman. Coba muat ulang sebentar lagi.",
+      "retry": "Coba lagi"
+    }
+  },
+  "Budget": {
+    "metaTitle": "Perkiraan anggaran Umrah · Umra Hub",
+    "backToChecklist": "Kembali ke checklist",
+    "title": "Anggaran {name}",
+    "travelers": "Untuk {count} orang",
+    "totalTitle": "Total perkiraan biaya",
+    "totalNote": "Langkah individual dikalikan jumlah orang, langkah bersama dihitung sekali.",
+    "chartLabel": "Perkiraan biaya per fase",
+    "phaseTotal": "Total fase",
+    "perPersonTimes": "{amount} per orang × {count} orang",
+    "shared": "Dibagi untuk seluruh rombongan",
+    "error": {
+      "title": "Anggaran belum bisa dimuat",
       "description": "Tenang, data Anda aman. Coba muat ulang sebentar lagi.",
       "retry": "Coba lagi"
     }

@@ -74,8 +74,26 @@
     "saveFailed": "The status wasn't saved. Please try again.",
     "learnMore": "Learn more",
     "learnMoreLabel": "Learn more: {title}",
+    "budgetLink": "See budget estimate",
     "error": {
       "title": "We couldn't load your checklist",
+      "description": "Don't worry, your data is safe. Please try again in a moment.",
+      "retry": "Try again"
+    }
+  },
+  "Budget": {
+    "metaTitle": "Umrah budget estimate · Umra Hub",
+    "backToChecklist": "Back to checklist",
+    "title": "Budget for {name}",
+    "travelers": "For {count, plural, one {# person} other {# people}}",
+    "totalTitle": "Estimated total cost",
+    "totalNote": "Individual steps are multiplied by the number of people, shared steps are counted once.",
+    "chartLabel": "Estimated cost per phase",
+    "phaseTotal": "Phase total",
+    "perPersonTimes": "{amount} per person × {count, plural, one {# person} other {# people}}",
+    "shared": "Shared by the whole group",
+    "error": {
+      "title": "We couldn't load your budget",
       "description": "Don't worry, your data is safe. Please try again in a moment.",
       "retry": "Try again"
     }
