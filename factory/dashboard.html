@@ -652,6 +652,7 @@ async function poll() {
   const status = $('status')
   try {
     jobs = await loadJobs()
+    await loadInfraPending()
     await loadRequests()
     await render()
     await renderBacklog()
@@ -735,9 +736,18 @@ let tasks = new Map() // code -> task
 let openTask = null
 const taskTrail = []
 
+// Task codes in the open infra PR (empty once the PR is merged, or when the server has no tasks API).
+let infraPending = new Set()
+async function loadInfraPending() {
+  if (jobs.find((j) => j.id === 'infra')?.stage !== 'pr') { infraPending = new Set(); return }
+  try { infraPending = new Set((await (await fetch('api/jobs/infra/tasks', { cache: 'no-store' })).json()).tasks || []) } catch {}
+}
+
 // Status shown in the list; job stages come from the job cards' job.json.
 function statusOf(t) {
   const job = t.job && jobs.find((j) => j.id === t.job)
+  // Infra tasks are checked off in the backlog when committed, but only count as done once their PR is merged.
+  if (t.type === 'infra' && infraPending.has(t.code)) return { key: 'human', label: 'Merge PR di GitHub' }
   if (t.section.startsWith('Selesai') || job?.stage === 'merged') return { key: 'done', label: 'Selesai' }
   if (job?.stage === 'needs-human') return { key: 'human', label: 'Butuh kamu' }
   if (job?.stage === 'pr') return { key: 'human', label: 'Merge PR di GitHub' }
