@@ -30,6 +30,54 @@
       }
     }
   },
+  "Checklist": {
+    "departureCity": "Berangkat dari {city}",
+    "progressTitle": "Progres persiapan",
+    "progressText": "{done} dari {total} langkah selesai",
+    "progressPercent": "{percent}%",
+    "progressLabel": "Progres persiapan Umrah",
+    "perPersonNote": "Semua biaya ditampilkan per orang.",
+    "disclaimer": "Harga perkiraan, dapat berubah",
+    "empty": "Belum ada langkah persiapan.",
+    "phases": {
+      "3_6_months_before": "3–6 bulan sebelum berangkat",
+      "2_3_months_before": "2–3 bulan sebelum berangkat",
+      "1_month_before": "1 bulan sebelum berangkat",
+      "1_week_before": "1 minggu sebelum berangkat",
+      "departure_day": "Hari keberangkatan"
+    },
+    "categories": {
+      "documents": "Dokumen",
+      "health": "Kesehatan",
+      "financial": "Keuangan",
+      "booking": "Pemesanan",
+      "preparation": "Persiapan",
+      "final_checks": "Pemeriksaan akhir",
+      "spiritual": "Persiapan ibadah",
+      "checklist": "Daftar periksa"
+    },
+    "status": {
+      "not_started": "Belum mulai",
+      "in_progress": "Sedang dikerjakan",
+      "completed": "Selesai"
+    },
+    "statusControlLabel": "Status langkah: {title}",
+    "costLabel": "Perkiraan biaya",
+    "perPerson": "per orang",
+    "cost": {
+      "range": "{min} – {max}",
+      "from": "mulai {min}",
+      "upTo": "hingga {max}",
+      "single": "{amount}",
+      "none": "Belum ada perkiraan biaya"
+    },
+    "saveFailed": "Status belum tersimpan. Silakan coba lagi.",
+    "error": {
+      "title": "Checklist belum bisa dimuat",
+      "description": "Tenang, data Anda aman. Coba muat ulang sebentar lagi.",
+      "retry": "Coba lagi"
+    }
+  },
   "Footer": {
     "text": "© {year} Umra Hub · Teman persiapan Umrah mandiri"
   }
