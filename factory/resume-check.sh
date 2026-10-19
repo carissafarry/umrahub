@@ -11,19 +11,29 @@ need() { action=1; echo "  ! $*"; }
 echo "== Software factory: state check ($(date '+%Y-%m-%d %H:%M'))"
 git fetch -q origin 2>/dev/null || echo "  (git fetch failed: offline? PR states below may be stale)"
 
-ahead=$(git rev-list --count origin/main..main 2>/dev/null || echo "?")
-behind=$(git rev-list --count main..origin/main 2>/dev/null || echo "?")
 branch=$(git branch --show-current)
-echo "main: ahead $ahead, behind $behind (checked out: $branch)"
-if [ "$ahead" != "0" ] && [ "$ahead" != "?" ]; then
-  shipped=$(git branch -r --contains main 2>/dev/null | grep -c 'origin/factory/infra-')
-  if [ "$shipped" -gt 0 ]; then
-    note "main has $ahead commit(s) GitHub's main doesn't, already shipped in an open infra PR (waiting for the user to merge it)"
-  else
-    need "main has $ahead commit(s) GitHub doesn't: ship them through an infra PR before opening job PRs"
+mbehind=$(git rev-list --count main..origin/main 2>/dev/null || echo "?")
+mahead=$(git rev-list --count origin/main..main 2>/dev/null || echo "?")
+echo "local main ref: ahead $mahead, behind $mbehind of origin/main"
+[ "$mahead" != "0" ] && [ "$mahead" != "?" ] && need "local main has $mahead commit(s) of its own: nothing is ever committed on main — move them to factory/infra and reset main to origin/main"
+[ "$mbehind" != "0" ] && [ "$mbehind" != "?" ] && need "local main is $mbehind behind origin/main: git fetch origin main:main"
+
+echo "main checkout is on: $branch"
+if [ "$branch" != "factory/infra" ]; then
+  need "the main checkout must be on factory/infra (infra work never lands on main): git switch factory/infra"
+else
+  iahead=$(git rev-list --count origin/main..factory/infra)
+  ibehind=$(git rev-list --count factory/infra..origin/main)
+  dirty=$(git status --porcelain | grep -v '^??' | wc -l | tr -d ' ')
+  echo "factory/infra: $iahead commit(s) not in origin/main, origin/main is $ibehind ahead"
+  [ "$ibehind" != "0" ] && need "origin/main moved ($ibehind new commit(s)): sync factory/infra with it (see 'When a PR is merged' in SKILL.md)"
+  [ "$dirty" != "0" ] && need "$dirty uncommitted tracked change(s) on factory/infra (backlog/requirements?): commit them as an infra-NNN commit"
+  if [ "$iahead" != "0" ]; then
+    ipr=$(gh pr list --head factory/infra --state open --json url -q '.[0].url' 2>/dev/null)
+    if [ -n "$ipr" ]; then note "open infra PR waiting for the user to merge: $ipr"
+    else need "factory/infra has $iahead commit(s) with no open PR: push it and open one against main"; fi
   fi
 fi
-[ "$behind" != "0" ] && [ "$behind" != "?" ] && need "main is $behind commit(s) behind origin/main: merge --ff-only origin/main"
 
 echo "dashboard requests:"
 found=0
@@ -58,7 +68,7 @@ for j in factory/jobs/*/job.json; do
       url=$(sed -n 's/.*"pr": "\([^"]*\)".*/\1/p' "$j" | head -1)
       state=$(gh pr view "$url" --json state -q .state 2>/dev/null || echo "UNKNOWN")
       case "$state" in
-        MERGED) need "$id: PR $url was MERGED while no session was watching — sync main, remove worktree/branch, promote backlog" ;;
+        MERGED) need "$id: PR $url was MERGED while no session was watching — run the 'When a PR is merged' steps" ;;
         CLOSED) need "$id: PR $url was CLOSED without merging — set needs-human and ask the user" ;;
         OPEN)   note "$id: PR open, waiting for the user to merge: $url" ;;
         *)      note "$id: PR state unknown ($url)" ;;
@@ -70,7 +80,7 @@ done
 
 echo "worktrees:"
 git worktree list | tail -n +2 | sed 's/^/  - /'
-[ "$(git worktree list | wc -l | tr -d ' ')" = "1" ] && note "none besides main"
+[ "$(git worktree list | wc -l | tr -d ' ')" = "1" ] && note "none besides the main checkout"
 
 echo
 if [ $action -eq 1 ]; then

@@ -45,8 +45,9 @@ this repo and start `/factory` in each. Your session orchestrates only the job i
 started or was handed.
 
 - Your session stays in the main checkout. Agents work in the job's worktree.
-  The main checkout is the user's, and it may be dirty or on another branch.
-  Only **Merge** touches it.
+  The main checkout is the user's repo folder and lives on `factory/infra` (see
+  **Prompts**); it may hold uncommitted backlog edits. Job work never touches it
+  except the sync in **Merge**.
 - Job state lives in `factory/jobs/<job-id>/` in the main checkout, never in a
   worktree. Each job has its own `job.json`, so sessions never write the same
   file.
@@ -97,16 +98,27 @@ Below, `<paths>` stands for that sentence.
 Every agent prompt also ends with ` Task code: <type>-<NNN>.` (for jobs from
 the backlog). Every commit in that job is `<type>-<NNN> <message>`, no brackets.
 
-Your own commits never pile up unpushed on `main`: job branches start from
-local `main`, and every unpushed `main` commit would show up inside the job's
-PR. After committing infra work on `main`, push it as `factory/infra-<NNN>`
-(`git push origin main:factory/infra-<NNN>`) and open a PR for it right away
-(`<code> <Title>`, no AI attribution); the user merges it like any job PR.
-Before opening a job PR, check `git rev-list --count origin/main..main`; if it
-isn't 0, open/refresh that infra PR first and tell the user to merge it before
-the job PR so the job PR shows only its own commits.
+**Nothing is ever committed on `main`, not even the local `main` ref.** All
+infra, tooling and factory changes go on one long-lived branch, `factory/infra`,
+and reach `main` only through a pull request the user merges. The main checkout
+(the repo folder this session runs in) stays on `factory/infra`; local `main` is
+a read-only mirror of `origin/main`, moved only with `git fetch origin main:main`.
+Job branches and worktrees start from `main` (fetch it first), so they never
+carry infra commits and job PRs show only their own commits.
 
-Your own commits on `main` follow the same rule. Factory or tooling changes
+Infra workflow: edit in the main checkout, commit with the task code
+(`infra-<NNN> <message>`; commit pending `factory/backlog.md` and
+`factory/requirements` changes the same way), `git push -u origin factory/infra`,
+and keep **one open PR** from `factory/infra` to `main`: if
+`gh pr list --head factory/infra --state open` shows none, create it (title
+`infra-<NNN> <Title>` of the newest task, body listing every task code in it, no
+AI attribution), otherwise the push updates it. Track it in
+`factory/jobs/infra/job.json` (`stage: "pr"`, `pr: <url>`) and tell the user the
+link. Never rename or delete `factory/infra` on GitHub: that closes its PR.
+Infra changes reach job worktrees (AGENTS.md rules, agent files) only after the
+PR is merged.
+
+Your own commits (on `factory/infra`) follow the same task-code rule. Factory or tooling changes
 that no backlog task covers get one first: add `- [x] [infra-<next NNN>] <Title>:
 <what changed> → infra-<NNN>` under **Selesai** in `factory/backlog.md` and
 commit with that code. Never commit without a task code, and **never add a
@@ -129,6 +141,7 @@ gets `5102 + 10n`, appended as ` Port: <port>.`
    `round: 0` and all reviews `pending`.
 2. **Worktree.** Create the branch and its worktree from `main`:
    ```bash
+   git fetch origin main:main    # main is a read-only mirror of origin/main
    git worktree add -b factory/<job-id> <worktree> main
    ```
    Then, in the worktree, run the setup AGENTS.md gives for a fresh checkout
@@ -200,16 +213,19 @@ Jobs never merge into `main` locally. The user merges every job on GitHub.
 4. Set `stage: "pr"` and add `"pr": "<url>"` to job.json. Tell the user the
    PR link. Never merge the PR yourself, and never push to `main`.
 
-**When the PR is merged** (the watcher prints `PR <job-id> MERGED <url>`):
-`git fetch origin`, then in the main checkout (clean apart from
-`factory/backlog.md` and `factory/requirements`) `git merge --ff-only origin/main`.
-If that can't fast-forward (local `main` has commits GitHub doesn't), run
-`git merge origin/main -m "<task code> Sync main with merged PR"`. Then
-`git worktree remove <worktree>`, `git branch -d factory/<job-id>` and
-`git push origin --delete factory/<job-id>` (ignore "remote ref does not
-exist"). Set `stage: "merged"`, drop `pr`-only state you no longer need (keep
-the `pr` url), and promote unblocked backlog items. Tell the user, including
-any post-merge step from the PR body.
+**When a PR is merged** (the watcher prints `PR <job-id> MERGED <url>`):
+sync the main checkout with GitHub. Commit any pending `factory/backlog.md` /
+`factory/requirements` changes on `factory/infra` (`infra-<NNN> …`), run
+`git fetch origin main:main`, then bring `factory/infra` up to date: when it has
+no commits outside `origin/main` (`git rev-list --count origin/main..factory/infra`
+is 0) run `git merge --ff-only origin/main`; otherwise
+`git merge origin/main -m "infra-<NNN> Sync main with merged PR"` and push.
+Then, for an ordinary job, `git worktree remove <worktree>`,
+`git branch -d factory/<job-id>` and `git push origin --delete factory/<job-id>`
+(ignore "remote ref does not exist"). For the long-lived `infra` job keep the
+branch and checkout: just do the sync; the next infra commit opens a new PR.
+Set `stage: "merged"`, keep the `pr` url, and promote unblocked backlog items.
+Tell the user, including any post-merge step from the PR body.
 
 **When the PR is closed unmerged** (`PR <job-id> CLOSED`): set
 `stage: "needs-human"` and ask the user what to do; keep the branch and
@@ -397,8 +413,10 @@ hand (run `bash factory/resume-check.sh` first if you have no report).
    - `approve`: `decision.md` exists → read it; otherwise respawn `approver`.
 5. **`needs-human` jobs**: restart a dead preview on its port, and remind the
    user which jobs wait for them.
-6. **Sync**: `git merge --ff-only origin/main` when behind; ship unpushed `main`
-   commits through an infra PR; promote unblocked backlog items.
+6. **Sync**: make sure the main checkout is on `factory/infra`, local `main` is
+   `origin/main` (`git fetch origin main:main`), `factory/infra` is up to date
+   with `origin/main`, and any infra commits have an open PR (see **Prompts**);
+   promote unblocked backlog items.
 7. **Report** in a few lines: what you recovered, what is running, what waits for
    the user.
 
