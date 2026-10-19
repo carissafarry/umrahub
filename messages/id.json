@@ -223,5 +223,44 @@
     "label": "Navigasi utama",
     "home": "Beranda",
     "newTrip": "Trip baru"
+  },
+  "Notifications": {
+    "metaTitle": "Notifikasi · Umra Hub",
+    "title": "Notifikasi",
+    "intro": "Pengingat tenggat persiapan Umrah Anda.",
+    "empty": "Belum ada notifikasi. Pengingat muncul di sini saat tanggal keberangkatan Anda mendekat.",
+    "bellLabel": "Notifikasi",
+    "bellLabelUnread": "Notifikasi, {count} belum dibaca",
+    "unread": "Belum dibaca",
+    "created": "Diterima {date}",
+    "markRead": "Tandai sudah dibaca",
+    "markAllRead": "Tandai semua sudah dibaca",
+    "reminders": {
+      "3_6_months_before": {
+        "title": "3–6 bulan sebelum berangkat",
+        "body": "Saatnya mengurus paspor, vaksin meningitis, dan mulai menabung untuk Umrah Anda."
+      },
+      "2_3_months_before": {
+        "title": "2–3 bulan sebelum berangkat",
+        "body": "Saatnya memesan tiket pesawat dan hotel untuk Umrah Anda."
+      },
+      "1_month_before": {
+        "title": "1 bulan sebelum berangkat",
+        "body": "Saatnya menukar riyal, membeli perlengkapan ihram, dan mempelajari manasik Umrah."
+      },
+      "1_week_before": {
+        "title": "1 minggu sebelum berangkat",
+        "body": "Saatnya memeriksa semua dokumen dan mengonfirmasi tiket pesawat serta hotel Anda."
+      },
+      "departure_day": {
+        "title": "Besok berangkat",
+        "body": "Saatnya pengecekan akhir koper dan dokumen di tas kabin. Semoga Umrah Anda lancar."
+      }
+    },
+    "error": {
+      "title": "Notifikasi belum bisa dimuat",
+      "description": "Terjadi kendala saat memuat notifikasi Anda. Silakan coba lagi.",
+      "retry": "Coba lagi"
+    }
   }
 }

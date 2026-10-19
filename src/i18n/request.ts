@@ -1,7 +1,7 @@
 import { cookies } from "next/headers";
 import { getRequestConfig } from "next-intl/server";
 import fallbackMessages from "../../messages/id.json";
-import { localeCookieName, resolveLocale } from "./config";
+import { isLocale, localeCookieName, resolveLocale } from "./config";
 
 // Looks up a dotted key path in the Indonesian messages.
 function fallbackMessage(path: string): string | undefined {
@@ -13,9 +13,13 @@ function fallbackMessage(path: string): string | undefined {
   return typeof node === "string" ? node : undefined;
 }
 
-export default getRequestConfig(async () => {
+// An explicit locale (e.g. `getTranslations({ locale: "en" })`) wins over
+// the cookie.
+export default getRequestConfig(async ({ locale: explicit }) => {
   const store = await cookies();
-  const locale = resolveLocale(store.get(localeCookieName)?.value);
+  const locale = isLocale(explicit)
+    ? explicit
+    : resolveLocale(store.get(localeCookieName)?.value);
 
   return {
     locale,
