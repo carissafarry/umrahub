@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { computeBudget, isIndividual, type BudgetStep } from "./budget";
+import { computeBudget, type BudgetStep } from "./budget";
+import { isIndividual } from "./checklist";
 
 const stepId = (n: number) =>
   `5eed0000-0000-4000-8000-0000000000${String(n).padStart(2, "0")}`;
