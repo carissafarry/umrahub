@@ -29,6 +29,8 @@ Scope now: user-facing app only. Admin CMS is out of scope; content is edited vi
 - `src/components/trips/` — trip checklist UI (step accordion, progress card)
 - `src/lib/steps/` — step detail data loader and the safe guide-markdown parser (see Step detail)
 - `src/components/steps/` — step detail page body and the `GuideMarkdown` renderer
+- `src/lib/dashboard/` — trip dashboard loader, per-trip progress summary, trip-name rules and the `renameTrip` / `deleteTrip` Server Actions (see Dashboard)
+- `src/components/dashboard/` — dashboard trip card and its rename/delete dialogs (see Dashboard)
 - `src/i18n/` — next-intl setup: locales (`config.ts`), request config (`request.ts`), language Server Action (`actions.ts`)
 - `messages/` — UI copy: `id.json` and `en.json`
 - `.plans/` — product specs
@@ -125,7 +127,7 @@ All four must pass before a change is ready. Use `build:check`, not `build`, for
 ## Auth
 
 - Google OAuth only, via Supabase Auth. Sign-in and sign-out are Server Actions in `src/lib/auth/actions.ts` (`signInWithGoogle`, `signOut`). The OAuth `redirectTo` is `<request origin>/auth/callback`, derived from the request headers (no env var).
-- `src/app/auth/callback/route.ts` exchanges the code for a session and redirects to `/onboarding`; any failure redirects to `/?auth_error=1`.
+- `src/app/auth/callback/route.ts` exchanges the code for a session and redirects to `/dashboard`; any failure redirects to `/?auth_error=1`.
 - `src/middleware.ts` (via `updateSession` in `src/lib/supabase/middleware.ts`) refreshes the session cookies (with no-store cache headers) and redirects signed-out users to `/` for every matched path except `/` and `/auth/*`. This redirect is UX, not the security boundary: the matcher skips `/_vercel/*` and any path ending in an image extension (`.png`, `.svg`, ...), so protected pages and Route Handlers must still check `getUser()` server-side, and data access relies on RLS. A page that must be public needs `isPublicPath` in `src/lib/auth/paths.ts` changed.
 - Read the user in server code with `createClient()` from `src/lib/supabase/server.ts` + `supabase.auth.getUser()`; never trust `getSession()` alone. Profile data (name, avatar) comes from `user_metadata` via `getUserProfile` in `src/lib/auth/profile.ts`.
 - Without Supabase env values the middleware and header treat everyone as signed out.
@@ -133,11 +135,23 @@ All four must pass before a change is ready. Use `build:check`, not `build`, for
 
 ## Onboarding
 
-- `/onboarding` (`src/app/onboarding/`) is the 5-step wizard for signed-in users with no trip: city, travel month/year, passport status, travelers, special needs. The page and the Server Action both check `getUser()` and redirect a user who already owns a trip to `/trips/<newest trip id>`. Nothing is saved until the final submit.
+- `/onboarding` (`src/app/onboarding/`) is the 5-step wizard for signed-in users with no trip: city, travel month/year, passport status, travelers, special needs. The page and the Server Action both check `getUser()` and redirect a user who already owns a trip to `/dashboard`; a first trip's successful submit opens `/trips/<new id>`. Nothing is saved until the final submit.
+- `OnboardingWizard` takes `variant: "onboarding" | "newTrip"`. `/trips/new` reuses it as `newTrip` (heading and intro from `Dashboard.newTrip.*`, submits to `createAdditionalTrip` in `src/app/trips/new/actions.ts`); never copy its steps or validation. Both actions name the trip with `defaultTripName` (`src/lib/onboarding/tripName.ts`).
 - Validation lives in `src/lib/onboarding/validate.ts` (`parseOnboardingInput`, no library; its rules are shared with the client): 1–10 travelers, names 1–80 chars after trim, disability notes ≤ 500 chars (dropped when nobody has a disability), month from the current month through +24 months (server clock). Errors are fixed codes and never echo input.
 - Writes are in `createOnboardingTrip` (`src/lib/onboarding/createTrip.ts`, takes the cookie-bound anon client): the trip (no `user_id`, left to `auth.uid()`), then its travelers; if a later insert fails the trip is deleted. Logs are a fixed string plus `error.code` only.
 - The passport answer is not stored. `valid` marks step 01 (`5eed0000-…-000000000001`) completed for every traveler; `expired`/`none` write nothing.
 - City values are exactly the 5 `city_cost_overrides` cities: `Jakarta`, `Surabaya`, `Medan`, `Makassar`, `Yogyakarta`.
+
+## Dashboard
+
+- Signed-in users land on `/dashboard` (`src/app/dashboard/`): the OAuth callback, `/` (when Supabase env is set and `getUser()` returns a user) and `/onboarding` (for users who own a trip) all redirect there. `/dashboard` redirects signed-out users to `/` and users with no trips to `/onboarding`, so there is no empty state; deleting the last trip leads to onboarding.
+- `loadDashboard` (`src/lib/dashboard/queries.ts`) selects only `id, name, departure_city, planned_departure_date` of the user's trips (newest first), the published steps once and trip-level progress (`traveler_id` null) of all those trips in one `.in("trip_id", …)` query. It never loads travelers or the disability/minor fields. Errors throw a generic `Error`; `src/app/dashboard/error.tsx` shows a calm retry card.
+- Per-trip progress is `summarizeTrips` (`src/lib/dashboard/summary.ts`), which groups rows by `trip_id` and calls `computeProgress`; never re-implement the counting, so the dashboard matches `/trips/[id]`.
+- `renameTrip` and `deleteTrip` (`src/lib/dashboard/actions.ts`) validate (`isUuid`, `parseTripName`: trimmed, 1–80 chars, duplicates allowed), call `getUser()`, re-check ownership with `.eq("id").eq("user_id", user.id).maybeSingle()`, then write filtered by both `id` and `user_id` and `revalidatePath("/dashboard")`. Delete relies on the `on delete cascade` of travelers, config and progress. Logs are a fixed string plus `error.code` only.
+- Both are confirmed in modal `<dialog>`s in `src/components/dashboard/TripActions.tsx` (the only client component on the page); delete is a `role="alertdialog"` with Cancel focused first and an ink-filled (`bg-foreground text-background`) destructive button, never indigo.
+- Trip cap: `maxTripsPerUser` = 10 (`src/lib/dashboard/validate.ts`), enforced at app level only, in `createAdditionalTrip` (returns `{ error: "limit" }`); at the cap the dashboard shows `Onboarding.errors.limit` instead of the CTA. There is no DB-level cap.
+- Navigation tabs live in one list in `src/components/AppNav.tsx` (`/dashboard`, `/trips/new`), used by `AppBottomNav` (mobile) and `AppTopNav` (in `SiteHeader` for signed-in users, `hidden lg:flex`, active tab is a non-indigo surface pill via `AppNavLink`). Add a tab only for a route that exists.
+- Pages that render `AppBottomNav` pad their content below `lg` by at least `calc(7rem + env(safe-area-inset-bottom))` so the fixed nav never covers it (`lg:pb-16` from desktop up).
 
 ## Design system
 

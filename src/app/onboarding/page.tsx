@@ -18,10 +18,15 @@ export default async function OnboardingPage() {
   } = await supabase.auth.getUser();
   if (!user) redirect("/");
 
-  // Users who already have a trip skip the wizard.
+  // Users who already have a trip go to their dashboard instead.
   const latest = await findLatestTripId(supabase, user.id);
-  if (latest.ok && latest.tripId) redirect(`/trips/${latest.tripId}`);
+  if (latest.ok && latest.tripId) redirect("/dashboard");
 
   // The server clock sets the first selectable month, matching validation.
-  return <OnboardingWizard firstMonth={currentYearMonth(new Date())} />;
+  return (
+    <OnboardingWizard
+      variant="onboarding"
+      firstMonth={currentYearMonth(new Date())}
+    />
+  );
 }

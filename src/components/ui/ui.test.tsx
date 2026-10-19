@@ -1,7 +1,7 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { BottomNav, type BottomNavItem } from "./BottomNav";
-import { Button } from "./Button";
+import { Button, ButtonLink } from "./Button";
 import { Chip } from "./Chip";
 import { IconButton } from "./IconButton";
 import { HomeIcon } from "./icons";
@@ -11,6 +11,19 @@ describe("ui primitives", () => {
     const html = renderToStaticMarkup(<Button>Masuk dengan Google</Button>);
     expect(html).toMatch(/^<button[^>]*type="button"/);
     expect(html).toContain("Masuk dengan Google");
+  });
+
+  it("ButtonLink renders a link with the same classes and badge as Button", () => {
+    const link = renderToStaticMarkup(
+      <ButtonLink href="/trips/new">Buat trip baru</ButtonLink>,
+    );
+    const button = renderToStaticMarkup(<Button>Buat trip baru</Button>);
+    expect(link).toMatch(/^<a[^>]*href="\/trips\/new"/);
+    const classes = (html: string) => html.match(/class="([^"]*)"/)![1];
+    expect(classes(link)).toBe(classes(button));
+    expect(link.replace(/^<a[^>]*>/, "")).toBe(
+      button.replace(/^<button[^>]*>/, "").replace(/<\/button>$/, "</a>"),
+    );
   });
 
   it("IconButton uses label as aria-label", () => {
