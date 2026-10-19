@@ -111,8 +111,9 @@ Infra workflow: edit in the main checkout, commit with the task code
 `factory/requirements` changes the same way), `git push -u origin factory/infra`,
 and keep **one open PR** from `factory/infra` to `main`: if
 `gh pr list --head factory/infra --state open` shows none, create it (title
-`infra-<NNN> <Title>` of the newest task, body listing every task code in it, no
-AI attribution), otherwise the push updates it. Track it in
+`Merge infra-<NNN> to main: <Title>` for the newest task, or
+`Merge infra-028, infra-029 to main: <Title>` when several are in it; body listing
+every task code, no AI attribution), otherwise the push updates it. Track it in
 `factory/jobs/infra/job.json` (`stage: "pr"`, `pr: <url>`) and tell the user the
 link. Never rename or delete `factory/infra` on GitHub: that closes its PR.
 Infra changes reach job worktrees (AGENTS.md rules, agent files) only after the
@@ -202,8 +203,11 @@ Jobs never merge into `main` locally. The user merges every job on GitHub.
 3. Open the PR:
    ```bash
    gh pr create --repo carissafarry/umrahub --base main --head factory/<job-id> \
-     --title "<task code> <Title>" --body-file <job folder>/pr-body.md
+     --title "Merge <task code> to main: <Title>" --body-file <job folder>/pr-body.md
    ```
+   The repo is set so the PR title becomes the merge commit's title: a PR merge
+   shows up in `git log` as `Merge <task code> to main: …`, while ordinary
+   commits are `<task code> <message>`, so the user can tell them apart.
    Write `pr-body.md` first (it is runtime state): a short summary of what the
    branch does (from build.md), the acceptance criteria with ✅/❌, the final
    review verdicts, the approver's `decision.md` "Why" (or "approved by the
