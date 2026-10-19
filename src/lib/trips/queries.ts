@@ -1,0 +1,65 @@
+import { notFound, redirect } from "next/navigation";
+import { createClient } from "@/lib/supabase/server";
+import {
+  isUuid,
+  type ChecklistStep,
+  type CityCostOverride,
+  type StepProgress,
+} from "./checklist";
+
+export type ChecklistTrip = {
+  id: string;
+  name: string;
+  departure_city: string;
+};
+
+// Loads everything /trips/[id] needs under the user's RLS. Signed out →
+// redirect to `/`; bad id or a trip that isn't the user's → 404.
+export async function loadTripChecklist(id: string) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect("/");
+
+  if (!isUuid(id)) notFound();
+
+  const { data: trip, error: tripError } = await supabase
+    .from("trips")
+    .select("id, name, departure_city")
+    .eq("id", id)
+    .maybeSingle<ChecklistTrip>();
+  if (tripError) throw new Error("Failed to load trip", { cause: tripError });
+  if (!trip) notFound();
+
+  const [steps, overrides, progress] = await Promise.all([
+    supabase
+      .from("preparation_steps")
+      .select(
+        "id, phase_key, category_key, title_id, title_en, summary_id, summary_en, estimated_cost_min, estimated_cost_max, sort_order",
+      )
+      .eq("is_published", true)
+      .order("sort_order")
+      .overrideTypes<ChecklistStep[], { merge: false }>(),
+    supabase
+      .from("city_cost_overrides")
+      .select("step_id, city, cost_min, cost_max")
+      .eq("city", trip.departure_city)
+      .overrideTypes<CityCostOverride[], { merge: false }>(),
+    supabase
+      .from("trip_step_progress")
+      .select("step_id, status")
+      .eq("trip_id", trip.id)
+      .is("traveler_id", null)
+      .overrideTypes<StepProgress[], { merge: false }>(),
+  ]);
+  const error = steps.error ?? overrides.error ?? progress.error;
+  if (error) throw new Error("Failed to load checklist", { cause: error });
+
+  return {
+    trip,
+    steps: steps.data ?? [],
+    overrides: overrides.data ?? [],
+    progress: progress.data ?? [],
+  };
+}
