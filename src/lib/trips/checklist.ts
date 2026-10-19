@@ -31,8 +31,11 @@ export type StepProgress = {
   status: StepStatus;
 };
 
-export type CategoryGroup = { key: string; steps: ChecklistStep[] };
-export type PhaseGroup = { key: string; categories: CategoryGroup[] };
+export type CategoryGroup<T = ChecklistStep> = { key: string; steps: T[] };
+export type PhaseGroup<T = ChecklistStep> = {
+  key: string;
+  categories: CategoryGroup<T>[];
+};
 
 const uuidPattern =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -62,7 +65,9 @@ function groupBy<T>(items: T[], key: (item: T) => string) {
 
 // Phase → category → steps. Phases and categories are ordered by their
 // smallest sort_order, steps by sort_order then id.
-export function groupSteps(steps: ChecklistStep[]): PhaseGroup[] {
+export function groupSteps<T extends ChecklistStep>(
+  steps: T[],
+): PhaseGroup<T>[] {
   const sorted = [...steps].sort(compareSteps);
   return groupBy(sorted, (step) => step.phase_key).map(([key, phaseSteps]) => ({
     key,
