@@ -100,7 +100,7 @@ export type CostRange = { min: number | null; max: number | null };
 // The override for the trip's departure city (exact match) wins over the
 // step's own range.
 export function resolveCost(
-  step: ChecklistStep,
+  step: Pick<ChecklistStep, "id" | "estimated_cost_min" | "estimated_cost_max">,
   overrides: CityCostOverride[],
   departureCity: string,
 ): CostRange {

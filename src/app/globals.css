@@ -83,6 +83,13 @@
   min-width: 2.75rem;
 }
 
+/* Tailwind v4 resets buttons to the default cursor; show the pointer on hover. */
+button:not(:disabled),
+[role="button"]:not([aria-disabled="true"]),
+summary {
+  cursor: pointer;
+}
+
 body {
   min-height: 100vh;
   background-color: var(--background);

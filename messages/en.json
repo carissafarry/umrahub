@@ -72,8 +72,24 @@
       "none": "No cost estimate"
     },
     "saveFailed": "The status wasn't saved. Please try again.",
+    "learnMore": "Learn more",
+    "learnMoreLabel": "Learn more: {title}",
     "error": {
       "title": "We couldn't load your checklist",
+      "description": "Don't worry, your data is safe. Please try again in a moment.",
+      "retry": "Try again"
+    }
+  },
+  "StepDetail": {
+    "metaTitle": "Preparation step guide · Umra Hub",
+    "backToChecklist": "Back to checklist",
+    "costVariesNote": "The cost depends on your departure city.",
+    "prerequisitesTitle": "Do these first",
+    "guideTitle": "Full guide",
+    "guideEmpty": "The full guide is not available yet.",
+    "opensInNewTab": "(opens in a new tab)",
+    "error": {
+      "title": "We couldn't load this step",
       "description": "Don't worry, your data is safe. Please try again in a moment.",
       "retry": "Try again"
     }

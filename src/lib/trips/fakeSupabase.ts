@@ -1,7 +1,8 @@
 import { vi } from "vitest";
 
 // Minimal chainable stand-in for the Supabase client, for tests only. Each
-// table resolves to its configured `{ data, error }`; calls are recorded.
+// table resolves to its configured `{ data, error }`, or with a list of
+// results, the n-th query of that table to the n-th entry; calls are recorded.
 type Result = { data: unknown; error: unknown };
 type Write = (row: unknown, options?: unknown) => Promise<{ error: unknown }>;
 
@@ -10,6 +11,7 @@ function makeBuilder(result: Result) {
     select: vi.fn(() => builder),
     eq: vi.fn(() => builder),
     is: vi.fn(() => builder),
+    in: vi.fn(() => builder),
     order: vi.fn(() => builder),
     overrideTypes: vi.fn(() => builder),
     maybeSingle: vi.fn(async () => result),
@@ -23,12 +25,19 @@ function makeBuilder(result: Result) {
 
 export function fakeSupabase({
   user = { id: "user-1" } as { id: string } | null,
-  tables = {} as Record<string, Result>,
+  tables = {} as Record<string, Result | Result[]>,
 } = {}) {
   const builders: { table: string; builder: ReturnType<typeof makeBuilder> }[] =
     [];
   const from = vi.fn((table: string) => {
-    const builder = makeBuilder(tables[table] ?? { data: null, error: null });
+    const configured = tables[table];
+    const calls = builders.filter((entry) => entry.table === table).length;
+    const builder = makeBuilder(
+      (Array.isArray(configured) ? configured[calls] : configured) ?? {
+        data: null,
+        error: null,
+      },
+    );
     builders.push({ table, builder });
     return builder;
   });
