@@ -19,7 +19,7 @@ while true; do
       url=$(sed -n 's/.*"pr": "\([^"]*\)".*/\1/p' "$j")
       [ -n "$url" ] || continue
       state=$(gh pr view "$url" --json state -q .state 2>/dev/null || true)
-      seen="factory/inbox/pr-seen/$id"
+      seen="factory/inbox/pr-seen/$id-${url##*/}" # per PR: the long-lived infra job gets a new PR each time
       if { [ "$state" = "MERGED" ] || [ "$state" = "CLOSED" ]; } && [ "$(cat "$seen" 2>/dev/null)" != "$state" ]; then
         echo "$state" > "$seen"
         echo "PR $id $state $url"

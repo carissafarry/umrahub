@@ -45,8 +45,9 @@ this repo and start `/factory` in each. Your session orchestrates only the job i
 started or was handed.
 
 - Your session stays in the main checkout. Agents work in the job's worktree.
-  The main checkout is the user's, and it may be dirty or on another branch.
-  Only **Merge** touches it.
+  The main checkout is the user's repo folder and lives on `factory/infra` (see
+  **Prompts**); it may hold uncommitted backlog edits. Job work never touches it
+  except the sync in **Merge**.
 - Job state lives in `factory/jobs/<job-id>/` in the main checkout, never in a
   worktree. Each job has its own `job.json`, so sessions never write the same
   file.
@@ -97,16 +98,28 @@ Below, `<paths>` stands for that sentence.
 Every agent prompt also ends with ` Task code: <type>-<NNN>.` (for jobs from
 the backlog). Every commit in that job is `<type>-<NNN> <message>`, no brackets.
 
-Your own commits never pile up unpushed on `main`: job branches start from
-local `main`, and every unpushed `main` commit would show up inside the job's
-PR. After committing infra work on `main`, push it as `factory/infra-<NNN>`
-(`git push origin main:factory/infra-<NNN>`) and open a PR for it right away
-(`<code> <Title>`, no AI attribution); the user merges it like any job PR.
-Before opening a job PR, check `git rev-list --count origin/main..main`; if it
-isn't 0, open/refresh that infra PR first and tell the user to merge it before
-the job PR so the job PR shows only its own commits.
+**Nothing is ever committed on `main`, not even the local `main` ref.** All
+infra, tooling and factory changes go on one long-lived branch, `factory/infra`,
+and reach `main` only through a pull request the user merges. The main checkout
+(the repo folder this session runs in) stays on `factory/infra`; local `main` is
+a read-only mirror of `origin/main`, moved only with `git fetch origin main:main`.
+Job branches and worktrees start from `main` (fetch it first), so they never
+carry infra commits and job PRs show only their own commits.
 
-Your own commits on `main` follow the same rule. Factory or tooling changes
+Infra workflow: edit in the main checkout, commit with the task code
+(`infra-<NNN> <message>`; commit pending `factory/backlog.md` and
+`factory/requirements` changes the same way), `git push -u origin factory/infra`,
+and keep **one open PR** from `factory/infra` to `main`: if
+`gh pr list --head factory/infra --state open` shows none, create it, then set its title (see **Merge**) to
+`Merge pull request #<N> from /factory/infra: infra-030, infra-029, infra-028`
+(every task code in the PR, newest first; update the title whenever you push
+another task to the open PR; body listing every task code, no AI attribution), otherwise the push updates it. Track it in
+`factory/jobs/infra/job.json` (`stage: "pr"`, `pr: <url>`) and tell the user the
+link. Never rename or delete `factory/infra` on GitHub: that closes its PR.
+Infra changes reach job worktrees (AGENTS.md rules, agent files) only after the
+PR is merged.
+
+Your own commits (on `factory/infra`) follow the same task-code rule. Factory or tooling changes
 that no backlog task covers get one first: add `- [x] [infra-<next NNN>] <Title>:
 <what changed> → infra-<NNN>` under **Selesai** in `factory/backlog.md` and
 commit with that code. Never commit without a task code, and **never add a
@@ -129,6 +142,7 @@ gets `5102 + 10n`, appended as ` Port: <port>.`
    `round: 0` and all reviews `pending`.
 2. **Worktree.** Create the branch and its worktree from `main`:
    ```bash
+   git fetch origin main:main    # main is a read-only mirror of origin/main
    git worktree add -b factory/<job-id> <worktree> main
    ```
    Then, in the worktree, run the setup AGENTS.md gives for a fresh checkout
@@ -189,8 +203,16 @@ Jobs never merge into `main` locally. The user merges every job on GitHub.
 3. Open the PR:
    ```bash
    gh pr create --repo carissafarry/umrahub --base main --head factory/<job-id> \
-     --title "<task code> <Title>" --body-file <job folder>/pr-body.md
+     --title "Merge pull request #0 from /factory/<job-id>" \
+     --body-file <job folder>/pr-body.md
    ```
+   The PR number is only known after creation, so right away set the real title
+   (`gh pr edit` fails on this repo; use the API):
+   `gh api -X PATCH repos/carissafarry/umrahub/pulls/<N> -f title="Merge pull request #<N> from /factory/<job-id>"`.
+   The repo uses the PR title as the merge commit's title, so every PR merge
+   reads `Merge pull request #<N> from /factory/<job-id>` (no owner prefix, no
+   task code; GitHub turns `#N` into a link on the web, git itself cannot store
+   markdown links), while ordinary commits stay `<task code> <message>`.
    Write `pr-body.md` first (it is runtime state): a short summary of what the
    branch does (from build.md), the acceptance criteria with ✅/❌, the final
    review verdicts, the approver's `decision.md` "Why" (or "approved by the
@@ -200,16 +222,19 @@ Jobs never merge into `main` locally. The user merges every job on GitHub.
 4. Set `stage: "pr"` and add `"pr": "<url>"` to job.json. Tell the user the
    PR link. Never merge the PR yourself, and never push to `main`.
 
-**When the PR is merged** (the watcher prints `PR <job-id> MERGED <url>`):
-`git fetch origin`, then in the main checkout (clean apart from
-`factory/backlog.md` and `factory/requirements`) `git merge --ff-only origin/main`.
-If that can't fast-forward (local `main` has commits GitHub doesn't), run
-`git merge origin/main -m "<task code> Sync main with merged PR"`. Then
-`git worktree remove <worktree>`, `git branch -d factory/<job-id>` and
-`git push origin --delete factory/<job-id>` (ignore "remote ref does not
-exist"). Set `stage: "merged"`, drop `pr`-only state you no longer need (keep
-the `pr` url), and promote unblocked backlog items. Tell the user, including
-any post-merge step from the PR body.
+**When a PR is merged** (the watcher prints `PR <job-id> MERGED <url>`):
+sync the main checkout with GitHub. Commit any pending `factory/backlog.md` /
+`factory/requirements` changes on `factory/infra` (`infra-<NNN> …`), run
+`git fetch origin main:main`, then bring `factory/infra` up to date: when it has
+no commits outside `origin/main` (`git rev-list --count origin/main..factory/infra`
+is 0) run `git merge --ff-only origin/main`; otherwise
+`git merge origin/main -m "infra-<NNN> Sync main with merged PR"` and push.
+Then, for an ordinary job, `git worktree remove <worktree>`,
+`git branch -d factory/<job-id>` and `git push origin --delete factory/<job-id>`
+(ignore "remote ref does not exist"). For the long-lived `infra` job keep the
+branch and checkout: just do the sync; the next infra commit opens a new PR.
+Set `stage: "merged"`, keep the `pr` url, and promote unblocked backlog items.
+Tell the user, including any post-merge step from the PR body.
 
 **When the PR is closed unmerged** (`PR <job-id> CLOSED`): set
 `stage: "needs-human"` and ask the user what to do; keep the branch and
@@ -359,6 +384,53 @@ check in **Merge**, like `factory/backlog.md`.
 
 On start, also process any files already in `factory/inbox/taken/` (left by a
 session that closed mid-request) and in `factory/inbox/`.
+
+## /factory resume — the factory restarts itself with the session
+
+**Rule: the factory never depends on one session staying alive.** When a session
+ends, its watcher, its background agents and its previews die with it, but job
+state lives on disk (`factory/jobs/*/job.json`, `factory/inbox/`, git, GitHub).
+So every new or resumed session continues the factory by itself, without being
+asked.
+
+The `SessionStart` hook in `.claude/settings.json` runs
+`factory/resume-check.sh`, which prints the real state: unprocessed dashboard
+requests, PRs that were merged or closed while nobody watched, jobs stuck in
+`spec`/`build`/`review`/`approve`, previews that went down, and whether `main`
+is in sync. **Treat every `!` line as your to-do list and act on it at once**;
+only stop for decisions that are the user's. `/factory resume` does the same by
+hand (run `bash factory/resume-check.sh` first if you have no report).
+
+1. **Bring the servers back**: the dashboard server (`node factory/server.mjs`,
+   background, port 8000) dies with the session, so start it again when port 8000
+   is down and give the user the link (http://localhost:8000/dashboard.html).
+   Then re-arm the watcher: Monitor `bash factory/watch.sh`, and re-arm it every
+   time it expires. Never report the factory as resumed until both are up.
+2. **Dashboard requests**: process everything in `factory/inbox/taken/` and
+   `factory/inbox/` as the user's own commands (see **Dashboard requests**). A
+   request is never "nothing to do"; if you can't tell what it asks, ask.
+3. **PRs**: for each job in stage `pr`, if the PR is `MERGED` run the
+   "When the PR is merged" steps; if `CLOSED`, set `needs-human` and ask.
+4. **Interrupted jobs**: agents from a dead session are gone, so a
+   `SendMessage` to an old name may fail; then spawn a fresh agent with the
+   same `<paths>` prompt plus "Continue: check `git status` and
+   `git log --oneline main..HEAD` in the worktree first and don't redo finished
+   work". By stage:
+   - `spec`: `spec.md` exists → go on to build; otherwise run `spec-writer`.
+   - `build`: `build.md` starts with `STATUS: READY` → **Build check**;
+     otherwise resume (or respawn) the builder.
+   - `review`: look at `round-<N>/`; spawn **only** the reviewers whose
+     `review-*.md` is missing, record verdicts already on disk, then decide as
+     usual.
+   - `approve`: `decision.md` exists → read it; otherwise respawn `approver`.
+5. **`needs-human` jobs**: restart a dead preview on its port, and remind the
+   user which jobs wait for them.
+6. **Sync**: make sure the main checkout is on `factory/infra`, local `main` is
+   `origin/main` (`git fetch origin main:main`), `factory/infra` is up to date
+   with `origin/main`, and any infra commits have an open PR (see **Prompts**);
+   promote unblocked backlog items.
+7. **Report** in a few lines: what you recovered, what is running, what waits for
+   the user.
 
 ## /factory approve <job-id>
 
