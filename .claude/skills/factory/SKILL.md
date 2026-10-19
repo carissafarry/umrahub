@@ -259,10 +259,20 @@ builder or a UX/UI reviewer has finished in that worktree, start it: copy the
 main checkout's `.env.local` into the worktree if it is missing (it is
 gitignored), run `npm run dev -- --port <5103 + 10n>` there in the background,
 wait until it answers, and add `"preview": "http://localhost:<port><route>"` to
-job.json, where `<route>` is the page to check (e.g. `/dashboard`), never just
-the port (the dashboard shows it as a "Lihat preview" button). Give the user the
-link in your message, plus the pages to open for this feature, in the message
-that reports a decision or a PR.
+job.json (the dashboard shows it as a "Lihat preview" button). Give the user the
+link in your message, plus any other pages to open for this feature, in the
+message that reports a decision or a PR.
+
+**`<route>` is the exact page the job added or changed** (for fe-011:
+`/trips/<id>/budget`), never just the port, never `/`, and never a parent or
+entry page the user has to click through from. Take it from the spec and
+`build.md`. Fill dynamic segments with a real id: seeded content ids are fixed
+(steps are `5eed0000-0000-4000-8000-0000000000NN`); an id that belongs to the
+user (a trip, for example) comes from the user, so ask once for it, use it, and
+keep it for later previews. If you don't have such an id yet, ask for it
+before reporting the preview; do not fall back to `/`. When a job touches
+several pages, `<route>` is the main one and the message lists the rest.
+`factory/resume-check.sh` flags an fe job whose preview opens `/`.
 
 You may also start the preview earlier (e.g. while a round is waiting on a
 reviewer that doesn't open pages) when the user wants to look; the dashboard

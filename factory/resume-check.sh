@@ -51,6 +51,10 @@ for f in factory/inbox/*.json factory/inbox/taken/*.json; do
 done
 [ $found -eq 0 ] && note "none"
 
+# Path part of a job's preview link ("" when it is just the port or "/"): fe previews must open the changed page.
+pv_path() { sed -n 's/.*"preview": "http:\/\/localhost:[0-9]*\([^"]*\)".*/\1/p' "$1" | head -1; }
+pv_generic() { [ "${1#fe-}" != "$1" ] && p=$(pv_path "$2") && { [ -z "$p" ] || [ "$p" = "/" ]; }; }
+
 echo "jobs:"
 shown=0
 for j in factory/jobs/*/job.json; do
@@ -69,6 +73,8 @@ for j in factory/jobs/*/job.json; do
         need "$id: waiting for the user's decision, but its preview (port $port) is down — restart it"
       elif [ -z "$port" ] && [ "${id#fe-}" != "$id" ]; then
         need "$id: waiting for the user's decision, but it has no preview — start one (SKILL.md: Preview for fe jobs)"
+      elif pv_generic "$id" "$j"; then
+        need "$id: preview opens '/' instead of the changed page — set \"preview\" to that exact route (SKILL.md: Preview for fe jobs)"
       else
         note "$id: waiting for the user's decision${port:+ (preview on port $port)}"
       fi ;;
@@ -85,6 +91,8 @@ for j in factory/jobs/*/job.json; do
             need "$id: PR open ($url), but its preview (port $port) is down — restart it"
           elif [ -z "$port" ] && [ "${id#fe-}" != "$id" ]; then
             need "$id: PR open ($url), but it has no preview — start one (SKILL.md: Preview for fe jobs)"
+          elif pv_generic "$id" "$j"; then
+            need "$id: PR open ($url), but its preview opens '/' instead of the changed page — set \"preview\" to that exact route (SKILL.md: Preview for fe jobs)"
           else
             note "$id: PR open, waiting for the user to merge: $url${port:+ (preview on port $port)}"
           fi ;;
