@@ -205,6 +205,8 @@ async function readJob(jobId) {
 async function branchTasks(jobId) {
   const job = await readJob(jobId)
   if (!/^factory\/[\w.-]+$/.test(job?.branch || '')) return { tasks: [], pr: null }
+  // A merged job's branch may be reused (the long-lived infra branch), so read its own merged PR, not the branch.
+  if (job.stage === 'merged' && prNumberOf(job)) return { tasks: await mergedPrTasks(prNumberOf(job)), pr: job.pr }
   const open = await codesIn(`origin/main..${job.branch}`)
   if (open.length) return { tasks: open, pr: job.pr || null }
   const n = prNumberOf(job)

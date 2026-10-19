@@ -43,6 +43,8 @@ the orchestrator moves items whose dependencies are all merged from **Menunggu**
 - [x] [infra-044] "Done means merged" rule in SKILL.md (Reporting): no task, infra included, is called done/selesai in the dashboard, pr-body.md, backlog text or messages until its PR is merged; before that it is "menunggu merge" → infra-044
 - [x] [infra-045] Preview ids are looked up before asking the user: SKILL.md tells the orchestrator to grep the preview dev server log and the saved trip id for an id the user already opened → infra-045
 - [x] [infra-046] Backlog format guard: repairs the infra-030, 034, 036, 038 and 043 lines that had no "Title: description" shape (the dashboard dropped them, so infra-043 was missing from the list), and `factory/resume-check.sh` now flags any backlog task line the dashboard cannot parse → infra-046
+- [x] [infra-047] Keep merged branches on the remote: after a PR merges the orchestrator removes only the local worktree and branch and never deletes `factory/*` on the remote; the remote `factory/fe-011` deleted by mistake was restored → infra-047
+- [x] [infra-048] Merged infra PRs stay in the Merged column: the single infra job card was overwritten by each new PR, so PR #14 and #16 vanished from the board; they are now archived as `infra-pr14` and `infra-pr16` (with their task lists and PR bodies), and SKILL.md tells the orchestrator to archive a merged infra PR before reusing the infra job → infra-048
 - [x] [infra-024] Vercel Web Analytics: installed by the user from the Vercel dashboard (GitHub PR #1: `@vercel/analytics` and `<Analytics />` in `src/app/layout.tsx`); merged into local main → infra-024
 - [x] [infra-025] Spelling rule: worship term is always "Umrah" in both languages (never "Umroh"); brand is "Umra Hub" — AGENTS.md, spec and fe-004 requirements → infra-025
 - [x] [infra-026] Merge via GitHub PR: approved jobs are pushed and opened as pull requests instead of merging into local main; `factory/watch.sh` streams dashboard requests and PR merged/closed events; dashboard gets a Pull request column and PR links → infra-026
@@ -69,11 +71,11 @@ the orchestrator moves items whose dependencies are all merged from **Menunggu**
 - [x] [fe-009] Step detail: page /steps/[id] with the full guide markdown rendered safely, prerequisites, cost range adjusted for the trip's departure city, and a link back to the checklist; checklist accordions get a "Pelajari lebih lanjut" link to it → fe-009
 - [x] [fe-010] Trip dashboard: multi-trip dashboard /dashboard listing the user's trips with progress, create a new trip via a short wizard, rename and delete a trip with confirmation; signed-in users land here; mounts the BottomNav → fe-010
 - [x] [fe-011] Budget: page /trips/[id]/budget with per-step and per-phase cost ranges multiplied by traveler count where individual, total min–max in IDR with a simple bar chart, and the "harga perkiraan, dapat berubah" disclaimer → fe-011
-- [ ] [be-012] Notifications: in-app deadline reminders generated from the travel date and step timeline phases, a bell with unread count in the header, and a /notifications page to read and mark them read
+- [x] [be-012] Notifications: in-app deadline reminders generated from the travel date and step timeline phases, a bell with unread count in the header, and a /notifications page to read and mark them read → be-012
 
 ## Siap — gelombang 6
 
-- [ ] [fe-013] Step dependencies: hybrid step dependencies — marking a step done while a prerequisite is not done shows a non-blocking warning naming the prerequisite, and blocked steps are visually marked in the checklist
+- [x] [fe-013] Step dependencies: hybrid step dependencies — marking a step done while a prerequisite is not done shows a non-blocking warning naming the prerequisite, and blocked steps are visually marked in the checklist → fe-013
 - [ ] [be-014] Step comments: signed-in users can post and delete their own tips on a step detail page, newest first, with display name and avatar; requires a migration with RLS
 
 ## Menunggu

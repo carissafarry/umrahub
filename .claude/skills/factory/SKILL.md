@@ -243,9 +243,19 @@ no commits outside `origin/main` (`git rev-list --count origin/main..factory/inf
 is 0) run `git merge --ff-only origin/main`; otherwise
 `git merge origin/main -m "infra-<NNN> Sync main with merged PR"` and push.
 Then, for an ordinary job, `git worktree remove <worktree>`,
-`git branch -d factory/<job-id>` and `git push origin --delete factory/<job-id>`
-(ignore "remote ref does not exist"). For the long-lived `infra` job keep the
+and `git branch -d factory/<job-id>`. **Delete only the local branch: never
+delete a merged `factory/*` branch on the remote** (no `git push origin
+--delete`, no "delete branch" through `gh`), the user keeps them. If one was
+deleted by mistake, restore it from its last commit with
+`git push origin <sha>:refs/heads/factory/<job-id>`. For the long-lived `infra` job keep the
 branch and checkout: just do the sync; the next infra commit opens a new PR.
+**Before the infra job is reused for the next PR, archive the merged one** so it
+stays in the dashboard's Merged column: create `factory/jobs/infra-pr<N>/` with
+a copy of the infra `job.json` (`id: "infra-pr<N>"`, `stage: "merged"`, the
+merged `pr` url, and a `feature` like `Infra PR #<N>: infra-0AA sampai infra-0BB
+(<short summary>)`) and the PR's final `pr-body.md` (`gh pr view <N> --json body
+--jq .body`). Only then set the infra `job.json` to the new PR. Never overwrite a
+merged infra PR's card with the next PR.
 Stop the job's preview first (see **Stop the preview**) and drop `preview` from
 job.json.
 Set `stage: "merged"`, keep the `pr` url, and promote unblocked backlog items.
