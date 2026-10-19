@@ -30,6 +30,7 @@ the orchestrator moves items whose dependencies are all merged from **Menunggu**
 - [x] [infra-031] PR title prefix is "Merge PR" instead of "Merge pull request": job PRs "Merge PR #<N> from /factory/<job-id>", infra PR "Merge PR #<N> from /factory/infra: <task codes>" → infra-031
 - [x] [infra-032] Preview links with a route: `preview` in job.json may include a path (e.g. `http://localhost:5193/steps/<id>`) so "Lihat preview" opens the page to check, not only the port → infra-032
 - [x] [infra-033] Backlog bookkeeping after fe-009 merge: fe-013 and be-014 move to Siap (gelombang 6) → infra-033
+- [x] [infra-034] Sync factory/infra with origin/main after PR #11 (fe-009) and PR #12 (infra-032) merged → infra-034
 - [x] [infra-024] Vercel Web Analytics: installed by the user from the Vercel dashboard (GitHub PR #1: `@vercel/analytics` and `<Analytics />` in `src/app/layout.tsx`); merged into local main → infra-024
 - [x] [infra-025] Spelling rule: worship term is always "Umrah" in both languages (never "Umroh"); brand is "Umra Hub" — AGENTS.md, spec and fe-004 requirements → infra-025
 - [x] [infra-026] Merge via GitHub PR: approved jobs are pushed and opened as pull requests instead of merging into local main; `factory/watch.sh` streams dashboard requests and PR merged/closed events; dashboard gets a Pull request column and PR links → infra-026
