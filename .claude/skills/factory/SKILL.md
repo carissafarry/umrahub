@@ -111,7 +111,7 @@ Infra workflow: edit in the main checkout, commit with the task code
 `factory/requirements` changes the same way), `git push -u origin factory/infra`,
 and keep **one open PR** from `factory/infra` to `main`: if
 `gh pr list --head factory/infra --state open` shows none, create it, then set its title (see **Merge**) to
-`Merge pull request #<N> from /factory/infra: infra-030, infra-029, infra-028`
+`Merge PR #<N> from /factory/infra: infra-030, infra-029, infra-028`
 (every task code in the PR, newest first; update the title whenever you push
 another task to the open PR; body listing every task code, no AI attribution), otherwise the push updates it. Track it in
 `factory/jobs/infra/job.json` (`stage: "pr"`, `pr: <url>`) and tell the user the
@@ -203,14 +203,14 @@ Jobs never merge into `main` locally. The user merges every job on GitHub.
 3. Open the PR:
    ```bash
    gh pr create --repo carissafarry/umrahub --base main --head factory/<job-id> \
-     --title "Merge pull request #0 from /factory/<job-id>" \
+     --title "Merge PR #0 from /factory/<job-id>" \
      --body-file <job folder>/pr-body.md
    ```
    The PR number is only known after creation, so right away set the real title
    (`gh pr edit` fails on this repo; use the API):
-   `gh api -X PATCH repos/carissafarry/umrahub/pulls/<N> -f title="Merge pull request #<N> from /factory/<job-id>"`.
+   `gh api -X PATCH repos/carissafarry/umrahub/pulls/<N> -f title="Merge PR #<N> from /factory/<job-id>"`.
    The repo uses the PR title as the merge commit's title, so every PR merge
-   reads `Merge pull request #<N> from /factory/<job-id>` (no owner prefix, no
+   reads `Merge PR #<N> from /factory/<job-id>` (no owner prefix, no
    task code; GitHub turns `#N` into a link on the web, git itself cannot store
    markdown links), while ordinary commits stay `<task code> <message>`.
    Write `pr-body.md` first (it is runtime state): a short summary of what the
