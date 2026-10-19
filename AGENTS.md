@@ -23,6 +23,7 @@ Scope now: user-facing app only. Admin CMS is out of scope; content is edited vi
 - `src/components/ui/` — shared UI primitives (see Design system)
 - `src/lib/` — shared helpers
 - `src/lib/auth/` — auth Server Actions, public-path check, user profile mapping (see Auth)
+- `src/lib/onboarding/` — onboarding wizard validation and trip creation (see Onboarding)
 - `src/middleware.ts` — auth session refresh and route protection (see Auth)
 - `src/i18n/` — next-intl setup: locales (`config.ts`), request config (`request.ts`), language Server Action (`actions.ts`)
 - `messages/` — UI copy: `id.json` and `en.json`
@@ -103,11 +104,19 @@ All four must pass before a change is ready. Use `build:check`, not `build`, for
 ## Auth
 
 - Google OAuth only, via Supabase Auth. Sign-in and sign-out are Server Actions in `src/lib/auth/actions.ts` (`signInWithGoogle`, `signOut`). The OAuth `redirectTo` is `<request origin>/auth/callback`, derived from the request headers (no env var).
-- `src/app/auth/callback/route.ts` exchanges the code for a session and redirects to `/`; any failure redirects to `/?auth_error=1`.
+- `src/app/auth/callback/route.ts` exchanges the code for a session and redirects to `/onboarding`; any failure redirects to `/?auth_error=1`.
 - `src/middleware.ts` (via `updateSession` in `src/lib/supabase/middleware.ts`) refreshes the session cookies (with no-store cache headers) and redirects signed-out users to `/` for every matched path except `/` and `/auth/*`. This redirect is UX, not the security boundary: the matcher skips `/_vercel/*` and any path ending in an image extension (`.png`, `.svg`, ...), so protected pages and Route Handlers must still check `getUser()` server-side, and data access relies on RLS. A page that must be public needs `isPublicPath` in `src/lib/auth/paths.ts` changed.
 - Read the user in server code with `createClient()` from `src/lib/supabase/server.ts` + `supabase.auth.getUser()`; never trust `getSession()` alone. Profile data (name, avatar) comes from `user_metadata` via `getUserProfile` in `src/lib/auth/profile.ts`.
 - Without Supabase env values the middleware and header treat everyone as signed out.
 - The Supabase project's Redirect URLs allow-list must include `<origin>/auth/callback` for every deploy origin (localhost, Vercel previews, production); keep entries to exact origins or narrowly scoped preview patterns, never a bare `**`.
+
+## Onboarding
+
+- `/onboarding` (`src/app/onboarding/`) is the 5-step wizard for signed-in users with no trip: city, travel month/year, passport status, travelers, special needs. The page and the Server Action both check `getUser()` and redirect a user who already owns a trip to `/trips/<newest trip id>`. Nothing is saved until the final submit.
+- Validation lives in `src/lib/onboarding/validate.ts` (`parseOnboardingInput`, no library; its rules are shared with the client): 1–10 travelers, names 1–80 chars after trim, disability notes ≤ 500 chars (dropped when nobody has a disability), month from the current month through +24 months (server clock). Errors are fixed codes and never echo input.
+- Writes are in `createOnboardingTrip` (`src/lib/onboarding/createTrip.ts`, takes the cookie-bound anon client): the trip (no `user_id`, left to `auth.uid()`), then its travelers; if a later insert fails the trip is deleted. Logs are a fixed string plus `error.code` only.
+- The passport answer is not stored. `valid` marks step 01 (`5eed0000-…-000000000001`) completed for every traveler; `expired`/`none` write nothing.
+- City values are exactly the 5 `city_cost_overrides` cities: `Jakarta`, `Surabaya`, `Medan`, `Makassar`, `Yogyakarta`.
 
 ## Design system
 

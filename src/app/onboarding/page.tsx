@@ -1,0 +1,27 @@
+import type { Metadata } from "next";
+import { redirect } from "next/navigation";
+import { getTranslations } from "next-intl/server";
+import { createClient } from "@/lib/supabase/server";
+import { findLatestTripId } from "@/lib/onboarding/createTrip";
+import { currentYearMonth } from "@/lib/onboarding/validate";
+import { OnboardingWizard } from "./OnboardingWizard";
+
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("Onboarding");
+  return { title: t("metaTitle") };
+}
+
+export default async function OnboardingPage() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect("/");
+
+  // Users who already have a trip skip the wizard.
+  const latest = await findLatestTripId(supabase, user.id);
+  if (latest.ok && latest.tripId) redirect(`/trips/${latest.tripId}`);
+
+  // The server clock sets the first selectable month, matching validation.
+  return <OnboardingWizard firstMonth={currentYearMonth(new Date())} />;
+}

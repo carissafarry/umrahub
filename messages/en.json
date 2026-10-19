@@ -32,5 +32,64 @@
   },
   "Footer": {
     "text": "© {year} Umra Hub · Your companion for an independent Umrah"
+  },
+  "Onboarding": {
+    "metaTitle": "Start preparing for Umrah · Umra Hub",
+    "title": "Let's set up your Umrah trip",
+    "intro": "Answer 5 short questions so your preparation checklist fits your group. Nothing is saved until you tap Create my trip.",
+    "progress": "Step {current} of {total}",
+    "stepsLabel": "Setup steps",
+    "steps": {
+      "city": {
+        "title": "Departure city",
+        "hint": "Which city will you fly from?"
+      },
+      "date": {
+        "title": "Approximate travel date",
+        "hint": "Pick a month and year; an estimate is fine."
+      },
+      "passport": {
+        "title": "Passport status",
+        "hint": "What is the state of your group's passports right now?"
+      },
+      "travelers": {
+        "title": "Travelers",
+        "hint": "Enter the name of everyone travelling, including you."
+      },
+      "needs": {
+        "title": "Special needs",
+        "hint": "Mark travelers who need extra care so their preparation is adjusted."
+      }
+    },
+    "monthLabel": "Month",
+    "yearLabel": "Year",
+    "choose": "Choose",
+    "passport": {
+      "valid": "Have one, still valid",
+      "expired": "Have one, expired",
+      "none": "Don't have one"
+    },
+    "travelerLabel": "Traveler {number}",
+    "removeTraveler": "Remove traveler {number}",
+    "addTraveler": "Add traveler",
+    "travelerLimit": "Up to {max} travelers per trip.",
+    "hasDisability": "Has a disability",
+    "isMinor": "Is a minor (child/infant)",
+    "notesLabel": "Notes about accessibility needs (optional)",
+    "notesHint": "Up to {max} characters.",
+    "back": "Back",
+    "next": "Next",
+    "submit": "Create my trip",
+    "submitting": "Creating your trip…",
+    "errors": {
+      "city": "Choose a departure city.",
+      "date": "Choose a month and year within the next 24 months.",
+      "passport": "Choose a passport status.",
+      "names": "Enter a name for every traveler (1–80 characters).",
+      "notes": "Notes can be up to 500 characters.",
+      "invalid": "Some answers aren't valid. Please check them and try again.",
+      "failed": "Couldn't create your trip. Please try again."
+    },
+    "defaultTripName": "Umrah {month} {year}"
   }
 }
