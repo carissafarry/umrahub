@@ -249,7 +249,7 @@ inspect. Tell the user which job is waiting, give the worktree path, and quote
 **Preview for fe jobs.** When the task code is `fe-*` and `build.md` says
 `STATUS: READY`, start a preview so the user can look before deciding: in the
 worktree, run `npm run dev -- --port <5103 + 10n>` in the background, wait until
-it answers, and add `"preview": "http://localhost:<port>"` to job.json (the
+it answers, and add `"preview": "http://localhost:<port><route>"` to job.json, where `<route>` is the page to check (e.g. `/dashboard`), never just the port (the
 dashboard shows it as a "Lihat preview" button). Give the user the link in your
 message, plus the pages to open for this feature.
 
