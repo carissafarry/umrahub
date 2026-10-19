@@ -127,7 +127,11 @@ PR is merged.
 Your own commits (on `factory/infra`) follow the same task-code rule. Factory or tooling changes
 that no backlog task covers get one first: add `- [x] [infra-<next NNN>] <Title>:
 <what changed> → infra-<NNN>` under **Selesai** in `factory/backlog.md` and
-commit with that code. Never commit without a task code, and **never add a
+commit with that code. The `: ` after the short title is required: the
+dashboard drops any backlog line without it, so the task is missing from the
+list while its code still shows up in commits and PR titles. Take the next
+number from the highest `infra-NNN` in the backlog and add the line **before**
+you mention the code anywhere. `factory/resume-check.sh` flags unparseable lines. Never commit without a task code, and **never add a
 `Co-Authored-By: Claude` (or any AI attribution) trailer** to any commit or
 merge — the user's most important rule.
 
