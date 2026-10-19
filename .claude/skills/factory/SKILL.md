@@ -198,7 +198,9 @@ When it finishes, read the first line of `decision.md`:
 
 Jobs never merge into `main` locally. The user merges every job on GitHub.
 
-1. Stop the job's preview if one is running.
+1. For `fe-*` jobs, make sure the preview is **running** (see **Preview for fe
+   jobs**); start it if it is not. Never stop it here: it stays up while the PR
+   is open so the user can look before merging.
 2. Push the branch: `git -C <worktree> push -u origin factory/<job-id>`.
 3. Open the PR:
    ```bash
@@ -219,8 +221,10 @@ Jobs never merge into `main` locally. The user merges every job on GitHub.
    user" for `/factory approve`), anything the user must do after merging
    (e.g. `supabase db push`), and the preview link for fe jobs. **No AI
    attribution of any kind** in the title or body.
-4. Set `stage: "pr"` and add `"pr": "<url>"` to job.json. Tell the user the
-   PR link. Never merge the PR yourself, and never push to `main`.
+4. Set `stage: "pr"` and add `"pr": "<url>"` to job.json (an `fe-*` job keeps
+   its `preview` there). Tell the user the PR link and, for `fe-*` jobs, the
+   preview link with the page to open. Never merge the PR yourself, and never
+   push to `main`.
 
 **When a PR is merged** (the watcher prints `PR <job-id> MERGED <url>`):
 sync the main checkout with GitHub. Commit any pending `factory/backlog.md` /
@@ -233,12 +237,14 @@ Then, for an ordinary job, `git worktree remove <worktree>`,
 `git branch -d factory/<job-id>` and `git push origin --delete factory/<job-id>`
 (ignore "remote ref does not exist"). For the long-lived `infra` job keep the
 branch and checkout: just do the sync; the next infra commit opens a new PR.
+Stop the job's preview first (see **Stop the preview**) and drop `preview` from
+job.json.
 Set `stage: "merged"`, keep the `pr` url, and promote unblocked backlog items.
 Tell the user, including any post-merge step from the PR body.
 
 **When the PR is closed unmerged** (`PR <job-id> CLOSED`): set
-`stage: "needs-human"` and ask the user what to do; keep the branch and
-worktree.
+`stage: "needs-human"` and ask the user what to do; keep the branch, the
+worktree and the preview.
 
 ### Needs human
 
@@ -246,20 +252,28 @@ Set `stage: "needs-human"`. The branch and its worktree stay for the human to
 inspect. Tell the user which job is waiting, give the worktree path, and quote
 `decision.md` (or the BLOCKED reason from `build.md`).
 
-**Preview for fe jobs.** When the task code is `fe-*` and `build.md` says
-`STATUS: READY`, start a preview so the user can look before deciding: in the
-worktree, run `npm run dev -- --port <5103 + 10n>` in the background, wait until
-it answers, and add `"preview": "http://localhost:<port><route>"` to job.json, where `<route>` is the page to check (e.g. `/dashboard`), never just the port (the
-dashboard shows it as a "Lihat preview" button). Give the user the link in your
-message, plus the pages to open for this feature.
+**Preview for fe jobs (hard rule).** An `fe-*` job must never be in
+`needs-human` or `pr` (and the PR must never be opened) without a running
+preview. As soon as `build.md` says `STATUS: READY`, and again every time a
+builder or a UX/UI reviewer has finished in that worktree, start it: copy the
+main checkout's `.env.local` into the worktree if it is missing (it is
+gitignored), run `npm run dev -- --port <5103 + 10n>` there in the background,
+wait until it answers, and add `"preview": "http://localhost:<port><route>"` to
+job.json, where `<route>` is the page to check (e.g. `/dashboard`), never just
+the port (the dashboard shows it as a "Lihat preview" button). Give the user the
+link in your message, plus the pages to open for this feature, in the message
+that reports a decision or a PR.
 
 You may also start the preview earlier (e.g. while a round is waiting on a
 reviewer that doesn't open pages) when the user wants to look; the dashboard
 shows the button whenever `preview` is set.
 
 **Stop the preview** (`kill $(lsof -tiTCP:<port> -sTCP:LISTEN)`) and drop
-`preview` from job.json before **Merge**, before any builder (resume or rework)
-or a UX/UI reviewer runs in that worktree, and when the job is merged.
+`preview` from job.json only (1) before any builder (resume or rework) or a
+UX/UI reviewer runs in that worktree, because two dev servers in one worktree
+clash, and (2) when the job's PR is merged. Case (1) is temporary: start it
+again right after that agent finishes. Never stop it just because the PR was
+opened.
 
 ## /factory next
 
@@ -423,8 +437,9 @@ hand (run `bash factory/resume-check.sh` first if you have no report).
      `review-*.md` is missing, record verdicts already on disk, then decide as
      usual.
    - `approve`: `decision.md` exists → read it; otherwise respawn `approver`.
-5. **`needs-human` jobs**: restart a dead preview on its port, and remind the
-   user which jobs wait for them.
+5. **`needs-human` and `pr` jobs**: every `fe-*` job here must have a running
+   preview. Restart a dead one on its port, start one that is missing (see
+   **Preview for fe jobs**), and remind the user which jobs wait for them.
 6. **Sync**: make sure the main checkout is on `factory/infra`, local `main` is
    `origin/main` (`git fetch origin main:main`), `factory/infra` is up to date
    with `origin/main`, and any infra commits have an open PR (see **Prompts**);

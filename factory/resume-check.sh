@@ -64,9 +64,11 @@ for j in factory/jobs/*/job.json; do
       shown=1; need "$id: stage=$stage round=$round — interrupted when the last session ended; resume the loop at this stage" ;;
     needs-human)
       shown=1
-      port=$(sed -n 's/.*"preview": "http:\/\/localhost:\([0-9]*\)".*/\1/p' "$j" | head -1)
+      port=$(sed -n 's/.*"preview": "http:\/\/localhost:\([0-9]*\)[^"]*".*/\1/p' "$j" | head -1)
       if [ -n "$port" ] && ! lsof -tiTCP:"$port" -sTCP:LISTEN >/dev/null 2>&1; then
         need "$id: waiting for the user's decision, but its preview (port $port) is down — restart it"
+      elif [ -z "$port" ] && [ "${id#fe-}" != "$id" ]; then
+        need "$id: waiting for the user's decision, but it has no preview — start one (SKILL.md: Preview for fe jobs)"
       else
         note "$id: waiting for the user's decision${port:+ (preview on port $port)}"
       fi ;;
@@ -77,7 +79,15 @@ for j in factory/jobs/*/job.json; do
       case "$state" in
         MERGED) need "$id: PR $url was MERGED while no session was watching — run the 'When a PR is merged' steps" ;;
         CLOSED) need "$id: PR $url was CLOSED without merging — set needs-human and ask the user" ;;
-        OPEN)   note "$id: PR open, waiting for the user to merge: $url" ;;
+        OPEN)
+          port=$(sed -n 's/.*"preview": "http:\/\/localhost:\([0-9]*\)[^"]*".*/\1/p' "$j" | head -1)
+          if [ -n "$port" ] && ! lsof -tiTCP:"$port" -sTCP:LISTEN >/dev/null 2>&1; then
+            need "$id: PR open ($url), but its preview (port $port) is down — restart it"
+          elif [ -z "$port" ] && [ "${id#fe-}" != "$id" ]; then
+            need "$id: PR open ($url), but it has no preview — start one (SKILL.md: Preview for fe jobs)"
+          else
+            note "$id: PR open, waiting for the user to merge: $url${port:+ (preview on port $port)}"
+          fi ;;
         *)      note "$id: PR state unknown ($url)" ;;
       esac ;;
     *) shown=1; note "$id: stage=$stage" ;;
