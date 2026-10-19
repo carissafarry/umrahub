@@ -3,8 +3,8 @@ import { createClient } from "@/lib/supabase/server";
 import type { BudgetStep, StepConfig } from "./budget";
 import {
   isUuid,
-  type ChecklistStep,
   type CityCostOverride,
+  type DependentStep,
   type StepProgress,
 } from "./checklist";
 
@@ -46,10 +46,10 @@ export async function loadTripChecklist(id: string) {
   const [steps, overrides, progress] = await Promise.all([
     supabase
       .from("preparation_steps")
-      .select(stepColumns)
+      .select(`${stepColumns}, dependency_step_ids`)
       .eq("is_published", true)
       .order("sort_order")
-      .overrideTypes<ChecklistStep[], { merge: false }>(),
+      .overrideTypes<DependentStep[], { merge: false }>(),
     supabase
       .from("city_cost_overrides")
       .select("step_id, city, cost_min, cost_max")

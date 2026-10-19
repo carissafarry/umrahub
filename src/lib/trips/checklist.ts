@@ -18,6 +18,11 @@ export type ChecklistStep = {
   sort_order: number;
 };
 
+// The checklist page also needs each step's prerequisites.
+export type DependentStep = ChecklistStep & {
+  dependency_step_ids: string[] | null;
+};
+
 export type CityCostOverride = {
   step_id: string;
   city: string;
@@ -86,6 +91,24 @@ export function stepStatus(
   progress: StepProgress[],
 ): StepStatus {
   return progress.find((row) => row.step_id === stepId)?.status ?? "not_started";
+}
+
+// Prerequisites of `step` that are not completed yet, in sort_order.
+// Dependencies are advisory: unknown ids (unpublished or missing steps) and
+// a step listing itself are ignored.
+export function incompletePrerequisites<T extends ChecklistStep>(
+  step: Pick<DependentStep, "id" | "dependency_step_ids">,
+  steps: T[],
+  progress: StepProgress[],
+): T[] {
+  const ids = new Set(step.dependency_step_ids ?? []);
+  ids.delete(step.id);
+  return steps
+    .filter(
+      (other) =>
+        ids.has(other.id) && stepStatus(other.id, progress) !== "completed",
+    )
+    .sort(compareSteps);
 }
 
 export function computeProgress(
