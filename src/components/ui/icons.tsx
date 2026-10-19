@@ -28,6 +28,14 @@ export function ArrowRightIcon({ className }: IconProps) {
   );
 }
 
+export function ChevronDownIcon({ className }: IconProps) {
+  return (
+    <Svg className={className}>
+      <path d="m6 9 6 6 6-6" />
+    </Svg>
+  );
+}
+
 export function HomeIcon({ className }: IconProps) {
   return (
     <Svg className={className}>
