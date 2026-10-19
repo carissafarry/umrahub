@@ -74,6 +74,15 @@ export function BookIcon({ className }: IconProps) {
   );
 }
 
+export function BellIcon({ className }: IconProps) {
+  return (
+    <Svg className={className}>
+      <path d="M6 9.5a6 6 0 0 1 12 0c0 4.5 1.5 6.5 2 7H4c.5-.5 2-2.5 2-7Z" />
+      <path d="M10 20a2.2 2.2 0 0 0 4 0" />
+    </Svg>
+  );
+}
+
 export function SignOutIcon({ className }: IconProps) {
   return (
     <Svg className={className}>

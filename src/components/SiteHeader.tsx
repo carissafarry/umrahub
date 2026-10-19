@@ -4,6 +4,7 @@ import { hasSupabaseEnv } from "@/lib/supabase/env";
 import { createClient } from "@/lib/supabase/server";
 import { AppTopNav } from "./AppNav";
 import { LanguageToggle } from "./LanguageToggle";
+import { NotificationBell } from "./NotificationBell";
 import { UserMenu } from "./UserMenu";
 
 async function getSignedInUser() {
@@ -29,6 +30,7 @@ export async function SiteHeader() {
         Umra Hub
       </Link>
       {user && <AppTopNav className="lg:mr-auto lg:ml-4" />}
+      {user && <NotificationBell userId={user.id} className="ml-auto md:ml-0" />}
       <LanguageToggle />
       {user && <UserMenu profile={getUserProfile(user)} />}
     </header>
