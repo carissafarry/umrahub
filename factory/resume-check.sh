@@ -42,6 +42,11 @@ else
   need "dashboard server is down (it dies with the session): start it in the background with 'node factory/server.mjs' from the repo root, then tell the user http://localhost:8000/dashboard.html"
 fi
 
+# The dashboard silently drops backlog lines that are not "- [ ] [<type>-NNN] <Title>: <description>".
+bad=$(grep -E '^- (\[[ x]\] )?\[(infra|be|fe|\?)-[0-9]{3}\]' factory/backlog.md | grep -vE '^- (\[[ x]\] )?\[(infra|be|fe|\?)-[0-9]{3}\] .+: ' | LC_ALL=C sed -E 's/^- (\[[ x]\] )?\[([a-z?]+-[0-9]{3})\].*/\2/' | tr '\n' ' ')
+echo "backlog:"
+if [ -n "$bad" ]; then need "backlog lines the dashboard cannot parse (no '<Title>: ' after the code): $bad— fix them"; else note "all task lines parse"; fi
+
 echo "dashboard requests:"
 found=0
 for f in factory/inbox/*.json factory/inbox/taken/*.json; do

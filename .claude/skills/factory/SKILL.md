@@ -127,7 +127,11 @@ PR is merged.
 Your own commits (on `factory/infra`) follow the same task-code rule. Factory or tooling changes
 that no backlog task covers get one first: add `- [x] [infra-<next NNN>] <Title>:
 <what changed> → infra-<NNN>` under **Selesai** in `factory/backlog.md` and
-commit with that code. Never commit without a task code, and **never add a
+commit with that code. The `: ` after the short title is required: the
+dashboard drops any backlog line without it, so the task is missing from the
+list while its code still shows up in commits and PR titles. Take the next
+number from the highest `infra-NNN` in the backlog and add the line **before**
+you mention the code anywhere. `factory/resume-check.sh` flags unparseable lines. Never commit without a task code, and **never add a
 `Co-Authored-By: Claude` (or any AI attribution) trailer** to any commit or
 merge — the user's most important rule.
 
@@ -284,7 +288,10 @@ is not empty and not `/`.
 entry page the user has to click through from. Take it from the spec and
 `build.md`. Fill dynamic segments with a real id: seeded content ids are fixed
 (steps are `5eed0000-0000-4000-8000-0000000000NN`); an id that belongs to the
-user (a trip, for example) comes from the user, so ask once for it, use it, and
+user (a trip, for example) is looked up before it is asked: grep the preview dev
+server log (`grep -oE 'GET /trips/[0-9a-f-]{36}' <log>`, the log you started the
+preview with) and the memory note `reference_preview_trip_id` for an id the user
+already opened. Only when nothing is there, ask the user once; then use it and
 keep it for later previews. If you don't have such an id yet, ask for it
 before reporting the preview; do not fall back to `/`. When a job touches
 several pages, `<route>` is the main one and the message lists the rest.
@@ -494,3 +501,15 @@ The job must be in `needs-human`.
 Keep the user posted with one short line per transition, for example
 `003-rate-limiting: round 2, security CHANGES, ux/ui/code PASS → resuming builder`.
 When the job ends, say whether it merged or needs a human, and why.
+
+**Done means merged (hard rule, every task type).** A task, infra tasks
+included, is never called "done", "selesai" or "finished" — in the dashboard,
+in `pr-body.md`, in the backlog text or in a message to the user — until its PR
+is merged on GitHub. Between the commit and the merge it is "menunggu merge" /
+"waiting for merge" (the dashboard shows infra tasks of the open infra PR as
+"Merge PR di GitHub"). Checking an infra task off under **Selesai** in
+`factory/backlog.md` at commit time is only bookkeeping; the dashboard, not the
+checkbox, decides what counts as done, and any report you write says "waiting
+for merge" until the `PR … MERGED` event arrives. Never build a dashboard
+status or a report that treats a checked-off task as done without looking at
+its PR.

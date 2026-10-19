@@ -177,16 +177,54 @@ async function serveStatic(req, res, urlPath) {
   send(res, 200, await readFile(target), TYPES[extname(target)] || 'application/octet-stream')
 }
 
-// Task codes of the commits a job's branch has on top of origin/main (newest first), i.e. what its open PR contains.
-async function branchTasks(jobId) {
-  let branch
-  try { branch = JSON.parse(await readFile(join(JOBS, jobId, 'job.json'), 'utf8')).branch } catch { return [] }
-  if (!/^factory\/[\w.-]+$/.test(branch || '')) return []
-  const subjects = await new Promise((done) => {
-    execFile('git', ['log', `origin/main..${branch}`, '--format=%s'], { cwd: resolve(ROOT, '..') }, (err, out) => done(err ? '' : out))
-  })
-  const codes = subjects.split('\n').map((s) => s.match(/^((?:infra|be|fe)-\d{3})\b/)?.[1]).filter(Boolean)
+const git = (args) => new Promise((done) => {
+  execFile('git', args, { cwd: resolve(ROOT, '..') }, (err, out) => done(err ? '' : out))
+})
+
+// Task codes in the commit subjects of a git range, newest task first.
+async function codesIn(range) {
+  const codes = (await git(['log', range, '--format=%s'])).split('\n').map((s) => s.match(/^((?:infra|be|fe)-\d{3})\b/)?.[1]).filter(Boolean)
   return [...new Set(codes)].sort((a, b) => Number(b.slice(-3)) - Number(a.slice(-3)))
+}
+
+// A merged PR's tasks: the commits its merge commit brought into main (second parent minus first parent).
+async function mergedPrTasks(prNumber) {
+  const merge = (await git(['log', 'origin/main', '--merges', '--fixed-strings', `--grep=Merge PR #${prNumber} from`, '--format=%H', '-1'])).trim()
+  return merge ? codesIn(`${merge}^1..${merge}^2`) : []
+}
+
+const prNumberOf = (job) => String(job?.pr || '').match(/\/pull\/(\d+)$/)?.[1]
+const prUrlOf = (job, n) => (job?.pr || '').replace(/\/pull\/\d+$/, `/pull/${n}`)
+
+async function readJob(jobId) {
+  try { return JSON.parse(await readFile(join(JOBS, jobId, 'job.json'), 'utf8')) } catch { return null }
+}
+
+// The tasks of a job's PR (newest first): what its branch has on top of origin/main while the PR is open,
+// the PR's own commits once it is merged, so the list survives the merge.
+async function branchTasks(jobId) {
+  const job = await readJob(jobId)
+  if (!/^factory\/[\w.-]+$/.test(job?.branch || '')) return { tasks: [], pr: null }
+  const open = await codesIn(`origin/main..${job.branch}`)
+  if (open.length) return { tasks: open, pr: job.pr || null }
+  const n = prNumberOf(job)
+  return { tasks: n ? await mergedPrTasks(n) : [], pr: job.pr || null }
+}
+
+// The PR a task shipped in, with every task of that PR: the open infra PR first, then merged PRs on main.
+async function taskGroup(code) {
+  const infra = await readJob('infra')
+  const current = await branchTasks('infra')
+  if (current.tasks.includes(code)) return current
+  const merges = (await git(['log', 'origin/main', '--merges', '--fixed-strings', '--grep=Merge PR #', '--format=%H %s'])).split('\n').filter(Boolean)
+  for (const line of merges) {
+    const m = line.match(/^(\w+) Merge PR #(\d+) from/)
+    if (!m) continue
+    const [, sha, n] = m
+    const tasks = await codesIn(`${sha}^1..${sha}^2`)
+    if (tasks.includes(code)) return { tasks, pr: prUrlOf(infra, n) }
+  }
+  return { tasks: [], pr: null }
 }
 
 createServer(async (req, res) => {
@@ -200,7 +238,11 @@ createServer(async (req, res) => {
     }
     const jobTasks = pathname.match(/^\/api\/jobs\/([\w-]+)\/tasks$/)
     if (jobTasks && req.method === 'GET') {
-      return send(res, 200, JSON.stringify({ tasks: await branchTasks(jobTasks[1]) }), TYPES['.json'])
+      return send(res, 200, JSON.stringify(await branchTasks(jobTasks[1])), TYPES['.json'])
+    }
+    const taskPr = pathname.match(/^\/api\/tasks\/((?:infra|be|fe)-\d{3})\/group$/)
+    if (taskPr && req.method === 'GET') {
+      return send(res, 200, JSON.stringify(await taskGroup(taskPr[1])), TYPES['.json'])
     }
     const reqMatch = pathname.match(/^\/api\/requirements\/([^/]+)(\/generate)?$/)
     if (reqMatch) {
