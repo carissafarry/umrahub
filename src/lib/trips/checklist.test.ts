@@ -4,6 +4,7 @@ import {
   costText,
   formatRupiah,
   groupSteps,
+  incompletePrerequisites,
   isStepStatus,
   isUuid,
   resolveCost,
@@ -114,6 +115,67 @@ describe("stepStatus", () => {
     expect(
       stepStatus(stepId(1), [{ step_id: stepId(1), status: "in_progress" }]),
     ).toBe("in_progress");
+  });
+});
+
+describe("incompletePrerequisites", () => {
+  // Seeded step 09 (book flights) depends on 01, 02 and 04.
+  const flights = (dependencies: string[] | null) => ({
+    id: stepId(9),
+    dependency_step_ids: dependencies,
+  });
+  const ids = (list: ChecklistStep[]) => list.map((s) => s.id);
+  const done = (...ns: number[]) =>
+    ns.map((n) => ({ step_id: stepId(n), status: "completed" as const }));
+
+  it("returns nothing without dependencies", () => {
+    expect(incompletePrerequisites(flights(null), steps, [])).toEqual([]);
+    expect(incompletePrerequisites(flights([]), steps, [])).toEqual([]);
+  });
+
+  it("returns nothing when every prerequisite is completed", () => {
+    expect(
+      incompletePrerequisites(
+        flights([stepId(1), stepId(2), stepId(4)]),
+        steps,
+        done(1, 2, 4),
+      ),
+    ).toEqual([]);
+  });
+
+  it("returns only incomplete prerequisites, in sort_order", () => {
+    const progress = [
+      ...done(2),
+      { step_id: stepId(1), status: "in_progress" as const },
+    ];
+    expect(
+      ids(
+        incompletePrerequisites(
+          flights([stepId(4), stepId(2), stepId(1)]),
+          [...steps].reverse(),
+          progress,
+        ),
+      ),
+    ).toEqual([stepId(1), stepId(4)]);
+  });
+
+  it("counts a prerequisite without a progress row as incomplete", () => {
+    expect(
+      ids(incompletePrerequisites(flights([stepId(4)]), steps, [])),
+    ).toEqual([stepId(4)]);
+  });
+
+  it("ignores unknown ids and the step itself", () => {
+    const unknown = "5eed0000-0000-4000-8000-000000000099";
+    expect(
+      ids(
+        incompletePrerequisites(
+          flights([unknown, stepId(9), stepId(1)]),
+          steps,
+          [],
+        ),
+      ),
+    ).toEqual([stepId(1)]);
   });
 });
 

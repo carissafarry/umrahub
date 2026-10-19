@@ -72,6 +72,9 @@
       "none": "No cost estimate"
     },
     "saveFailed": "The status wasn't saved. Please try again.",
+    "blocked": "Waiting on another step",
+    "blockedBy": "Recommended first: {steps}",
+    "prerequisiteWarning": "This step usually needs {steps} done first. Your status is still saved.",
     "learnMore": "Learn more",
     "learnMoreLabel": "Learn more: {title}",
     "budgetLink": "See budget estimate",
