@@ -27,6 +27,8 @@ Scope now: user-facing app only. Admin CMS is out of scope; content is edited vi
 - `src/middleware.ts` — auth session refresh and route protection (see Auth)
 - `src/lib/trips/` — trip checklist logic (grouping, progress, costs), page data loader and the `updateStepStatus` Server Action (see Trip checklist)
 - `src/components/trips/` — trip checklist UI (step accordion, progress card)
+- `src/lib/steps/` — step detail data loader and the safe guide-markdown parser (see Step detail)
+- `src/components/steps/` — step detail page body and the `GuideMarkdown` renderer
 - `src/i18n/` — next-intl setup: locales (`config.ts`), request config (`request.ts`), language Server Action (`actions.ts`)
 - `messages/` — UI copy: `id.json` and `en.json`
 - `.plans/` — product specs
@@ -89,6 +91,12 @@ All four must pass before a change is ready. Use `build:check`, not `build`, for
 - Status writes go only through `updateStepStatus` in `src/lib/trips/actions.ts`, which validates input, re-checks trip ownership and upserts on `trip_id,step_id,traveler_id`.
 - Costs use the `city_cost_overrides` row whose `city` equals `trips.departure_city` exactly, else the step's own range; they are shown per person.
 - Ordering is by `sort_order` only: phases and categories by their smallest `sort_order`, steps by `sort_order` then `id`. Phase and category labels are `Checklist.phases.*` / `Checklist.categories.*`; an unknown key shows the raw key.
+
+## Step detail
+
+- `/steps/[id]?trip=<tripId>` (`src/app/steps/[id]/`) loads through `loadStepDetail` in `src/lib/steps/queries.ts`: signed out → `/`, a non-UUID id or a step that isn't published → `notFound()`. A `trip` param that isn't a UUID or that RLS doesn't return is treated exactly like no trip, so the page never reveals whether a trip exists.
+- Costs, overrides and statuses reuse `src/lib/trips/checklist.ts`; never duplicate that logic.
+- **Database markdown is rendered only through `GuideMarkdown`** (`src/components/steps/GuideMarkdown.tsx`, parser `src/lib/steps/markdown.ts`): raw HTML is shown as literal text, only `https:` links become anchors (new tab, `rel="noopener noreferrer"`), and all text goes in as React children. Never use `dangerouslySetInnerHTML`, `innerHTML`, a raw-HTML plugin such as `rehype-raw`, or a markdown library for it. Supported syntax: `#`/`##` (h2), `###`+ (h3), paragraphs, `1.` / `-` / `*` lists with one nested level, `**bold**`, `[text](https://...)`.
 
 ## Conventions
 
