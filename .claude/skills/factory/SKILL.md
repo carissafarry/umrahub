@@ -395,7 +395,11 @@ bash factory/watch.sh   # from the repo root
 
 It emits `REQUEST <file> <json>` for dashboard requests and
 `PR <job-id> MERGED|CLOSED <url>` when a job's pull request leaves the open
-state (see **Merge**).
+state (see **Merge**). A `MERGED`/`CLOSED` event repeats about every five minutes
+for as long as the job's stage is still `pr`, so a missed one comes back: act on
+the first one at once (run the "When the PR is merged" steps) and set the job's
+stage so it stops. When you re-arm the watcher after editing `watch.sh`, stop the
+old Monitor first (the running script keeps the old code).
 
 For each `REQUEST` event with `"kind": "decision"`:
 - `approve`: run `/factory approve <job>`. A non-empty note is only a comment;

@@ -20,9 +20,14 @@ while true; do
       [ -n "$url" ] || continue
       state=$(gh pr view "$url" --json state -q .state 2>/dev/null || true)
       seen="factory/inbox/pr-seen/$id-${url##*/}" # per PR: the long-lived infra job gets a new PR each time
-      if { [ "$state" = "MERGED" ] || [ "$state" = "CLOSED" ]; } && [ "$(cat "$seen" 2>/dev/null)" != "$state" ]; then
-        echo "$state" > "$seen"
-        echo "PR $id $state $url"
+      # Re-emit every ~5 minutes for as long as the job is still in stage "pr" (the loop above skips it once the
+      # orchestrator has set another stage), so an event the orchestrator missed is not lost.
+      if [ "$state" = "MERGED" ] || [ "$state" = "CLOSED" ]; then
+        last=$(cut -d' ' -f2 "$seen" 2>/dev/null); now=$(date +%s)
+        if [ -z "$last" ] || [ $((now - last)) -ge 300 ]; then
+          echo "$state $now" > "$seen"
+          echo "PR $id $state $url"
+        fi
       fi
     done
   fi
