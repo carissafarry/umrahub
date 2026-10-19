@@ -1,9 +1,10 @@
 "use client";
 
+import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { useOptimistic, useState, useTransition } from "react";
 import { Card } from "@/components/ui/Card";
-import { ChevronDownIcon } from "@/components/ui/icons";
+import { ArrowRightIcon, ChevronDownIcon } from "@/components/ui/icons";
 import { SegmentedControl } from "@/components/ui/SegmentedControl";
 import { updateStepStatus } from "@/lib/trips/actions";
 import {
@@ -92,6 +93,14 @@ export function StepAccordion({
             <span className="text-muted"> {t("perPerson")}</span>
           )}
         </p>
+        <Link
+          href={`/steps/${stepId}?trip=${tripId}`}
+          aria-label={t("learnMoreLabel", { title })}
+          className="tap-target inline-flex items-center gap-2 self-start rounded-full font-medium text-primary focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-primary"
+        >
+          {t("learnMore")}
+          <ArrowRightIcon className="size-4" />
+        </Link>
         <SegmentedControl
           label={t("statusControlLabel", { title })}
           options={stepStatuses.map((value) => ({
