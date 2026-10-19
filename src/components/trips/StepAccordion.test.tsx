@@ -10,7 +10,11 @@ vi.mock("@/lib/trips/actions", () => ({ updateStepStatus: vi.fn() }));
 
 const stepId = "5eed0000-0000-4000-8000-000000000009";
 
-function render(status: StepStatus, locale: "id" | "en" = "id") {
+function render(
+  status: StepStatus,
+  locale: "id" | "en" = "id",
+  prerequisites: string[] = [],
+) {
   return renderToStaticMarkup(
     <NextIntlClientProvider
       locale={locale}
@@ -27,6 +31,7 @@ function render(status: StepStatus, locale: "id" | "en" = "id") {
           values: { min: "Rp 10.000.000", max: "Rp 16.000.000" },
         }}
         status={status}
+        prerequisites={prerequisites}
       />
     </NextIntlClientProvider>,
   );
@@ -61,6 +66,54 @@ describe("StepAccordion", () => {
       'role="radiogroup" aria-label="Status langkah: Pesan tiket pesawat"',
     );
     expect(html).toMatch(/aria-checked="true"[^>]*>Selesai</);
+  });
+
+  describe("prerequisites", () => {
+    const copy = {
+      id: {
+        titles: ["Paspor", "Vaksin meningitis"],
+        marker: "Menunggu langkah lain",
+        line: "Disarankan selesai dulu: Paspor dan Vaksin meningitis",
+      },
+      en: {
+        titles: ["Passport", "Meningitis vaccine"],
+        marker: "Waiting on another step",
+        line: "Recommended first: Passport and Meningitis vaccine",
+      },
+    } as const;
+
+    for (const locale of ["id", "en"] as const) {
+      const { titles, marker, line } = copy[locale];
+
+      it(`marks a blocked step in the header and panel (${locale})`, () => {
+        for (const status of ["not_started", "in_progress"] as const) {
+          const html = render(status, locale, [...titles]);
+          const button =
+            html.match(/<button[^>]*aria-expanded[^>]*>.*?<\/button>/)?.[0] ??
+            "";
+          expect(button).toMatch(
+            new RegExp(`<svg[^>]*aria-hidden="true"[^>]*>.*?</svg>${marker}<`),
+          );
+          expect(button).toContain("bg-tile-blue");
+          expect(button).not.toContain("bg-primary");
+          const panel = html.slice(html.indexOf('<div id="step-panel-'));
+          expect(panel).toContain(line);
+          // The status control is never disabled.
+          expect(panel).not.toContain("disabled");
+        }
+      });
+
+      it(`renders no marker when unblocked (${locale})`, () => {
+        for (const html of [
+          render("not_started", locale),
+          render("completed", locale, [...titles]),
+        ]) {
+          expect(html).not.toContain(marker);
+          expect(html).not.toContain(line);
+          expect(html).not.toContain('role="status"');
+        }
+      });
+    }
   });
 
   it("links the panel to the step detail page with the trip", () => {

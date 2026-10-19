@@ -1,10 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { useOptimistic, useState, useTransition } from "react";
 import { Card } from "@/components/ui/Card";
-import { ArrowRightIcon, ChevronDownIcon } from "@/components/ui/icons";
+import {
+  ArrowRightIcon,
+  ChevronDownIcon,
+  ClockIcon,
+} from "@/components/ui/icons";
 import { SegmentedControl } from "@/components/ui/SegmentedControl";
 import { updateStepStatus } from "@/lib/trips/actions";
 import {
@@ -21,10 +25,13 @@ type StepAccordionProps = {
   summary: string | null;
   cost: CostText;
   status: StepStatus;
+  // Localized titles of prerequisites that are not completed yet.
+  prerequisites: string[];
 };
 
 // One checklist step: a collapsed header with its status badge, expanding to
-// the summary, per-person cost and the status control.
+// the summary, per-person cost and the status control. Prerequisites are
+// advisory: a blocked step is marked and warned about, never locked.
 export function StepAccordion({
   tripId,
   stepId,
@@ -32,19 +39,27 @@ export function StepAccordion({
   summary,
   cost,
   status,
+  prerequisites,
 }: StepAccordionProps) {
   const t = useTranslations("Checklist");
+  const locale = useLocale();
   const [open, setOpen] = useState(false);
   const [saveFailed, setSaveFailed] = useState(false);
+  const [warnPrerequisites, setWarnPrerequisites] = useState(false);
   // Falls back to the server's `status` when the transition ends: the new
   // value after revalidation, or the previous one if saving failed.
   const [shownStatus, setShownStatus] = useOptimistic(status);
   const [, startTransition] = useTransition();
   const panelId = `step-panel-${stepId}`;
+  const blocked = shownStatus !== "completed" && prerequisites.length > 0;
+  const prerequisiteList = new Intl.ListFormat(locale, {
+    type: "conjunction",
+  }).format(prerequisites);
 
   function changeStatus(next: StepStatus) {
     if (next === shownStatus) return;
     setSaveFailed(false);
+    setWarnPrerequisites(next === "completed" && prerequisites.length > 0);
     startTransition(async () => {
       setShownStatus(next);
       try {
@@ -68,10 +83,18 @@ export function StepAccordion({
         >
           <span className="flex min-w-0 flex-1 flex-col gap-2 md:flex-row md:items-center md:justify-between">
             <span className="font-semibold">{title}</span>
-            <StatusBadge
-              status={shownStatus}
-              label={t(`status.${shownStatus}`)}
-            />
+            <span className="flex flex-wrap items-center gap-2 md:justify-end">
+              {blocked && (
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-tile-blue px-3 py-1 text-sm font-medium text-tile-blue-foreground">
+                  <ClockIcon className="size-4 shrink-0" />
+                  {t("blocked")}
+                </span>
+              )}
+              <StatusBadge
+                status={shownStatus}
+                label={t(`status.${shownStatus}`)}
+              />
+            </span>
           </span>
           <ChevronDownIcon
             className={`size-5 shrink-0 text-muted transition-transform ${open ? "rotate-180" : ""}`}
@@ -83,6 +106,11 @@ export function StepAccordion({
         hidden={!open}
         className="mt-4 flex flex-col gap-4 border-t border-border pt-4"
       >
+        {blocked && (
+          <p className="font-medium text-foreground">
+            {t("blockedBy", { steps: prerequisiteList })}
+          </p>
+        )}
         {summary && <p className="text-muted">{summary}</p>}
         <p>
           <span className="block text-sm text-muted">{t("costLabel")}</span>
@@ -110,6 +138,14 @@ export function StepAccordion({
           value={shownStatus}
           onChange={changeStatus}
         />
+        {warnPrerequisites && (
+          <p
+            role="status"
+            className="rounded-2xl bg-tile-blue px-4 py-3 font-medium text-foreground"
+          >
+            {t("prerequisiteWarning", { steps: prerequisiteList })}
+          </p>
+        )}
         {saveFailed && (
           <p
             role="alert"

@@ -5,10 +5,11 @@ import {
   computeProgress,
   costText,
   groupSteps,
+  incompletePrerequisites,
   resolveCost,
   stepStatus,
-  type ChecklistStep,
   type CityCostOverride,
+  type DependentStep,
   type StepProgress,
 } from "@/lib/trips/checklist";
 import type { ChecklistTrip } from "@/lib/trips/queries";
@@ -17,7 +18,7 @@ import { StepAccordion } from "./StepAccordion";
 
 type TripChecklistProps = {
   trip: ChecklistTrip;
-  steps: ChecklistStep[];
+  steps: DependentStep[];
   overrides: CityCostOverride[];
   progress: StepProgress[];
 };
@@ -35,6 +36,8 @@ export async function TripChecklist({
   // Content added later in Studio may use keys without a message yet.
   const label = (group: "phases" | "categories", key: string) =>
     t.has(`${group}.${key}`) ? t(`${group}.${key}`) : key;
+  const title = (step: DependentStep) =>
+    locale === "en" ? step.title_en : step.title_id;
   const phases = groupSteps(steps);
 
   return (
@@ -88,7 +91,7 @@ export async function TripChecklist({
                           key={step.id}
                           tripId={trip.id}
                           stepId={step.id}
-                          title={locale === "en" ? step.title_en : step.title_id}
+                          title={title(step)}
                           summary={
                             locale === "en" ? step.summary_en : step.summary_id
                           }
@@ -96,6 +99,11 @@ export async function TripChecklist({
                             resolveCost(step, overrides, trip.departure_city),
                           )}
                           status={stepStatus(step.id, progress)}
+                          prerequisites={incompletePrerequisites(
+                            step,
+                            steps,
+                            progress,
+                          ).map(title)}
                         />
                       ))}
                     </ul>

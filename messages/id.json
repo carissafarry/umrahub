@@ -72,6 +72,9 @@
       "none": "Belum ada perkiraan biaya"
     },
     "saveFailed": "Status belum tersimpan. Silakan coba lagi.",
+    "blocked": "Menunggu langkah lain",
+    "blockedBy": "Disarankan selesai dulu: {steps}",
+    "prerequisiteWarning": "Langkah ini biasanya butuh {steps} selesai dulu. Status tetap disimpan.",
     "learnMore": "Pelajari lebih lanjut",
     "learnMoreLabel": "Pelajari lebih lanjut: {title}",
     "budgetLink": "Lihat perkiraan anggaran",
