@@ -284,7 +284,10 @@ is not empty and not `/`.
 entry page the user has to click through from. Take it from the spec and
 `build.md`. Fill dynamic segments with a real id: seeded content ids are fixed
 (steps are `5eed0000-0000-4000-8000-0000000000NN`); an id that belongs to the
-user (a trip, for example) comes from the user, so ask once for it, use it, and
+user (a trip, for example) is looked up before it is asked: grep the preview dev
+server log (`grep -oE 'GET /trips/[0-9a-f-]{36}' <log>`, the log you started the
+preview with) and the memory note `reference_preview_trip_id` for an id the user
+already opened. Only when nothing is there, ask the user once; then use it and
 keep it for later previews. If you don't have such an id yet, ask for it
 before reporting the preview; do not fall back to `/`. When a job touches
 several pages, `<route>` is the main one and the message lists the rest.
