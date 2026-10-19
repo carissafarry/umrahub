@@ -243,8 +243,11 @@ no commits outside `origin/main` (`git rev-list --count origin/main..factory/inf
 is 0) run `git merge --ff-only origin/main`; otherwise
 `git merge origin/main -m "infra-<NNN> Sync main with merged PR"` and push.
 Then, for an ordinary job, `git worktree remove <worktree>`,
-`git branch -d factory/<job-id>` and `git push origin --delete factory/<job-id>`
-(ignore "remote ref does not exist"). For the long-lived `infra` job keep the
+and `git branch -d factory/<job-id>`. **Delete only the local branch: never
+delete a merged `factory/*` branch on the remote** (no `git push origin
+--delete`, no "delete branch" through `gh`), the user keeps them. If one was
+deleted by mistake, restore it from its last commit with
+`git push origin <sha>:refs/heads/factory/<job-id>`. For the long-lived `infra` job keep the
 branch and checkout: just do the sync; the next infra commit opens a new PR.
 Stop the job's preview first (see **Stop the preview**) and drop `preview` from
 job.json.
