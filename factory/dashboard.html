@@ -433,6 +433,7 @@
       <div class="num" id="d-num"></div>
       <h3 id="d-title"></h3>
       <div class="branch" id="d-branch"></div>
+      <div id="d-links"></div>
       <div id="d-decide"></div>
       <button class="close" data-close aria-label="Close">×</button>
     </div>
@@ -1003,6 +1004,8 @@ async function refreshDrawer() {
   $('d-num').textContent = `${job.id} · ${job.stage}${job.round ? ` · round ${job.round}` : ''}`
   $('d-title').textContent = job.feature
   $('d-branch').textContent = job.branch
+  $('d-links').innerHTML = `${prUrl(job) ? `<a class="t-job" style="display:inline-block;margin:8px 8px 0 0;text-decoration:none;background:var(--merged)" href="${esc(prUrl(job))}" target="_blank" rel="noopener">⇄ Buka PR #${esc(prUrl(job).split('/').pop())}</a>` : ''}
+    ${previewUrl(job) ? `<a class="t-job" style="display:inline-block;margin:8px 8px 0 0;text-decoration:none;background:var(--human)" href="${esc(previewUrl(job))}" target="_blank" rel="noopener">▶ Lihat preview</a>` : ''}`
   renderDecide(job)
 
   const base = `jobs/${job.id}/`
