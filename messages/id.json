@@ -32,5 +32,64 @@
   },
   "Footer": {
     "text": "© {year} Umra Hub · Teman persiapan Umrah mandiri"
+  },
+  "Onboarding": {
+    "metaTitle": "Mulai persiapan Umrah · Umra Hub",
+    "title": "Mari siapkan perjalanan Umrah Anda",
+    "intro": "Jawab 5 pertanyaan singkat agar checklist persiapan sesuai dengan rombongan Anda. Tidak ada yang disimpan sebelum Anda menekan Buat perjalanan saya.",
+    "progress": "Langkah {current} dari {total}",
+    "stepsLabel": "Langkah pengisian",
+    "steps": {
+      "city": {
+        "title": "Kota keberangkatan",
+        "hint": "Dari kota mana Anda akan berangkat?"
+      },
+      "date": {
+        "title": "Perkiraan waktu berangkat",
+        "hint": "Pilih bulan dan tahun, cukup perkiraan saja."
+      },
+      "passport": {
+        "title": "Status paspor",
+        "hint": "Bagaimana kondisi paspor rombongan Anda saat ini?"
+      },
+      "travelers": {
+        "title": "Jemaah",
+        "hint": "Tulis nama setiap orang yang ikut berangkat, termasuk Anda."
+      },
+      "needs": {
+        "title": "Kebutuhan khusus",
+        "hint": "Tandai jemaah yang membutuhkan perhatian khusus agar persiapannya disesuaikan."
+      }
+    },
+    "monthLabel": "Bulan",
+    "yearLabel": "Tahun",
+    "choose": "Pilih",
+    "passport": {
+      "valid": "Punya, masih berlaku",
+      "expired": "Punya, sudah habis",
+      "none": "Belum punya"
+    },
+    "travelerLabel": "Jemaah {number}",
+    "removeTraveler": "Hapus jemaah {number}",
+    "addTraveler": "Tambah jemaah",
+    "travelerLimit": "Maksimal {max} jemaah dalam satu perjalanan.",
+    "hasDisability": "Penyandang disabilitas",
+    "isMinor": "Di bawah umur (anak/balita)",
+    "notesLabel": "Catatan kebutuhan aksesibilitas (opsional)",
+    "notesHint": "Maksimal {max} karakter.",
+    "back": "Kembali",
+    "next": "Lanjut",
+    "submit": "Buat perjalanan saya",
+    "submitting": "Membuat perjalanan…",
+    "errors": {
+      "city": "Pilih kota keberangkatan.",
+      "date": "Pilih bulan dan tahun dalam 24 bulan ke depan.",
+      "passport": "Pilih status paspor.",
+      "names": "Isi nama setiap jemaah (1–80 karakter).",
+      "notes": "Catatan maksimal 500 karakter.",
+      "invalid": "Ada jawaban yang belum sesuai. Periksa kembali lalu coba lagi.",
+      "failed": "Perjalanan gagal dibuat. Silakan coba lagi."
+    },
+    "defaultTripName": "Umrah {month} {year}"
   }
 }
