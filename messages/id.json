@@ -72,8 +72,24 @@
       "none": "Belum ada perkiraan biaya"
     },
     "saveFailed": "Status belum tersimpan. Silakan coba lagi.",
+    "learnMore": "Pelajari lebih lanjut",
+    "learnMoreLabel": "Pelajari lebih lanjut: {title}",
     "error": {
       "title": "Checklist belum bisa dimuat",
+      "description": "Tenang, data Anda aman. Coba muat ulang sebentar lagi.",
+      "retry": "Coba lagi"
+    }
+  },
+  "StepDetail": {
+    "metaTitle": "Panduan langkah persiapan · Umra Hub",
+    "backToChecklist": "Kembali ke checklist",
+    "costVariesNote": "Biaya bisa berbeda tergantung kota keberangkatan Anda.",
+    "prerequisitesTitle": "Langkah sebelumnya",
+    "guideTitle": "Panduan lengkap",
+    "guideEmpty": "Panduan lengkap belum tersedia.",
+    "opensInNewTab": "(membuka tab baru)",
+    "error": {
+      "title": "Langkah ini belum bisa dimuat",
       "description": "Tenang, data Anda aman. Coba muat ulang sebentar lagi.",
       "retry": "Coba lagi"
     }

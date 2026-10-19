@@ -62,4 +62,25 @@ describe("StepAccordion", () => {
     );
     expect(html).toMatch(/aria-checked="true"[^>]*>Selesai</);
   });
+
+  it("links the panel to the step detail page with the trip", () => {
+    const href =
+      'href="/steps/5eed0000-0000-4000-8000-000000000009?trip=11111111-1111-4111-8111-111111111111"';
+    for (const [locale, text, label] of [
+      ["id", "Pelajari lebih lanjut", "Pelajari lebih lanjut: Pesan tiket pesawat"],
+      ["en", "Learn more", "Learn more: Pesan tiket pesawat"],
+    ] as const) {
+      const html = render("not_started", locale);
+      const link = html.match(/<a [^>]*>.*?<\/a>/)?.[0] ?? "";
+      expect(link).toContain(href);
+      expect(link).toContain(`aria-label="${label}"`);
+      expect(link).toContain("tap-target");
+      expect(link).toContain("text-primary");
+      expect(link).toMatch(new RegExp(`>${text}<svg[^>]*aria-hidden="true"`));
+      // Inside the panel, after the cost and before the status control.
+      const panel = html.slice(html.indexOf('<div id="step-panel-'));
+      expect(panel.indexOf(href)).toBeGreaterThan(panel.indexOf("per "));
+      expect(panel.indexOf(href)).toBeLessThan(panel.indexOf('role="radiogroup"'));
+    }
+  });
 });

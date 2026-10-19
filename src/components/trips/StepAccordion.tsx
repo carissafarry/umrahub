@@ -1,9 +1,10 @@
 "use client";
 
+import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { useOptimistic, useState, useTransition } from "react";
 import { Card } from "@/components/ui/Card";
-import { ChevronDownIcon } from "@/components/ui/icons";
+import { ArrowRightIcon, ChevronDownIcon } from "@/components/ui/icons";
 import { SegmentedControl } from "@/components/ui/SegmentedControl";
 import { updateStepStatus } from "@/lib/trips/actions";
 import {
@@ -11,12 +12,7 @@ import {
   type CostText,
   type StepStatus,
 } from "@/lib/trips/checklist";
-
-const badgeClassName: Record<StepStatus, string> = {
-  completed: "bg-tile-green text-tile-green-foreground",
-  in_progress: "bg-tile-amber text-tile-amber-foreground",
-  not_started: "border border-border text-muted",
-};
+import { StatusBadge } from "./StatusBadge";
 
 type StepAccordionProps = {
   tripId: string;
@@ -72,11 +68,10 @@ export function StepAccordion({
         >
           <span className="flex min-w-0 flex-1 flex-col gap-2 md:flex-row md:items-center md:justify-between">
             <span className="font-semibold">{title}</span>
-            <span
-              className={`shrink-0 self-start rounded-full px-3 py-1 text-sm font-medium md:self-center ${badgeClassName[shownStatus]}`}
-            >
-              {t(`status.${shownStatus}`)}
-            </span>
+            <StatusBadge
+              status={shownStatus}
+              label={t(`status.${shownStatus}`)}
+            />
           </span>
           <ChevronDownIcon
             className={`size-5 shrink-0 text-muted transition-transform ${open ? "rotate-180" : ""}`}
@@ -98,6 +93,14 @@ export function StepAccordion({
             <span className="text-muted"> {t("perPerson")}</span>
           )}
         </p>
+        <Link
+          href={`/steps/${stepId}?trip=${tripId}`}
+          aria-label={t("learnMoreLabel", { title })}
+          className="tap-target inline-flex items-center gap-2 self-start rounded-full font-medium text-primary focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-primary"
+        >
+          {t("learnMore")}
+          <ArrowRightIcon className="size-4" />
+        </Link>
         <SegmentedControl
           label={t("statusControlLabel", { title })}
           options={stepStatuses.map((value) => ({
