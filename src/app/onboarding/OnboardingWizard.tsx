@@ -20,6 +20,7 @@ import {
   type PassportStatus,
   type YearMonth,
 } from "@/lib/onboarding/validate";
+import { createAdditionalTrip } from "@/app/trips/new/actions";
 import {
   createTripFromOnboarding,
   type OnboardingActionResult,
@@ -50,9 +51,20 @@ const focusRing =
 const fieldClassName = `tap-target w-full rounded-2xl border border-border bg-surface px-4 text-base text-foreground ${focusRing}`;
 const secondaryClassName = `tap-target inline-flex items-center justify-center gap-2 rounded-full bg-surface px-6 font-semibold text-foreground shadow-card disabled:opacity-60 ${focusRing}`;
 
-export function OnboardingWizard({ firstMonth }: { firstMonth: YearMonth }) {
+// `onboarding` is a first-time user's first trip; `newTrip` (/trips/new) adds
+// another one and leaves room for the BottomNav below `lg`.
+export function OnboardingWizard({
+  variant,
+  firstMonth,
+}: {
+  variant: "onboarding" | "newTrip";
+  firstMonth: YearMonth;
+}) {
   const t = useTranslations("Onboarding");
+  const tNewTrip = useTranslations("Dashboard.newTrip");
   const format = useFormatter();
+  const isNewTrip = variant === "newTrip";
+  const submitTrip = isNewTrip ? createAdditionalTrip : createTripFromOnboarding;
 
   const [step, setStep] = useState(0);
   const [city, setCity] = useState<OnboardingCity | "">("");
@@ -144,7 +156,7 @@ export function OnboardingWizard({ firstMonth }: { firstMonth: YearMonth }) {
     setSubmitError(null);
     startTransition(async () => {
       // Success redirects to the new trip; only failures return here.
-      const result = await createTripFromOnboarding({
+      const result = await submitTrip({
         city,
         year: Number(year),
         month: Number(month),
@@ -164,12 +176,18 @@ export function OnboardingWizard({ firstMonth }: { firstMonth: YearMonth }) {
 
   return (
     <div className="mx-auto flex w-full max-w-md flex-1 flex-col px-5 md:max-w-3xl md:px-8 lg:max-w-6xl lg:px-10">
-      <main className="grid flex-1 content-start gap-6 pt-2 pb-10 lg:grid-cols-2 lg:gap-16 lg:pt-8 lg:pb-16">
+      <main
+        className={`grid flex-1 content-start gap-6 pt-2 lg:grid-cols-2 lg:gap-16 lg:pt-8 lg:pb-16 ${
+          isNewTrip ? "pb-[calc(7rem+env(safe-area-inset-bottom))]" : "pb-10"
+        }`}
+      >
         <div className="flex flex-col gap-3">
           <h1 className="text-3xl leading-tight font-bold md:text-4xl lg:text-5xl">
-            {t("title")}
+            {isNewTrip ? tNewTrip("title") : t("title")}
           </h1>
-          <p className="text-lg text-muted lg:text-xl">{t("intro")}</p>
+          <p className="text-lg text-muted lg:text-xl">
+            {isNewTrip ? tNewTrip("intro") : t("intro")}
+          </p>
           <ol
             aria-label={t("stepsLabel")}
             className="mt-6 hidden flex-col gap-2 lg:flex"

@@ -1,4 +1,5 @@
 import type { ComponentType } from "react";
+import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
@@ -9,6 +10,8 @@ import {
   WalletIcon,
 } from "@/components/ui/icons";
 import { signInWithGoogle } from "@/lib/auth/actions";
+import { hasSupabaseEnv } from "@/lib/supabase/env";
+import { createClient } from "@/lib/supabase/server";
 
 // `id` is the message key under Home.benefits and the stable React key.
 const benefits: {
@@ -126,6 +129,15 @@ export default async function Home({
 }: {
   searchParams: Promise<{ auth_error?: string | string[] }>;
 }) {
+  // Signed-in users land on their dashboard.
+  if (hasSupabaseEnv()) {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (user) redirect("/dashboard");
+  }
+
   const authError = (await searchParams).auth_error !== undefined;
   const t = await getTranslations("Home");
   const tFooter = await getTranslations("Footer");
