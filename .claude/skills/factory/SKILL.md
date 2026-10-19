@@ -494,3 +494,15 @@ The job must be in `needs-human`.
 Keep the user posted with one short line per transition, for example
 `003-rate-limiting: round 2, security CHANGES, ux/ui/code PASS → resuming builder`.
 When the job ends, say whether it merged or needs a human, and why.
+
+**Done means merged (hard rule, every task type).** A task, infra tasks
+included, is never called "done", "selesai" or "finished" — in the dashboard,
+in `pr-body.md`, in the backlog text or in a message to the user — until its PR
+is merged on GitHub. Between the commit and the merge it is "menunggu merge" /
+"waiting for merge" (the dashboard shows infra tasks of the open infra PR as
+"Merge PR di GitHub"). Checking an infra task off under **Selesai** in
+`factory/backlog.md` at commit time is only bookkeeping; the dashboard, not the
+checkbox, decides what counts as done, and any report you write says "waiting
+for merge" until the `PR … MERGED` event arrives. Never build a dashboard
+status or a report that treats a checked-off task as done without looking at
+its PR.
