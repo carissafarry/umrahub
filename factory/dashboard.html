@@ -818,6 +818,7 @@ function renderTask() {
       ${linkList(blocking(t), 'Tidak ada task yang menunggu task ini.')}</section>
     <section class="t-sec"><h5>Job</h5>
       ${job ? `<button class="t-job" data-job="${esc(job.id)}" type="button">Buka job ${esc(job.id)} →</button>
+        ${prUrl(job) ? `<a class="t-job" style="display:inline-block;margin-left:8px;text-decoration:none;background:var(--merged)" href="${esc(prUrl(job))}" target="_blank" rel="noopener">⇄ Buka PR #${esc(prUrl(job).split('/').pop())}</a>` : ''}
         ${previewUrl(job) ? `<a class="t-job" style="display:inline-block;margin-left:8px;text-decoration:none;background:var(--human)" href="${esc(previewUrl(job))}" target="_blank" rel="noopener">▶ Lihat preview</a>` : ''}`
         : `<p class="t-none">${t.job ? `Job ${esc(t.job)} belum terlihat di board.` : 'Belum dijalankan.'} ${s.key === 'new' ? `Minta Claude: <code>/factory run ${esc(t.code)}</code>` : s.key === 'ready' ? `Minta Claude: <code>/factory run ${esc(t.code)}</code>` : ''}</p>`}
     </section>`
