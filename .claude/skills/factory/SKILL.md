@@ -113,7 +113,12 @@ and keep **one open PR** from `factory/infra` to `main`: if
 `gh pr list --head factory/infra --state open` shows none, create it, then set its title (see **Merge**) to
 `Merge PR #<N> from /factory/infra: infra-030, infra-029, infra-028`
 (every task code in the PR, newest first; update the title whenever you push
-another task to the open PR; body listing every task code, no AI attribution), otherwise the push updates it. Track it in
+another task to the open PR; body listing every task code, no AI attribution), otherwise the push updates it.
+**Every push of a new infra task also updates the PR's content**: add a
+section for it to `factory/jobs/infra/pr-body.md` (the dashboard shows this file
+as the job's summary) and send the whole file as the PR body with
+`gh api -X PATCH repos/carissafarry/umrahub/pulls/<N> -F body=@factory/jobs/infra/pr-body.md`.
+A summary that lists only some of the PR's tasks is a bug. Track it in
 `factory/jobs/infra/job.json` (`stage: "pr"`, `pr: <url>`) and tell the user the
 link. Never rename or delete `factory/infra` on GitHub: that closes its PR.
 Infra changes reach job worktrees (AGENTS.md rules, agent files) only after the
@@ -262,6 +267,17 @@ wait until it answers, and add `"preview": "http://localhost:<port><route>"` to
 job.json (the dashboard shows it as a "Lihat preview" button). Give the user the
 link in your message, plus any other pages to open for this feature, in the
 message that reports a decision or a PR.
+
+**Hard gates, no exceptions.** (1) Every builder prompt for an `fe-*` job also
+ends with ` Preview route: write the exact page(s) to check, as paths, on a line
+"Preview route: <path>" in build.md.` and you read that line to fill `<route>`.
+(2) Never tell the user "the preview is up" or open the PR with a bare
+`http://localhost:<port>/` link: the message and job.json must carry the full
+link to the specific page, as a clickable URL. (3) If `<route>` needs an id that
+belongs to the user and you don't have it, ask for it right then and wait; do
+not open the PR, start with `/`, or promise to fix it later. (4) After you set
+`preview` in job.json, re-read the job.json and the message and check the path
+is not empty and not `/`.
 
 **`<route>` is the exact page the job added or changed** (for fe-011:
 `/trips/<id>/budget`), never just the port, never `/`, and never a parent or
