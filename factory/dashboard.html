@@ -1021,11 +1021,11 @@ const taskButtons = (codes, current) => codes.length
 // Infra tasks have no job of their own: they ride on the long-lived infra job and its one open PR.
 async function renderInfraSiblings(code) {
   const el = $('t-infra')
-  const infra = jobs.find((j) => j.id === 'infra')
-  let codes = []
-  try { codes = (await (await fetch('api/jobs/infra/tasks', { cache: 'no-store' })).json()).tasks || [] } catch {}
+  let group = { tasks: [], pr: null }
+  try { group = await (await fetch(`api/tasks/${encodeURIComponent(code)}/group`, { cache: 'no-store' })).json() } catch {}
   if (openTask !== code) return
-  el.innerHTML = `${prUrl(infra) ? `<a class="t-job" style="display:inline-block;text-decoration:none;background:var(--merged)" href="${esc(prUrl(infra))}" target="_blank" rel="noopener">⇄ Buka PR #${esc(prUrl(infra).split('/').pop())}</a>` : ''}${taskButtons(codes, code)}`
+  const pr = prUrl({ pr: group.pr })
+  el.innerHTML = `${pr ? `<a class="t-job" style="display:inline-block;text-decoration:none;background:var(--merged)" href="${esc(pr)}" target="_blank" rel="noopener">⇄ Buka PR #${esc(pr.split('/').pop())}</a>` : ''}${taskButtons(group.tasks || [], code)}`
 }
 
 async function refreshDrawer() {
