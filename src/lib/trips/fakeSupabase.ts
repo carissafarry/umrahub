@@ -2,7 +2,7 @@ import { vi } from "vitest";
 
 // Minimal chainable stand-in for the Supabase client, for tests only. Each
 // table resolves to its configured `{ data, error }`; calls are recorded.
-type Result = { data: unknown; error: unknown };
+type Result = { data: unknown; error: unknown; count?: number | null };
 type Write = (row: unknown, options?: unknown) => Promise<{ error: unknown }>;
 
 function makeBuilder(result: Result) {
@@ -10,14 +10,21 @@ function makeBuilder(result: Result) {
     select: vi.fn(() => builder),
     eq: vi.fn(() => builder),
     is: vi.fn(() => builder),
+    in: vi.fn(() => builder),
     order: vi.fn(() => builder),
+    limit: vi.fn(() => builder),
     overrideTypes: vi.fn(() => builder),
     maybeSingle: vi.fn(async () => result),
     upsert: vi.fn<Write>(async () => ({ error: result.error })),
     insert: vi.fn<Write>(async () => ({ error: result.error })),
-    update: vi.fn<Write>(async () => ({ error: result.error })),
+    update: vi.fn<(row: unknown) => unknown>(),
+    delete: vi.fn<() => unknown>(),
     then: (resolve: (value: Result) => unknown) => resolve(result),
   };
+  // Chainable like PostgREST (`.update(row).eq(...)`); awaiting resolves the
+  // table's result, whose `error` the write reports.
+  builder.update.mockImplementation(() => builder);
+  builder.delete.mockImplementation(() => builder);
   return builder;
 }
 
