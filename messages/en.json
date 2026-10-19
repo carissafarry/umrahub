@@ -220,5 +220,44 @@
     "label": "Main navigation",
     "home": "Home",
     "newTrip": "New trip"
+  },
+  "Notifications": {
+    "metaTitle": "Notifications · Umra Hub",
+    "title": "Notifications",
+    "intro": "Deadline reminders for your Umrah preparation.",
+    "empty": "No notifications yet. Reminders appear here as your departure date gets closer.",
+    "bellLabel": "Notifications",
+    "bellLabelUnread": "Notifications, {count} unread",
+    "unread": "Unread",
+    "created": "Received {date}",
+    "markRead": "Mark as read",
+    "markAllRead": "Mark all as read",
+    "reminders": {
+      "3_6_months_before": {
+        "title": "3–6 months before departure",
+        "body": "Time to sort out your passport and meningitis vaccine, and start saving for your Umrah."
+      },
+      "2_3_months_before": {
+        "title": "2–3 months before departure",
+        "body": "Time to book flights and a hotel for your Umrah."
+      },
+      "1_month_before": {
+        "title": "1 month before departure",
+        "body": "Time to exchange riyals, buy ihram clothing and study the Umrah rituals (manasik)."
+      },
+      "1_week_before": {
+        "title": "1 week before departure",
+        "body": "Time to check all your documents and confirm your flight and hotel bookings."
+      },
+      "departure_day": {
+        "title": "Departure is tomorrow",
+        "body": "Time for a final check of your luggage and the documents in your carry-on. Have a blessed Umrah."
+      }
+    },
+    "error": {
+      "title": "Notifications couldn't load",
+      "description": "Something went wrong while loading your notifications. Please try again.",
+      "retry": "Try again"
+    }
   }
 }
