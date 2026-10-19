@@ -618,7 +618,7 @@ document.addEventListener('submit', async (e) => {
 })
 
 // Only local dev-server URLs written by the orchestrator are shown.
-const previewUrl = (job) => (/^http:\/\/localhost:\d{2,5}\/?$/.test(job?.preview || '') ? job.preview : null)
+const previewUrl = (job) => (/^http:\/\/localhost:\d{2,5}(\/[\w\-./]*)?(\?[\w\-.=&%]*)?$/.test(job?.preview || '') ? job.preview : null)
 const prUrl = (job) => (/^https:\/\/github\.com\/[\w.-]+\/[\w.-]+\/pull\/\d+$/.test(job?.pr || '') ? job.pr : null)
 
 async function render() {
