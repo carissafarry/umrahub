@@ -224,6 +224,22 @@
     padding: 0 32px 32px; font-family: var(--mono); font-size: 11px; color: var(--faint);
     display: flex; gap: 20px; flex-wrap: wrap;
   }
+  /* Each command shows its hint instantly on hover or keyboard focus (a native title tooltip is slow and easy to miss). */
+  footer span[data-tip] {
+    position: relative; cursor: help; padding: 3px 8px; margin: -3px -8px; border-radius: 6px;
+    transition: color .12s, background .12s;
+  }
+  footer span[data-tip]:hover, footer span[data-tip]:focus-visible {
+    color: var(--text); background: var(--card-hover); outline: none;
+  }
+  footer span[data-tip]::after {
+    content: attr(data-tip); position: absolute; left: 0; bottom: calc(100% + 8px); z-index: 5;
+    width: max-content; max-width: min(320px, 80vw); padding: 8px 10px; border-radius: 8px;
+    background: var(--panel); border: 1px solid var(--line); color: var(--text);
+    font-family: inherit; font-size: 12px; line-height: 1.4; white-space: normal;
+    opacity: 0; transform: translateY(4px); pointer-events: none; transition: opacity .12s, transform .12s;
+  }
+  footer span[data-tip]:hover::after, footer span[data-tip]:focus-visible::after { opacity: 1; transform: none; }
 
   @media (max-width: 1100px) {
     .board { grid-template-columns: repeat(3, minmax(0, 1fr)); row-gap: 28px; }
@@ -424,13 +440,13 @@
 </details>
 <main class="board" id="board"></main>
 <footer>
-  <span title="Jalankan fitur baru dari satu kalimat">/factory &lt;feature&gt;</span>
-  <span title="Ambil n item Siap pertama dari backlog dan jalankan paralel (default 1)">/factory next [n]</span>
-  <span title="Jalankan satu task backlog berdasarkan kodenya">/factory run &lt;code&gt;</span>
-  <span title="Lanjutkan factory setelah sesi baru: nyalakan server dan watcher, tangani request, PR merge, dan job yang terhenti">/factory resume</span>
-  <span title="Pantau inbox dashboard dan event PR merged/closed">/factory watch</span>
-  <span title="Setujui job yang butuh kamu dan buka PR-nya">/factory approve &lt;job-id&gt;</span>
-  <span title="Kembalikan job yang butuh kamu ke builder dengan catatan">/factory rework &lt;job-id&gt; &lt;note&gt;</span>
+  <span data-tip="Jalankan fitur baru dari satu kalimat" tabindex="0">/factory &lt;feature&gt;</span>
+  <span data-tip="Ambil n item Siap pertama dari backlog dan jalankan paralel (default 1)" tabindex="0">/factory next [n]</span>
+  <span data-tip="Jalankan satu task backlog berdasarkan kodenya" tabindex="0">/factory run &lt;code&gt;</span>
+  <span data-tip="Lanjutkan factory setelah sesi baru: nyalakan server dan watcher, tangani request, PR merge, dan job yang terhenti" tabindex="0">/factory resume</span>
+  <span data-tip="Pantau inbox dashboard dan event PR merged/closed" tabindex="0">/factory watch</span>
+  <span data-tip="Setujui job yang butuh kamu dan buka PR-nya" tabindex="0">/factory approve &lt;job-id&gt;</span>
+  <span data-tip="Kembalikan job yang butuh kamu ke builder dengan catatan" tabindex="0">/factory rework &lt;job-id&gt; &lt;note&gt;</span>
 </footer>
 
 <div id="overlay">
