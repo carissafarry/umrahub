@@ -1,6 +1,7 @@
 // Factory dashboard server: static files + directory listings (like `python3 -m http.server`)
 // plus a tiny API so new backlog tasks can be added from the dashboard.
 // Run from the repo root: node factory/server.mjs   (http://localhost:8000/dashboard.html)
+import { execFile } from 'node:child_process'
 import { createServer } from 'node:http'
 import { mkdir, readFile, readdir, stat, writeFile } from 'node:fs/promises'
 import { dirname, extname, join, resolve, sep } from 'node:path'
@@ -176,6 +177,18 @@ async function serveStatic(req, res, urlPath) {
   send(res, 200, await readFile(target), TYPES[extname(target)] || 'application/octet-stream')
 }
 
+// Task codes of the commits a job's branch has on top of origin/main (newest first), i.e. what its open PR contains.
+async function branchTasks(jobId) {
+  let branch
+  try { branch = JSON.parse(await readFile(join(JOBS, jobId, 'job.json'), 'utf8')).branch } catch { return [] }
+  if (!/^factory\/[\w.-]+$/.test(branch || '')) return []
+  const subjects = await new Promise((done) => {
+    execFile('git', ['log', `origin/main..${branch}`, '--format=%s'], { cwd: resolve(ROOT, '..') }, (err, out) => done(err ? '' : out))
+  })
+  const codes = subjects.split('\n').map((s) => s.match(/^((?:infra|be|fe)-\d{3})\b/)?.[1]).filter(Boolean)
+  return [...new Set(codes)].sort((a, b) => Number(b.slice(-3)) - Number(a.slice(-3)))
+}
+
 createServer(async (req, res) => {
   try {
     const { pathname } = new URL(req.url, 'http://localhost')
@@ -184,6 +197,10 @@ createServer(async (req, res) => {
     }
     if (pathname === '/api/inbox' && req.method === 'GET') {
       return send(res, 200, JSON.stringify({ requests: await listRequests() }), TYPES['.json'])
+    }
+    const jobTasks = pathname.match(/^\/api\/jobs\/([\w-]+)\/tasks$/)
+    if (jobTasks && req.method === 'GET') {
+      return send(res, 200, JSON.stringify({ tasks: await branchTasks(jobTasks[1]) }), TYPES['.json'])
     }
     const reqMatch = pathname.match(/^\/api\/requirements\/([^/]+)(\/generate)?$/)
     if (reqMatch) {

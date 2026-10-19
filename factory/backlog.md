@@ -29,6 +29,15 @@ the orchestrator moves items whose dependencies are all merged from **Menunggu**
 - [x] [infra-030] PR titles read "Merge pull request #<N> from /factory/<job-id>" (the infra PR appends its task codes; set via the API once the number is known) so PR merge commits are easy to tell from ordinary commits in git log → infra-030
 - [x] [infra-031] PR title prefix is "Merge PR" instead of "Merge pull request": job PRs "Merge PR #<N> from /factory/<job-id>", infra PR "Merge PR #<N> from /factory/infra: <task codes>" → infra-031
 - [x] [infra-032] Preview links with a route: `preview` in job.json may include a path (e.g. `http://localhost:5193/steps/<id>`) so "Lihat preview" opens the page to check, not only the port → infra-032
+- [x] [infra-033] Backlog bookkeeping after fe-009 merge: fe-013 and be-014 move to Siap (gelombang 6) → infra-033
+- [x] [infra-034] Sync factory/infra with origin/main after PR #11 (fe-009) and PR #12 (infra-032) merged → infra-034
+- [x] [infra-035] PR button in the task detail drawer: the Job section shows "Buka PR #N" next to "Lihat preview" once the job has a pull request → infra-035
+- [x] [infra-036] PR and preview buttons in the job drawer (opened from a card in the Pull request column), under the branch name → infra-036
+- [x] [infra-037] Task list in the infra job drawer: `GET /api/jobs/<id>/tasks` reads the task codes of the branch's commits on top of origin/main, and the infra drawer shows one button per task that opens its detail; also removes a stale duplicate `pr` key from `factory/jobs/infra/job.json` that made the dashboard show PR #10 instead of the open PR → infra-037
+- [x] [infra-038] Task detail of an infra task shows the open infra PR button and the list of all tasks in that PR (current one dimmed), each opening its own detail → infra-038
+- [x] [infra-039] Preview rule for fe jobs: an fe job never sits in needs-human or pr without a running preview; it is stopped only while a builder or UX/UI reviewer runs in the worktree and when the PR is merged, never when the PR is opened; resume-check flags fe jobs in needs-human or pr whose preview is missing or down (also fixes its port regex, which ignored previews that carry a route) → infra-039
+- [x] [infra-040] Preview route rule: an fe job's preview link opens the exact page the job added or changed (dynamic ids filled with a real id, asked from the user when it is theirs), never `/` or a parent page; resume-check flags fe previews that open `/` → infra-040
+- [x] [infra-041] Stricter preview gates (builder writes `Preview route:` in build.md, no PR or "preview is up" with a bare port link, ask the user for their id first) and the infra PR's content is kept current: every pushed infra task is added to `factory/jobs/infra/pr-body.md` (the dashboard summary) and to the GitHub PR body; both now list infra-033…041 → infra-041
 - [x] [infra-024] Vercel Web Analytics: installed by the user from the Vercel dashboard (GitHub PR #1: `@vercel/analytics` and `<Analytics />` in `src/app/layout.tsx`); merged into local main → infra-024
 - [x] [infra-025] Spelling rule: worship term is always "Umrah" in both languages (never "Umroh"); brand is "Umra Hub" — AGENTS.md, spec and fe-004 requirements → infra-025
 - [x] [infra-026] Merge via GitHub PR: approved jobs are pushed and opened as pull requests instead of merging into local main; `factory/watch.sh` streams dashboard requests and PR merged/closed events; dashboard gets a Pull request column and PR links → infra-026
@@ -54,14 +63,15 @@ the orchestrator moves items whose dependencies are all merged from **Menunggu**
 
 - [x] [fe-009] Step detail: page /steps/[id] with the full guide markdown rendered safely, prerequisites, cost range adjusted for the trip's departure city, and a link back to the checklist; checklist accordions get a "Pelajari lebih lanjut" link to it → fe-009
 - [x] [fe-010] Trip dashboard: multi-trip dashboard /dashboard listing the user's trips with progress, create a new trip via a short wizard, rename and delete a trip with confirmation; signed-in users land here; mounts the BottomNav → fe-010
-- [ ] [fe-011] Budget: page /trips/[id]/budget with per-step and per-phase cost ranges multiplied by traveler count where individual, total min–max in IDR with a simple bar chart, and the "harga perkiraan, dapat berubah" disclaimer
+- [x] [fe-011] Budget: page /trips/[id]/budget with per-step and per-phase cost ranges multiplied by traveler count where individual, total min–max in IDR with a simple bar chart, and the "harga perkiraan, dapat berubah" disclaimer → fe-011
 - [ ] [be-012] Notifications: in-app deadline reminders generated from the travel date and step timeline phases, a bell with unread count in the header, and a /notifications page to read and mark them read
 
-## Menunggu
+## Siap — gelombang 6
 
-Gelombang 6
-- [fe-013] Step dependencies: hybrid step dependencies — marking a step done while a prerequisite is not done shows a non-blocking warning naming the prerequisite, and blocked steps are visually marked in the checklist (butuh: fe-009)
-- [be-014] Step comments: signed-in users can post and delete their own tips on a step detail page, newest first, with display name and avatar; requires a migration with RLS (butuh: fe-009)
+- [ ] [fe-013] Step dependencies: hybrid step dependencies — marking a step done while a prerequisite is not done shows a non-blocking warning naming the prerequisite, and blocked steps are visually marked in the checklist
+- [ ] [be-014] Step comments: signed-in users can post and delete their own tips on a step detail page, newest first, with display name and avatar; requires a migration with RLS
+
+## Menunggu
 
 Gelombang 7
 - [fe-015] Per traveler: trip owner can switch each step between shared and individual; individual steps show one status control per traveler and count toward progress per traveler (butuh: fe-013)

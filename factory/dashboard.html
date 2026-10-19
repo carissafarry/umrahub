@@ -433,6 +433,8 @@
       <div class="num" id="d-num"></div>
       <h3 id="d-title"></h3>
       <div class="branch" id="d-branch"></div>
+      <div id="d-links"></div>
+      <div id="d-tasks"></div>
       <div id="d-decide"></div>
       <button class="close" data-close aria-label="Close">×</button>
     </div>
@@ -818,9 +820,12 @@ function renderTask() {
       ${linkList(blocking(t), 'Tidak ada task yang menunggu task ini.')}</section>
     <section class="t-sec"><h5>Job</h5>
       ${job ? `<button class="t-job" data-job="${esc(job.id)}" type="button">Buka job ${esc(job.id)} →</button>
+        ${prUrl(job) ? `<a class="t-job" style="display:inline-block;margin-left:8px;text-decoration:none;background:var(--merged)" href="${esc(prUrl(job))}" target="_blank" rel="noopener">⇄ Buka PR #${esc(prUrl(job).split('/').pop())}</a>` : ''}
         ${previewUrl(job) ? `<a class="t-job" style="display:inline-block;margin-left:8px;text-decoration:none;background:var(--human)" href="${esc(previewUrl(job))}" target="_blank" rel="noopener">▶ Lihat preview</a>` : ''}`
         : `<p class="t-none">${t.job ? `Job ${esc(t.job)} belum terlihat di board.` : 'Belum dijalankan.'} ${s.key === 'new' ? `Minta Claude: <code>/factory run ${esc(t.code)}</code>` : s.key === 'ready' ? `Minta Claude: <code>/factory run ${esc(t.code)}</code>` : ''}</p>`}
+      ${t.type === 'infra' && !job ? '<div id="t-infra"></div>' : ''}
     </section>`
+  if (t.type === 'infra' && !job) renderInfraSiblings(openTask)
 }
 
 function showTask(code, push = true) {
@@ -996,13 +1001,43 @@ function tone(first) {
 
 const firstLines = new Map()
 
+// The long-lived infra job carries many tasks in one PR: list each one as a button that opens its task detail.
+async function renderJobTasks(job) {
+  const el = $('d-tasks')
+  if (job.id !== 'infra') { el.innerHTML = ''; return }
+  let codes = []
+  try { codes = (await (await fetch(`api/jobs/${job.id}/tasks`, { cache: 'no-store' })).json()).tasks || [] } catch {}
+  if (openJobId !== job.id) return
+  el.innerHTML = taskButtons(codes)
+}
+
+const taskButtons = (codes, current) => codes.length
+  ? `<div class="group" style="margin-top:10px">Task di PR ini · ${codes.length}</div>${codes.map((c) => {
+      const t = tasks.get(c)
+      return `<button class="t-job" style="margin:6px 8px 0 0${c === current ? ';opacity:.55' : ''}" data-task="${esc(c)}" type="button"${c === current ? ' aria-current="true"' : ''}>${esc(c)}${t ? ` · ${esc(t.title)}` : ''}</button>`
+    }).join('')}`
+  : ''
+
+// Infra tasks have no job of their own: they ride on the long-lived infra job and its one open PR.
+async function renderInfraSiblings(code) {
+  const el = $('t-infra')
+  const infra = jobs.find((j) => j.id === 'infra')
+  let codes = []
+  try { codes = (await (await fetch('api/jobs/infra/tasks', { cache: 'no-store' })).json()).tasks || [] } catch {}
+  if (openTask !== code) return
+  el.innerHTML = `${prUrl(infra) ? `<a class="t-job" style="display:inline-block;text-decoration:none;background:var(--merged)" href="${esc(prUrl(infra))}" target="_blank" rel="noopener">⇄ Buka PR #${esc(prUrl(infra).split('/').pop())}</a>` : ''}${taskButtons(codes, code)}`
+}
+
 async function refreshDrawer() {
   const job = jobs.find((j) => j.id === openJobId)
   if (!job) return
   $('d-num').textContent = `${job.id} · ${job.stage}${job.round ? ` · round ${job.round}` : ''}`
   $('d-title').textContent = job.feature
   $('d-branch').textContent = job.branch
+  $('d-links').innerHTML = `${prUrl(job) ? `<a class="t-job" style="display:inline-block;margin:8px 8px 0 0;text-decoration:none;background:var(--merged)" href="${esc(prUrl(job))}" target="_blank" rel="noopener">⇄ Buka PR #${esc(prUrl(job).split('/').pop())}</a>` : ''}
+    ${previewUrl(job) ? `<a class="t-job" style="display:inline-block;margin:8px 8px 0 0;text-decoration:none;background:var(--human)" href="${esc(previewUrl(job))}" target="_blank" rel="noopener">▶ Lihat preview</a>` : ''}`
   renderDecide(job)
+  renderJobTasks(job)
 
   const base = `jobs/${job.id}/`
   const files = sortFiles(await listFiles(base))
