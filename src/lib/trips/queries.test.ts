@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { fakeSupabase } from "./fakeSupabase";
-import { loadTripChecklist } from "./queries";
+import { loadTripBudget, loadTripChecklist } from "./queries";
 
 const tripId = "11111111-1111-4111-8111-111111111111";
 
@@ -89,5 +89,87 @@ describe("loadTripChecklist", () => {
       "traveler_id",
       null,
     );
+  });
+});
+
+describe("loadTripBudget", () => {
+  it("redirects a signed-out user to /", async () => {
+    fake = fakeSupabase({ user: null });
+    await expect(loadTripBudget(tripId)).rejects.toThrow("NEXT_REDIRECT /");
+    expect(fake.from).not.toHaveBeenCalled();
+  });
+
+  it("404s a non-UUID id without querying the DB", async () => {
+    fake = fakeSupabase();
+    await expect(loadTripBudget("not-a-uuid")).rejects.toThrow(
+      "NEXT_NOT_FOUND",
+    );
+    expect(fake.from).not.toHaveBeenCalled();
+  });
+
+  it("404s when the trip query returns no row", async () => {
+    fake = fakeSupabase({ tables: { trips: { data: null, error: null } } });
+    await expect(loadTripBudget(tripId)).rejects.toThrow("NEXT_NOT_FOUND");
+    expect(fake.from).toHaveBeenCalledTimes(1);
+  });
+
+  it.each(["preparation_steps", "trip_step_config", "travelers"])(
+    "throws when the %s query errors",
+    async (table) => {
+      fake = fakeSupabase({
+        tables: {
+          trips: { data: trip, error: null },
+          [table]: { data: null, error: { message: "boom" } },
+        },
+      });
+      await expect(loadTripBudget(tripId)).rejects.toThrow(
+        "Failed to load budget",
+      );
+    },
+  );
+
+  it("loads steps with is_shared_step, the city's overrides, configs and travelers", async () => {
+    const steps = [{ id: "s1", is_shared_step: false }];
+    const configs = [{ step_id: "s1", tracking_mode: "shared" }];
+    const travelers = [{ id: "t1" }, { id: "t2" }];
+    fake = fakeSupabase({
+      tables: {
+        trips: { data: trip, error: null },
+        preparation_steps: { data: steps, error: null },
+        city_cost_overrides: { data: [], error: null },
+        trip_step_config: { data: configs, error: null },
+        travelers: { data: travelers, error: null },
+      },
+    });
+    expect(await loadTripBudget(tripId)).toEqual({
+      trip,
+      steps,
+      overrides: [],
+      configs,
+      travelers,
+    });
+
+    const query = (table: string) =>
+      fake.builders.find((entry) => entry.table === table)!.builder;
+    expect(query("preparation_steps").select).toHaveBeenCalledWith(
+      expect.stringContaining("is_shared_step"),
+    );
+    expect(query("preparation_steps").eq).toHaveBeenCalledWith(
+      "is_published",
+      true,
+    );
+    expect(query("city_cost_overrides").eq).toHaveBeenCalledWith(
+      "city",
+      "Surabaya",
+    );
+    expect(query("trip_step_config").select).toHaveBeenCalledWith(
+      "step_id, tracking_mode",
+    );
+    expect(query("trip_step_config").eq).toHaveBeenCalledWith(
+      "trip_id",
+      tripId,
+    );
+    expect(query("travelers").select).toHaveBeenCalledWith("id");
+    expect(query("travelers").eq).toHaveBeenCalledWith("trip_id", tripId);
   });
 });

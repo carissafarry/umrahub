@@ -1,4 +1,6 @@
+import Link from "next/link";
 import { getLocale, getTranslations } from "next-intl/server";
+import { ArrowRightIcon } from "@/components/ui/icons";
 import {
   computeProgress,
   costText,
@@ -48,8 +50,15 @@ export async function TripChecklist({
         </div>
 
         <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_22rem] lg:items-start lg:gap-10">
-          <div className="lg:sticky lg:top-6 lg:col-start-2 lg:row-start-1">
+          <div className="flex flex-col gap-4 lg:sticky lg:top-6 lg:col-start-2 lg:row-start-1">
             <ProgressCard {...computeProgress(steps, progress)} />
+            <Link
+              href={`/trips/${trip.id}/budget`}
+              className="tap-target inline-flex items-center gap-2 self-start rounded-full border border-border bg-surface px-4 font-medium text-foreground shadow-card focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-primary"
+            >
+              {t("budgetLink")}
+              <ArrowRightIcon className="size-4" />
+            </Link>
           </div>
 
           <div className="flex flex-col gap-10 lg:col-start-1 lg:row-start-1">

@@ -25,8 +25,8 @@ Scope now: user-facing app only. Admin CMS is out of scope; content is edited vi
 - `src/lib/auth/` — auth Server Actions, public-path check, user profile mapping (see Auth)
 - `src/lib/onboarding/` — onboarding wizard validation and trip creation (see Onboarding)
 - `src/middleware.ts` — auth session refresh and route protection (see Auth)
-- `src/lib/trips/` — trip checklist logic (grouping, progress, costs), page data loader and the `updateStepStatus` Server Action (see Trip checklist)
-- `src/components/trips/` — trip checklist UI (step accordion, progress card)
+- `src/lib/trips/` — trip checklist logic (grouping, progress, costs), budget logic (`budget.ts`), page data loaders and the `updateStepStatus` Server Action (see Trip checklist, Budget)
+- `src/components/trips/` — trip checklist UI (step accordion, progress card) and the budget page body
 - `src/lib/steps/` — step detail data loader and the safe guide-markdown parser (see Step detail)
 - `src/components/steps/` — step detail page body and the `GuideMarkdown` renderer
 - `src/lib/dashboard/` — trip dashboard loader, per-trip progress summary, trip-name rules and the `renameTrip` / `deleteTrip` Server Actions (see Dashboard)
@@ -93,6 +93,14 @@ All four must pass before a change is ready. Use `build:check`, not `build`, for
 - Status writes go only through `updateStepStatus` in `src/lib/trips/actions.ts`, which validates input, re-checks trip ownership and upserts on `trip_id,step_id,traveler_id`.
 - Costs use the `city_cost_overrides` row whose `city` equals `trips.departure_city` exactly, else the step's own range; they are shown per person.
 - Ordering is by `sort_order` only: phases and categories by their smallest `sort_order`, steps by `sort_order` then `id`. Phase and category labels are `Checklist.phases.*` / `Checklist.categories.*`; an unknown key shows the raw key.
+
+## Budget
+
+- `/trips/[id]/budget` (`src/app/trips/[id]/budget/`) loads through `loadTripBudget` in `src/lib/trips/queries.ts`, with the same guards as `loadTripChecklist` (shared `loadOwnedTrip`). `/trips/[id]` links to it below the progress card.
+- Totals come from `computeBudget` in `src/lib/trips/budget.ts` (pure, reuses `resolveCost`/`groupSteps`); reuse it, never duplicate the budget logic.
+- A step is individual when its `trip_step_config.tracking_mode` is `'individual'`; with no config row for the step, when `is_shared_step = false`. Individual steps are multiplied by the trip's `travelers` count (at least 1), shared steps by 1.
+- Summing: a null min counts as 0, a null max counts as the min (or 0). Such steps still show `Checklist.cost.none`. All published steps count, whatever their status.
+- The per-phase bar chart is CSS only (no chart library or SVG): bars scale to the largest phase max.
 
 ## Step detail
 
