@@ -86,6 +86,7 @@ All four must pass before a change is ready. Use `build:check`, not `build`, for
 
 - Every commit message is `<type>-<NNN> <message>`: the backlog task code, a space, then the message, no brackets (e.g. `fe-002 Add Card primitive`). Type is `infra`, `be` or `fe`. Every commit belongs to a backlog task — tooling and factory work gets an `infra-NNN` task first; there are no untagged commits.
 - Job branches are `factory/<type>-<NNN>` (e.g. `factory/fe-004`).
+- **The software factory resumes by itself whenever a session starts or resumes.** The `SessionStart` hook (`.claude/settings.json`) runs `factory/resume-check.sh`; the orchestrator then re-arms `factory/watch.sh`, processes dashboard requests, handles PRs merged while it was away and restarts interrupted jobs (`/factory resume` in `.claude/skills/factory/SKILL.md`). Job state lives on disk and in git/GitHub, never only in a session.
 
 - Mobile-first; minimum 44px tap targets; high contrast; one primary (indigo) CTA per screen.
 - UI copy in Bahasa Indonesia by default; all user-facing strings go through i18n (see below).

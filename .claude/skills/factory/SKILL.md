@@ -360,6 +360,48 @@ check in **Merge**, like `factory/backlog.md`.
 On start, also process any files already in `factory/inbox/taken/` (left by a
 session that closed mid-request) and in `factory/inbox/`.
 
+## /factory resume — the factory restarts itself with the session
+
+**Rule: the factory never depends on one session staying alive.** When a session
+ends, its watcher, its background agents and its previews die with it, but job
+state lives on disk (`factory/jobs/*/job.json`, `factory/inbox/`, git, GitHub).
+So every new or resumed session continues the factory by itself, without being
+asked.
+
+The `SessionStart` hook in `.claude/settings.json` runs
+`factory/resume-check.sh`, which prints the real state: unprocessed dashboard
+requests, PRs that were merged or closed while nobody watched, jobs stuck in
+`spec`/`build`/`review`/`approve`, previews that went down, and whether `main`
+is in sync. **Treat every `!` line as your to-do list and act on it at once**;
+only stop for decisions that are the user's. `/factory resume` does the same by
+hand (run `bash factory/resume-check.sh` first if you have no report).
+
+1. **Re-arm the watcher**: Monitor `bash factory/watch.sh`, and re-arm it every
+   time it expires.
+2. **Dashboard requests**: process everything in `factory/inbox/taken/` and
+   `factory/inbox/` as the user's own commands (see **Dashboard requests**). A
+   request is never "nothing to do"; if you can't tell what it asks, ask.
+3. **PRs**: for each job in stage `pr`, if the PR is `MERGED` run the
+   "When the PR is merged" steps; if `CLOSED`, set `needs-human` and ask.
+4. **Interrupted jobs**: agents from a dead session are gone, so a
+   `SendMessage` to an old name may fail; then spawn a fresh agent with the
+   same `<paths>` prompt plus "Continue: check `git status` and
+   `git log --oneline main..HEAD` in the worktree first and don't redo finished
+   work". By stage:
+   - `spec`: `spec.md` exists → go on to build; otherwise run `spec-writer`.
+   - `build`: `build.md` starts with `STATUS: READY` → **Build check**;
+     otherwise resume (or respawn) the builder.
+   - `review`: look at `round-<N>/`; spawn **only** the reviewers whose
+     `review-*.md` is missing, record verdicts already on disk, then decide as
+     usual.
+   - `approve`: `decision.md` exists → read it; otherwise respawn `approver`.
+5. **`needs-human` jobs**: restart a dead preview on its port, and remind the
+   user which jobs wait for them.
+6. **Sync**: `git merge --ff-only origin/main` when behind; ship unpushed `main`
+   commits through an infra PR; promote unblocked backlog items.
+7. **Report** in a few lines: what you recovered, what is running, what waits for
+   the user.
+
 ## /factory approve <job-id>
 
 The job must be in `needs-human`. Run **Merge** with that job id.
