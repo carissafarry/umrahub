@@ -23,6 +23,7 @@ Scope now: user-facing app only. Admin CMS is out of scope; content is edited vi
 - `src/components/ui/` — shared UI primitives (see Design system)
 - `src/lib/` — shared helpers
 - `src/lib/auth/` — auth Server Actions, public-path check, user profile mapping (see Auth)
+- `src/lib/notifications/` — deadline-reminder rule (`reminders.ts`), server-side reminder generation and queries, mark-read Server Actions
 - `src/lib/onboarding/` — onboarding wizard validation and trip creation (see Onboarding)
 - `src/middleware.ts` — auth session refresh and route protection (see Auth)
 - `src/lib/trips/` — trip checklist logic (grouping, progress, costs), budget logic (`budget.ts`), page data loaders and the `updateStepStatus` Server Action (see Trip checklist, Budget)
@@ -75,7 +76,7 @@ All four must pass before a change is ready. Use `build:check`, not `build`, for
 - To check a migration runs, use the local stack if Docker is available: `supabase start` then `supabase db reset --local`. Stop it with `supabase stop` when done.
 - All worktrees share **one** local stack. Before `supabase start`, run `supabase status`: if it is already running, another job owns it. Wait (check every 30s, up to 15 minutes) instead of resetting or stopping it. If it is still busy, skip the local check and say so in your report.
 - Generated types: `supabase gen types typescript --local > src/lib/supabase/database.types.ts` (local stack only).
-- MVP tables: `trips`, `travelers`, `trip_step_config`, `trip_step_progress` are trip-owned (signed-in users read/write only rows of their own trips); `preparation_steps` (published only) and `city_cost_overrides` are read-only for any signed-in user. `anon` gets nothing.
+- MVP tables: `trips`, `travelers`, `trip_step_config`, `trip_step_progress` are trip-owned (signed-in users read/write only rows of their own trips); `preparation_steps` (published only) and `city_cost_overrides` are read-only for any signed-in user; `notifications` is user-owned (users read and insert only their own rows, for their own trips; update is limited to the read state `is_read`/`read_at`; no delete). `anon` gets nothing.
 - Database tests are pgTAP files in `supabase/tests/`; run them with `supabase test db` (local stack only).
 - Preparation-step content is seeded by `supabase/migrations/20261018150410_seed_preparation_steps.sql`:
   - Step ids are fixed: `5eed0000-0000-4000-8000-0000000000NN` (`NN` = step 01–22); `sort_order` is `NN * 10`.
@@ -131,7 +132,7 @@ All four must pass before a change is ready. Use `build:check`, not `build`, for
 - Locales are `id` (default) and `en`. The active locale comes from the `NEXT_LOCALE` cookie (unknown or missing → `id`); `Accept-Language` is ignored. There are no per-locale URLs and no `[locale]` segment. `src/middleware.ts` exists for auth session refresh only and does no locale handling.
 - To add copy, add the key to **both** `messages/id.json` and `messages/en.json`, grouped by namespace (`Metadata`, `Header`, `Home`, `Footer`, ...). Use `getTranslations` from `next-intl/server` in Server Components and `useTranslations` from `next-intl` in Client Components. `src/i18n/messages.test.ts` fails if the two files' keys differ.
 - Spelling: the pilgrimage is "Umrah" in both languages (see Worship term above). The brand "Umra Hub" is never translated. Arabic text stays untranslated with `lang="ar" dir="rtl"`.
-- The root layout renders `SiteHeader` (wordmark + language toggle, plus the user block when signed in) on every page. New pages get the header automatically and must not render their own `<header>`.
+- The root layout renders `SiteHeader` (wordmark + language toggle, plus the notification bell linking to `/notifications` and the user block when signed in) on every page. New pages get the header automatically and must not render their own `<header>`.
 
 ## Auth
 
