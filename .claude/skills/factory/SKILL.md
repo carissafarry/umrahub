@@ -396,8 +396,11 @@ is in sync. **Treat every `!` line as your to-do list and act on it at once**;
 only stop for decisions that are the user's. `/factory resume` does the same by
 hand (run `bash factory/resume-check.sh` first if you have no report).
 
-1. **Re-arm the watcher**: Monitor `bash factory/watch.sh`, and re-arm it every
-   time it expires.
+1. **Bring the servers back**: the dashboard server (`node factory/server.mjs`,
+   background, port 8000) dies with the session, so start it again when port 8000
+   is down and give the user the link (http://localhost:8000/dashboard.html).
+   Then re-arm the watcher: Monitor `bash factory/watch.sh`, and re-arm it every
+   time it expires. Never report the factory as resumed until both are up.
 2. **Dashboard requests**: process everything in `factory/inbox/taken/` and
    `factory/inbox/` as the user's own commands (see **Dashboard requests**). A
    request is never "nothing to do"; if you can't tell what it asks, ask.

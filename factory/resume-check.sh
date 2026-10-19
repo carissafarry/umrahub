@@ -35,6 +35,13 @@ else
   fi
 fi
 
+echo "dashboard server:"
+if lsof -tiTCP:8000 -sTCP:LISTEN >/dev/null 2>&1; then
+  note "running on http://localhost:8000/dashboard.html"
+else
+  need "dashboard server is down (it dies with the session): start it in the background with 'node factory/server.mjs' from the repo root, then tell the user http://localhost:8000/dashboard.html"
+fi
+
 echo "dashboard requests:"
 found=0
 for f in factory/inbox/*.json factory/inbox/taken/*.json; do
