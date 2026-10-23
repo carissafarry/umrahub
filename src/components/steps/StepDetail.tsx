@@ -124,7 +124,7 @@ export async function StepDetail({
             )}
           </div>
 
-          <div className="flex flex-col gap-8 lg:col-start-1 lg:row-start-2">
+          <div className="flex min-w-0 flex-col gap-8 lg:col-start-1 lg:row-start-2">
             <section aria-label={t("guideTitle")}>
               <Card className="lg:p-8">
                 {!startsWithSection && (
