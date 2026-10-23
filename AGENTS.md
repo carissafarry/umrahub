@@ -116,7 +116,7 @@ All four must pass before a change is ready. Use `build:check`, not `build`, for
 
 ## Step comments
 
-- `step_comments` (migration `*_step_comments.sql`): a `before insert` `security definer` trigger fills `author_name` (`full_name`, else `name`, else `''`, never the email) and `author_avatar_url` (`avatar_url`, else `picture`, only if `https://`, else null) from the author's `auth.users` metadata; client values are never kept.
+- `step_comments` (migration `*_step_comments.sql`): a `before insert` `security definer` trigger fills `author_name` (`full_name`, else `name`, else `''`, never the email) and `author_avatar_url` (`avatar_url`, else `picture`, only on Google's photo host `https://lhN.googleusercontent.com/`, else null: users can edit their own metadata, and any other URL would be a tracking pixel for every reader) from the author's `auth.users` metadata; client values are never kept.
 - RLS `to authenticated`: select visible (`is_hidden = false`) comments on published steps, insert own on a published step, delete own; no update policy. Column grant: `authenticated` may insert only `(step_id, content)` and update nothing. Hiding a comment is setting `is_hidden` in Supabase Studio; there is no moderation UI.
 - Content is 1–1000 characters after trimming: `parseCommentContent` / `maxCommentLength` in `src/lib/steps/comments.ts`, plus a DB check constraint.
 - `postStepComment` and `deleteStepComment` (`src/lib/steps/actions.ts`) validate (`isUuid`, `parseCommentContent`), call `getUser()`, insert only `{ step_id, content }` / delete filtered by both `id` and `user_id`, and `revalidatePath("/steps/<id>")`. Errors are fixed codes; logs are a fixed string plus `error.code` only.

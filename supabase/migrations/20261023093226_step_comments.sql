@@ -26,7 +26,9 @@ create trigger set_updated_at before update on public.step_comments
   for each row execute function public.set_updated_at();
 
 -- Author fields always come from the author's Google metadata, never from
--- the client; the email is never used as a name.
+-- the client; the email is never used as a name. Users can edit their own
+-- metadata, so the avatar is kept only on Google's photo host: any other URL
+-- would be loaded by every reader (a tracking pixel).
 
 create function public.set_step_comment_author()
 returns trigger
@@ -45,7 +47,9 @@ begin
     ''
   );
   avatar = coalesce(nullif(meta ->> 'avatar_url', ''), nullif(meta ->> 'picture', ''));
-  new.author_avatar_url = case when avatar like 'https://%' then avatar end;
+  new.author_avatar_url = case
+    when avatar ~ '^https://lh[0-9]+\.googleusercontent\.com/' then avatar
+  end;
   return new;
 end;
 $$;

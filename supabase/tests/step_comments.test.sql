@@ -3,7 +3,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 
-select plan(23);
+select plan(25);
 
 -- Fixtures (as postgres, the table owner, so RLS does not apply)
 
@@ -11,7 +11,9 @@ insert into auth.users (id, email, raw_user_meta_data) values
   ('11111111-1111-1111-1111-111111111111', 'user-a@test.local',
    '{"full_name": "Aisyah Rahman", "name": "Aisyah", "avatar_url": "https://lh3.googleusercontent.com/a/aisyah"}'),
   ('22222222-2222-2222-2222-222222222222', 'user-b@test.local',
-   '{"name": "Budi", "picture": "http://example.com/budi.png"}');
+   '{"name": "Budi", "picture": "http://example.com/budi.png"}'),
+  ('33333333-3333-3333-3333-333333333333', 'user-c@test.local',
+   '{"full_name": "Citra", "avatar_url": "https://attacker.example/pixel.png"}');
 
 insert into public.preparation_steps (id, phase_key, category_key, title_id, title_en, sort_order, is_published) values
   ('aaaaaaaa-0000-0000-0000-000000000001', '3_6_months_before', 'documents', 'Paspor', 'Passport', 1, true),
@@ -141,6 +143,20 @@ select is(
   'A deletes own comment'
 );
 
+-- User C's self-edited avatar is not on Google's photo host
+
+set local request.jwt.claims = '{"sub": "33333333-3333-3333-3333-333333333333", "role": "authenticated"}';
+
+select lives_ok(
+  $$insert into public.step_comments (step_id, content) values ('aaaaaaaa-0000-0000-0000-000000000001', 'Tips dari C')$$,
+  'C inserts a comment'
+);
+select is(
+  (select author_avatar_url from public.step_comments where content = 'Tips dari C'),
+  null::text,
+  'a non-Google https avatar is stored as null'
+);
+
 -- Signed-out users see nothing
 
 reset role;
@@ -153,8 +169,8 @@ reset role;
 
 select is(
   (select count(*)::int from public.step_comments),
-  3,
-  'the hidden, B''s and A''s 1000-character comments remain'
+  4,
+  'the hidden, B''s, C''s and A''s 1000-character comments remain'
 );
 
 select * from finish();
