@@ -15,7 +15,7 @@ export async function generateMetadata(): Promise<Metadata> {
 
 // The signed-in user's trips. Users without one get the onboarding wizard.
 export default async function DashboardPage() {
-  const { trips, steps, progress } = await loadDashboard();
+  const { trips, steps, ...tracking } = await loadDashboard();
   if (trips.length === 0) redirect("/onboarding");
 
   const t = await getTranslations("Dashboard");
@@ -44,7 +44,7 @@ export default async function DashboardPage() {
         </div>
 
         <ul className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 lg:gap-6">
-          {summarizeTrips(trips, steps, progress).map((trip) => (
+          {summarizeTrips(trips, steps, tracking).map((trip) => (
             <TripCard key={trip.id} trip={trip} />
           ))}
         </ul>

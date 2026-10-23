@@ -18,10 +18,14 @@ export type ChecklistStep = {
   sort_order: number;
 };
 
-// The checklist page also needs each step's prerequisites.
-export type DependentStep = ChecklistStep & {
-  dependency_step_ids: string[] | null;
-};
+// Any step whose tracking mode can be resolved.
+export type TrackedStep = { id: string; is_shared_step: boolean };
+
+// The checklist page also needs each step's prerequisites and default mode.
+export type DependentStep = ChecklistStep &
+  TrackedStep & {
+    dependency_step_ids: string[] | null;
+  };
 
 export type CityCostOverride = {
   step_id: string;
@@ -30,10 +34,28 @@ export type CityCostOverride = {
   cost_max: number;
 };
 
-// A trip-level (`traveler_id` null) trip_step_progress row.
+export const trackingModes = ["shared", "individual"] as const;
+
+export type TrackingMode = (typeof trackingModes)[number];
+
+// A per-trip trip_step_config row; it wins over `is_shared_step`.
+export type StepConfig = {
+  step_id: string;
+  tracking_mode: TrackingMode;
+};
+
+// A trip_step_progress row: trip-level when `traveler_id` is null.
 export type StepProgress = {
   step_id: string;
+  traveler_id: string | null;
   status: StepStatus;
+};
+
+// Everything one trip's step statuses are resolved from.
+export type TripTracking = {
+  configs: StepConfig[];
+  travelerIds: string[];
+  progress: StepProgress[];
 };
 
 export type CategoryGroup<T = ChecklistStep> = { key: string; steps: T[] };
@@ -53,7 +75,14 @@ export function isStepStatus(value: unknown): value is StepStatus {
   return stepStatuses.includes(value as StepStatus);
 }
 
-function compareSteps(a: ChecklistStep, b: ChecklistStep) {
+export function isTrackingMode(value: unknown): value is TrackingMode {
+  return trackingModes.includes(value as TrackingMode);
+}
+
+function compareSteps(
+  a: Pick<ChecklistStep, "id" | "sort_order">,
+  b: Pick<ChecklistStep, "id" | "sort_order">,
+) {
   return a.sort_order - b.sort_order || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0);
 }
 
@@ -85,40 +114,95 @@ export function groupSteps<T extends ChecklistStep>(
   }));
 }
 
-// A step without a trip-level progress row has not been started.
-export function stepStatus(
+export function isIndividual(step: TrackedStep, configs: StepConfig[]) {
+  const config = configs.find((row) => row.step_id === step.id);
+  return config ? config.tracking_mode === "individual" : !step.is_shared_step;
+}
+
+// An individual step on a trip without travelers falls back to the
+// trip-level row.
+export function isPerTraveler(step: TrackedStep, tracking: TripTracking) {
+  return (
+    isIndividual(step, tracking.configs) && tracking.travelerIds.length > 0
+  );
+}
+
+// A step without a matching progress row has not been started. A null
+// `travelerId` reads the trip-level row.
+export function travelerStatus(
   stepId: string,
+  travelerId: string | null,
   progress: StepProgress[],
 ): StepStatus {
-  return progress.find((row) => row.step_id === stepId)?.status ?? "not_started";
+  return (
+    progress.find(
+      (row) => row.step_id === stepId && row.traveler_id === travelerId,
+    )?.status ?? "not_started"
+  );
+}
+
+// Completed when everyone is done, not started when nobody started,
+// otherwise in progress.
+export function aggregateStatus(statuses: StepStatus[]): StepStatus {
+  if (statuses.every((status) => status === "completed")) return "completed";
+  if (statuses.every((status) => status === "not_started")) {
+    return "not_started";
+  }
+  return "in_progress";
+}
+
+// The aggregate for a per-traveler step, the trip-level status otherwise.
+export function stepStatus(
+  step: TrackedStep,
+  tracking: TripTracking,
+): StepStatus {
+  if (!isPerTraveler(step, tracking)) {
+    return travelerStatus(step.id, null, tracking.progress);
+  }
+  return aggregateStatus(
+    tracking.travelerIds.map((travelerId) =>
+      travelerStatus(step.id, travelerId, tracking.progress),
+    ),
+  );
 }
 
 // Prerequisites of `step` that are not completed yet, in sort_order.
 // Dependencies are advisory: unknown ids (unpublished or missing steps) and
 // a step listing itself are ignored.
-export function incompletePrerequisites<T extends ChecklistStep>(
+export function incompletePrerequisites<
+  T extends TrackedStep & Pick<ChecklistStep, "sort_order">,
+>(
   step: Pick<DependentStep, "id" | "dependency_step_ids">,
   steps: T[],
-  progress: StepProgress[],
+  tracking: TripTracking,
 ): T[] {
   const ids = new Set(step.dependency_step_ids ?? []);
   ids.delete(step.id);
   return steps
     .filter(
       (other) =>
-        ids.has(other.id) && stepStatus(other.id, progress) !== "completed",
+        ids.has(other.id) && stepStatus(other, tracking) !== "completed",
     )
     .sort(compareSteps);
 }
 
-export function computeProgress(
-  steps: ChecklistStep[],
-  progress: StepProgress[],
-) {
-  const total = steps.length;
-  const done = steps.filter(
-    (step) => stepStatus(step.id, progress) === "completed",
-  ).length;
+// Counts units: a shared step is one, a per-traveler step one per traveler.
+export function computeProgress(steps: TrackedStep[], tracking: TripTracking) {
+  let done = 0;
+  let total = 0;
+  for (const step of steps) {
+    const travelerIds = isPerTraveler(step, tracking)
+      ? tracking.travelerIds
+      : [null];
+    for (const travelerId of travelerIds) {
+      total += 1;
+      if (
+        travelerStatus(step.id, travelerId, tracking.progress) === "completed"
+      ) {
+        done += 1;
+      }
+    }
+  }
   const percent = total === 0 ? 0 : Math.round((done / total) * 100);
   return { done, total, percent };
 }

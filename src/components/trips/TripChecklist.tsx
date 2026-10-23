@@ -6,13 +6,15 @@ import {
   costText,
   groupSteps,
   incompletePrerequisites,
+  isIndividual,
   resolveCost,
-  stepStatus,
+  travelerStatus,
   type CityCostOverride,
   type DependentStep,
+  type StepConfig,
   type StepProgress,
 } from "@/lib/trips/checklist";
-import type { ChecklistTrip } from "@/lib/trips/queries";
+import type { ChecklistTraveler, ChecklistTrip } from "@/lib/trips/queries";
 import { ProgressCard } from "./ProgressCard";
 import { StepAccordion } from "./StepAccordion";
 
@@ -20,6 +22,8 @@ type TripChecklistProps = {
   trip: ChecklistTrip;
   steps: DependentStep[];
   overrides: CityCostOverride[];
+  configs: StepConfig[];
+  travelers: ChecklistTraveler[];
   progress: StepProgress[];
 };
 
@@ -29,6 +33,8 @@ export async function TripChecklist({
   trip,
   steps,
   overrides,
+  configs,
+  travelers,
   progress,
 }: TripChecklistProps) {
   const locale = await getLocale();
@@ -39,6 +45,11 @@ export async function TripChecklist({
   const title = (step: DependentStep) =>
     locale === "en" ? step.title_en : step.title_id;
   const phases = groupSteps(steps);
+  const tracking = {
+    configs,
+    travelerIds: travelers.map((traveler) => traveler.id),
+    progress,
+  };
 
   return (
     <div className="mx-auto w-full max-w-md flex-1 px-5 md:max-w-3xl md:px-8 lg:max-w-6xl lg:px-10">
@@ -54,7 +65,7 @@ export async function TripChecklist({
 
         <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_22rem] lg:items-start lg:gap-10">
           <div className="flex flex-col gap-4 lg:sticky lg:top-6 lg:col-start-2 lg:row-start-1">
-            <ProgressCard {...computeProgress(steps, progress)} />
+            <ProgressCard {...computeProgress(steps, tracking)} />
             <Link
               href={`/trips/${trip.id}/budget`}
               className="tap-target inline-flex items-center gap-2 self-start rounded-full border border-border bg-surface px-4 font-medium text-foreground shadow-card focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-primary"
@@ -98,11 +109,24 @@ export async function TripChecklist({
                           cost={costText(
                             resolveCost(step, overrides, trip.departure_city),
                           )}
-                          status={stepStatus(step.id, progress)}
+                          trackingMode={
+                            isIndividual(step, configs)
+                              ? "individual"
+                              : "shared"
+                          }
+                          status={travelerStatus(step.id, null, progress)}
+                          travelers={travelers.map((traveler) => ({
+                            ...traveler,
+                            status: travelerStatus(
+                              step.id,
+                              traveler.id,
+                              progress,
+                            ),
+                          }))}
                           prerequisites={incompletePrerequisites(
                             step,
                             steps,
-                            progress,
+                            tracking,
                           ).map(title)}
                         />
                       ))}

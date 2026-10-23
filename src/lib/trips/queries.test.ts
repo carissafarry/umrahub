@@ -55,24 +55,56 @@ describe("loadTripChecklist", () => {
     );
   });
 
-  it("loads published steps, the city's overrides and trip-level progress", async () => {
+  it.each(["trip_step_config", "travelers", "trip_step_progress"])(
+    "throws when the %s query errors",
+    async (table) => {
+      fake = fakeSupabase({
+        tables: {
+          trips: { data: trip, error: null },
+          [table]: { data: null, error: { message: "boom" } },
+        },
+      });
+      await expect(loadTripChecklist(tripId)).rejects.toThrow(
+        "Failed to load checklist",
+      );
+    },
+  );
+
+  it("loads steps, the city's overrides, configs, travelers and all progress", async () => {
+    const steps = [{ id: "s1", is_shared_step: false }];
+    const configs = [{ step_id: "s1", tracking_mode: "shared" }];
+    const travelers = [
+      { id: "t1", name: "Ahmad" },
+      { id: "t2", name: "Siti" },
+    ];
+    const progress = [
+      { step_id: "s1", traveler_id: null, status: "completed" },
+      { step_id: "s1", traveler_id: "t1", status: "in_progress" },
+    ];
     fake = fakeSupabase({
       tables: {
         trips: { data: trip, error: null },
-        preparation_steps: { data: [], error: null },
+        preparation_steps: { data: steps, error: null },
         city_cost_overrides: { data: [], error: null },
-        trip_step_progress: { data: [], error: null },
+        trip_step_config: { data: configs, error: null },
+        travelers: { data: travelers, error: null },
+        trip_step_progress: { data: progress, error: null },
       },
     });
     expect(await loadTripChecklist(tripId)).toEqual({
       trip,
-      steps: [],
+      steps,
       overrides: [],
-      progress: [],
+      configs,
+      travelers,
+      progress,
     });
 
     const query = (table: string) =>
       fake.builders.find((entry) => entry.table === table)!.builder;
+    expect(query("preparation_steps").select).toHaveBeenCalledWith(
+      expect.stringContaining("is_shared_step"),
+    );
     expect(query("preparation_steps").eq).toHaveBeenCalledWith(
       "is_published",
       true,
@@ -81,14 +113,28 @@ describe("loadTripChecklist", () => {
       "city",
       "Surabaya",
     );
+    expect(query("trip_step_config").select).toHaveBeenCalledWith(
+      "step_id, tracking_mode",
+    );
+    expect(query("trip_step_config").eq).toHaveBeenCalledWith(
+      "trip_id",
+      tripId,
+    );
+    // Only id and name: never the minor, disability or notes fields.
+    expect(query("travelers").select).toHaveBeenCalledWith("id, name");
+    expect(query("travelers").eq).toHaveBeenCalledWith("trip_id", tripId);
+    expect(query("travelers").order.mock.calls).toEqual([
+      ["created_at"],
+      ["id"],
+    ]);
+    expect(query("trip_step_progress").select).toHaveBeenCalledWith(
+      "step_id, traveler_id, status",
+    );
     expect(query("trip_step_progress").eq).toHaveBeenCalledWith(
       "trip_id",
       tripId,
     );
-    expect(query("trip_step_progress").is).toHaveBeenCalledWith(
-      "traveler_id",
-      null,
-    );
+    expect(query("trip_step_progress").is).not.toHaveBeenCalled();
   });
 });
 

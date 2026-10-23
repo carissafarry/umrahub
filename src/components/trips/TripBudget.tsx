@@ -2,15 +2,12 @@ import Link from "next/link";
 import { getLocale, getTranslations } from "next-intl/server";
 import { Card } from "@/components/ui/Card";
 import { ArrowRightIcon } from "@/components/ui/icons";
-import {
-  computeBudget,
-  type BudgetStep,
-  type StepConfig,
-} from "@/lib/trips/budget";
+import { computeBudget, type BudgetStep } from "@/lib/trips/budget";
 import {
   costText,
   type CityCostOverride,
   type CostRange,
+  type StepConfig,
 } from "@/lib/trips/checklist";
 import type { ChecklistTrip } from "@/lib/trips/queries";
 
