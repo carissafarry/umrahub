@@ -224,6 +224,22 @@
     padding: 0 32px 32px; font-family: var(--mono); font-size: 11px; color: var(--faint);
     display: flex; gap: 20px; flex-wrap: wrap;
   }
+  /* Each command shows its hint instantly on hover or keyboard focus (a native title tooltip is slow and easy to miss). */
+  footer span[data-tip] {
+    position: relative; cursor: help; padding: 3px 8px; margin: -3px -8px; border-radius: 6px;
+    transition: color .12s, background .12s;
+  }
+  footer span[data-tip]:hover, footer span[data-tip]:focus-visible {
+    color: var(--text); background: var(--card-hover); outline: none;
+  }
+  footer span[data-tip]::after {
+    content: attr(data-tip); position: absolute; left: 0; bottom: calc(100% + 8px); z-index: 5;
+    width: max-content; max-width: min(320px, 80vw); padding: 8px 10px; border-radius: 8px;
+    background: var(--panel); border: 1px solid var(--line); color: var(--text);
+    font-family: inherit; font-size: 12px; line-height: 1.4; white-space: normal;
+    opacity: 0; transform: translateY(4px); pointer-events: none; transition: opacity .12s, transform .12s;
+  }
+  footer span[data-tip]:hover::after, footer span[data-tip]:focus-visible::after { opacity: 1; transform: none; }
 
   @media (max-width: 1100px) {
     .board { grid-template-columns: repeat(3, minmax(0, 1fr)); row-gap: 28px; }
@@ -257,10 +273,15 @@
   .backlog > summary .counts { font-family: var(--mono); font-size: 12px; color: var(--muted); font-weight: 400; }
   .bl-body { display: grid; grid-template-columns: minmax(0, 2fr) minmax(260px, 1fr); gap: 20px; padding: 4px 16px 16px; }
   .bl-group { margin-bottom: 8px; }
-  .bl-group h4 {
-    margin: 12px 0 0; padding: 0 10px 6px; font-size: 11px; text-transform: uppercase;
+  .bl-group > summary {
+    margin: 12px 0 0; padding: 0 10px 6px; font-size: 11px; text-transform: uppercase; font-weight: 600;
     letter-spacing: .06em; color: var(--muted); border-bottom: 1px solid var(--line);
+    cursor: pointer; list-style: none; user-select: none; display: flex; align-items: center; gap: 6px;
   }
+  .bl-group > summary::-webkit-details-marker { display: none; }
+  .bl-group > summary::before { content: '▾'; font-size: 12px; transition: transform .15s; }
+  .bl-group:not([open]) > summary::before { transform: rotate(-90deg); }
+  .bl-group > summary:hover, .bl-group > summary:focus-visible { color: var(--text, inherit); outline: none; }
   .task-row {
     display: grid; grid-template-columns: 78px minmax(0, 1fr) auto 52px 70px; gap: 12px; align-items: center;
     width: 100%; padding: 9px 10px; border: 0; border-bottom: 1px solid var(--line); background: none;
@@ -419,11 +440,13 @@
 </details>
 <main class="board" id="board"></main>
 <footer>
-  <span>/factory &lt;feature&gt;</span>
-  <span>/factory next [n]</span>
-  <span>/factory run &lt;code&gt;</span>
-  <span>/factory approve &lt;job-id&gt;</span>
-  <span>/factory rework &lt;job-id&gt; &lt;note&gt;</span>
+  <span data-tip="Jalankan fitur baru dari satu kalimat" tabindex="0">/factory &lt;feature&gt;</span>
+  <span data-tip="Ambil n item Siap pertama dari backlog dan jalankan paralel (default 1)" tabindex="0">/factory next [n]</span>
+  <span data-tip="Jalankan satu task backlog berdasarkan kodenya" tabindex="0">/factory run &lt;code&gt;</span>
+  <span data-tip="Lanjutkan factory setelah sesi baru: nyalakan server dan watcher, tangani request, PR merge, dan job yang terhenti" tabindex="0">/factory resume</span>
+  <span data-tip="Pantau inbox dashboard dan event PR merged/closed" tabindex="0">/factory watch</span>
+  <span data-tip="Setujui job yang butuh kamu dan buka PR-nya" tabindex="0">/factory approve &lt;job-id&gt;</span>
+  <span data-tip="Kembalikan job yang butuh kamu ke builder dengan catatan" tabindex="0">/factory rework &lt;job-id&gt; &lt;note&gt;</span>
 </footer>
 
 <div id="overlay">
@@ -775,6 +798,16 @@ function taskRow(t) {
   </button>`
 }
 
+// Backlog groups ("Butuh kamu", "Berjalan", ...) fold like a dropdown; the folded ones are remembered in this browser.
+const collapsedGroups = new Set()
+try { JSON.parse(localStorage.getItem('factory.backlog.collapsed') || '[]').forEach((g) => collapsedGroups.add(g)) } catch {}
+document.addEventListener('toggle', (e) => {
+  const d = e.target
+  if (!d.matches || !d.matches('details.bl-group')) return
+  if (d.open) collapsedGroups.delete(d.dataset.group); else collapsedGroups.add(d.dataset.group)
+  try { localStorage.setItem('factory.backlog.collapsed', JSON.stringify([...collapsedGroups])) } catch {}
+}, true)
+
 async function renderBacklog() {
   const res = await fetch('api/backlog', { cache: 'no-store' })
   if (!res.ok) return // served by a plain static server: no backlog API
@@ -790,7 +823,7 @@ async function renderBacklog() {
     ['Selesai', by(['done'])],
   ]
   const html = groups.filter(([, list]) => list.length).map(([title, list]) => `
-    <div class="bl-group"><h4>${esc(title)} · ${list.length}</h4>${list.map(taskRow).join('')}</div>`).join('')
+    <details class="bl-group" data-group="${esc(title)}"${collapsedGroups.has(title) ? '' : ' open'}><summary>${esc(title)} · ${list.length}</summary>${list.map(taskRow).join('')}</details>`).join('')
   if (html !== lastBacklog) {
     lastBacklog = html
     $('bl-list').innerHTML = html
