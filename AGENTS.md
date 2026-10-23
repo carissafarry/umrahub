@@ -26,7 +26,7 @@ Scope now: user-facing app only. Admin CMS is out of scope; content is edited vi
 - `src/lib/notifications/` — deadline-reminder rule (`reminders.ts`), server-side reminder generation and queries, mark-read Server Actions
 - `src/lib/onboarding/` — onboarding wizard validation and trip creation (see Onboarding)
 - `src/middleware.ts` — auth session refresh and route protection (see Auth)
-- `src/lib/trips/` — trip checklist logic (grouping, progress, costs), budget logic (`budget.ts`), page data loaders and the `updateStepStatus` Server Action (see Trip checklist, Budget)
+- `src/lib/trips/` — trip checklist logic (grouping, progress, costs), budget logic (`budget.ts`), page data loaders and the `updateStepStatus` / `updateStepTrackingMode` Server Actions (see Trip checklist, Budget)
 - `src/components/trips/` — trip checklist UI (step accordion, progress card) and the budget page body
 - `src/lib/steps/` — step detail data loader and the safe guide-markdown parser (see Step detail)
 - `src/components/steps/` — step detail page body and the `GuideMarkdown` renderer
@@ -91,8 +91,12 @@ All four must pass before a change is ready. Use `build:check`, not `build`, for
 ## Trip checklist
 
 - `/trips/[id]` (`src/app/trips/[id]/`) loads through `loadTripChecklist` in `src/lib/trips/queries.ts`: signed out → `/`, a non-UUID id or a trip RLS doesn't return → `notFound()`.
-- A step's status lives in its trip-level `trip_step_progress` row (`traveler_id` null). A missing row means `not_started`; progress is `completed` steps ÷ all published steps.
-- Status writes go only through `updateStepStatus` in `src/lib/trips/actions.ts`, which validates input, re-checks trip ownership and upserts on `trip_id,step_id,traveler_id`.
+- Each step has a tracking mode, resolved by `isIndividual` in `src/lib/trips/checklist.ts`: the trip's `trip_step_config` row wins, else `is_shared_step`. The owner switches it per step in the expanded accordion ("Bersama" / "Per jamaah").
+- A step is tracked per traveler when it is individual **and** the trip has at least one traveler (`isPerTraveler`); then each traveler has their own `trip_step_progress` row (`traveler_id` set) and status control. Otherwise it uses the trip-level row (`traveler_id` null). A missing row means `not_started`. Switching modes never deletes rows of either set, so switching back restores the earlier statuses.
+- The aggregate status of a per-traveler step (`aggregateStatus`, via `stepStatus`) is `completed` when every traveler is completed, `not_started` when every traveler is not started, otherwise `in_progress`. The header badge, the blocked marker and `incompletePrerequisites` use it.
+- Progress (`computeProgress`) counts units: a shared step is 1 unit, a per-traveler step 1 unit per traveler; `percent = round(done / total * 100)`. The copy says "tugas"/"tasks", not steps.
+- `loadTripChecklist` also loads `is_shared_step`, the trip's configs, travelers as `id, name` only (by `created_at`, then `id`) and all of the trip's progress rows.
+- Writes go only through the Server Actions in `src/lib/trips/actions.ts`, which validate input, re-check trip ownership and check the step is published: `updateStepStatus(tripId, stepId, status, travelerId = null)` upserts on `trip_id,step_id,traveler_id` (a non-null `travelerId` must be a traveler of that trip), and `updateStepTrackingMode(tripId, stepId, mode)` upserts `trip_step_config` on `trip_id,step_id` and revalidates `/trips/[id]` and its budget page.
 - Costs use the `city_cost_overrides` row whose `city` equals `trips.departure_city` exactly, else the step's own range; they are shown per person.
 - Ordering is by `sort_order` only: phases and categories by their smallest `sort_order`, steps by `sort_order` then `id`. Phase and category labels are `Checklist.phases.*` / `Checklist.categories.*`; an unknown key shows the raw key.
 
@@ -100,14 +104,14 @@ All four must pass before a change is ready. Use `build:check`, not `build`, for
 
 - `/trips/[id]/budget` (`src/app/trips/[id]/budget/`) loads through `loadTripBudget` in `src/lib/trips/queries.ts`, with the same guards as `loadTripChecklist` (shared `loadOwnedTrip`). `/trips/[id]` links to it below the progress card.
 - Totals come from `computeBudget` in `src/lib/trips/budget.ts` (pure, reuses `resolveCost`/`groupSteps`); reuse it, never duplicate the budget logic.
-- A step is individual when its `trip_step_config.tracking_mode` is `'individual'`; with no config row for the step, when `is_shared_step = false`. Individual steps are multiplied by the trip's `travelers` count (at least 1), shared steps by 1.
+- A step is individual when its `trip_step_config.tracking_mode` is `'individual'`; with no config row for the step, when `is_shared_step = false`. That rule is `isIndividual` in `src/lib/trips/checklist.ts` (with the `StepConfig` type); `budget.ts` imports it. Individual steps are multiplied by the trip's `travelers` count (at least 1), shared steps by 1.
 - Summing: a null min counts as 0, a null max counts as the min (or 0). Such steps still show `Checklist.cost.none`. All published steps count, whatever their status.
 - The per-phase bar chart is CSS only (no chart library or SVG): bars scale to the largest phase max.
 
 ## Step detail
 
 - `/steps/[id]?trip=<tripId>` (`src/app/steps/[id]/`) loads through `loadStepDetail` in `src/lib/steps/queries.ts`: signed out → `/`, a non-UUID id or a step that isn't published → `notFound()`. A `trip` param that isn't a UUID or that RLS doesn't return is treated exactly like no trip, so the page never reveals whether a trip exists.
-- Costs, overrides and statuses reuse `src/lib/trips/checklist.ts`; never duplicate that logic.
+- Costs, overrides and statuses reuse `src/lib/trips/checklist.ts`; never duplicate that logic. Prerequisite statuses come from the same `stepStatus` as the checklist (it loads the trip's configs, traveler ids and all progress rows of the dependencies), so a prerequisite tracked per traveler shows its aggregate status.
 - **Database markdown is rendered only through `GuideMarkdown`** (`src/components/steps/GuideMarkdown.tsx`, parser `src/lib/steps/markdown.ts`): raw HTML is shown as literal text, only `https:` links become anchors (new tab, `rel="noopener noreferrer"`), and all text goes in as React children. Never use `dangerouslySetInnerHTML`, `innerHTML`, a raw-HTML plugin such as `rehype-raw`, or a markdown library for it. Supported syntax: `#`/`##` (h2), `###`+ (h3), paragraphs, `1.` / `-` / `*` lists with one nested level, `**bold**`, `[text](https://...)`.
 
 ## Conventions
@@ -155,8 +159,8 @@ All four must pass before a change is ready. Use `build:check`, not `build`, for
 ## Dashboard
 
 - Signed-in users land on `/dashboard` (`src/app/dashboard/`): the OAuth callback, `/` (when Supabase env is set and `getUser()` returns a user) and `/onboarding` (for users who own a trip) all redirect there. `/dashboard` redirects signed-out users to `/` and users with no trips to `/onboarding`, so there is no empty state; deleting the last trip leads to onboarding.
-- `loadDashboard` (`src/lib/dashboard/queries.ts`) selects only `id, name, departure_city, planned_departure_date` of the user's trips (newest first), the published steps once and trip-level progress (`traveler_id` null) of all those trips in one `.in("trip_id", …)` query. It never loads travelers or the disability/minor fields. Errors throw a generic `Error`; `src/app/dashboard/error.tsx` shows a calm retry card.
-- Per-trip progress is `summarizeTrips` (`src/lib/dashboard/summary.ts`), which groups rows by `trip_id` and calls `computeProgress`; never re-implement the counting, so the dashboard matches `/trips/[id]`.
+- `loadDashboard` (`src/lib/dashboard/queries.ts`) selects only `id, name, departure_city, planned_departure_date` of the user's trips (newest first), the published steps once (with `is_shared_step`), and the `trip_step_config` rows, travelers (`id, trip_id` only) and all progress rows of those trips, each in one `.in("trip_id", …)` query. It never loads the disability/minor fields. Errors throw a generic `Error`; `src/app/dashboard/error.tsx` shows a calm retry card.
+- Per-trip progress is `summarizeTrips` (`src/lib/dashboard/summary.ts`), which groups configs, travelers and progress rows by `trip_id` and calls `computeProgress`; never re-implement the counting, so the dashboard matches `/trips/[id]`.
 - `renameTrip` and `deleteTrip` (`src/lib/dashboard/actions.ts`) validate (`isUuid`, `parseTripName`: trimmed, 1–80 chars, duplicates allowed), call `getUser()`, re-check ownership with `.eq("id").eq("user_id", user.id).maybeSingle()`, then write filtered by both `id` and `user_id` and `revalidatePath("/dashboard")`. Delete relies on the `on delete cascade` of travelers, config and progress. Logs are a fixed string plus `error.code` only.
 - Both are confirmed in modal `<dialog>`s in `src/components/dashboard/TripActions.tsx` (the only client component on the page); delete is a `role="alertdialog"` with Cancel focused first and an ink-filled (`bg-foreground text-background`) destructive button, never indigo.
 - Trip cap: `maxTripsPerUser` = 10 (`src/lib/dashboard/validate.ts`), enforced at app level only, in `createAdditionalTrip` (returns `{ error: "limit" }`); at the cap the dashboard shows `Onboarding.errors.limit` instead of the CTA. There is no DB-level cap.

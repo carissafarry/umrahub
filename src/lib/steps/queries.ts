@@ -6,6 +6,7 @@ import {
   resolveCost,
   stepStatus,
   type CityCostOverride,
+  type StepConfig,
   type StepProgress,
   type StepStatus,
 } from "@/lib/trips/checklist";
@@ -30,10 +31,14 @@ type PrerequisiteRow = {
   title_id: string;
   title_en: string;
   sort_order: number;
+  is_shared_step: boolean;
 };
 
-// `status` is null when no trip was loaded.
-export type Prerequisite = PrerequisiteRow & { status: StepStatus | null };
+// `status` is null when no trip was loaded; per-traveler prerequisites show
+// their aggregate status, like the checklist.
+export type Prerequisite = Omit<PrerequisiteRow, "is_shared_step"> & {
+  status: StepStatus | null;
+};
 
 const noRows = { data: [], error: null };
 
@@ -77,36 +82,61 @@ export async function loadStepDetail(
   const trip = tripResult.data;
 
   const dependencyIds = step.dependency_step_ids ?? [];
-  const [overrides, progress, prerequisites] = await Promise.all([
-    trip
-      ? supabase
-          .from("city_cost_overrides")
-          .select("step_id, city, cost_min, cost_max")
-          .eq("step_id", step.id)
-          .eq("city", trip.departure_city)
-          .overrideTypes<CityCostOverride[], { merge: false }>()
-      : noRows,
-    trip && dependencyIds.length > 0
-      ? supabase
-          .from("trip_step_progress")
-          .select("step_id, status")
-          .eq("trip_id", trip.id)
-          .is("traveler_id", null)
-          .in("step_id", dependencyIds)
-          .overrideTypes<StepProgress[], { merge: false }>()
-      : noRows,
-    dependencyIds.length > 0
-      ? supabase
-          .from("preparation_steps")
-          .select("id, title_id, title_en, sort_order")
-          .in("id", dependencyIds)
-          .eq("is_published", true)
-          .order("sort_order")
-          .overrideTypes<PrerequisiteRow[], { merge: false }>()
-      : noRows,
-  ]);
-  const error = overrides.error ?? progress.error ?? prerequisites.error;
+  const tracksPrerequisites = trip !== null && dependencyIds.length > 0;
+  const [overrides, configs, travelers, progress, prerequisites] =
+    await Promise.all([
+      trip
+        ? supabase
+            .from("city_cost_overrides")
+            .select("step_id, city, cost_min, cost_max")
+            .eq("step_id", step.id)
+            .eq("city", trip.departure_city)
+            .overrideTypes<CityCostOverride[], { merge: false }>()
+        : noRows,
+      tracksPrerequisites
+        ? supabase
+            .from("trip_step_config")
+            .select("step_id, tracking_mode")
+            .eq("trip_id", trip.id)
+            .overrideTypes<StepConfig[], { merge: false }>()
+        : noRows,
+      tracksPrerequisites
+        ? supabase
+            .from("travelers")
+            .select("id")
+            .eq("trip_id", trip.id)
+            .overrideTypes<{ id: string }[], { merge: false }>()
+        : noRows,
+      tracksPrerequisites
+        ? supabase
+            .from("trip_step_progress")
+            .select("step_id, traveler_id, status")
+            .eq("trip_id", trip.id)
+            .in("step_id", dependencyIds)
+            .overrideTypes<StepProgress[], { merge: false }>()
+        : noRows,
+      dependencyIds.length > 0
+        ? supabase
+            .from("preparation_steps")
+            .select("id, title_id, title_en, sort_order, is_shared_step")
+            .in("id", dependencyIds)
+            .eq("is_published", true)
+            .order("sort_order")
+            .overrideTypes<PrerequisiteRow[], { merge: false }>()
+        : noRows,
+    ]);
+  const error =
+    overrides.error ??
+    configs.error ??
+    travelers.error ??
+    progress.error ??
+    prerequisites.error;
   if (error) throw new Error("Failed to load step details", { cause: error });
+  const tracking = {
+    configs: configs.data ?? [],
+    travelerIds: (travelers.data ?? []).map((traveler) => traveler.id),
+    progress: progress.data ?? [],
+  };
 
   return {
     step,
@@ -115,9 +145,11 @@ export async function loadStepDetail(
       resolveCost(step, overrides.data ?? [], trip?.departure_city ?? ""),
     ),
     prerequisites: (prerequisites.data ?? []).map(
-      (row): Prerequisite => ({
+      ({ is_shared_step, ...row }): Prerequisite => ({
         ...row,
-        status: trip ? stepStatus(row.id, progress.data ?? []) : null,
+        status: trip
+          ? stepStatus({ id: row.id, is_shared_step }, tracking)
+          : null,
       }),
     ),
   };

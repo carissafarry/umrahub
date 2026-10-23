@@ -3,17 +3,25 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 import en from "../../../messages/en.json";
 import id from "../../../messages/id.json";
-import type { StepStatus } from "@/lib/trips/checklist";
-import { StepAccordion } from "./StepAccordion";
+import type { StepStatus, TrackingMode } from "@/lib/trips/checklist";
+import { StepAccordion, type TravelerStepStatus } from "./StepAccordion";
 
-vi.mock("@/lib/trips/actions", () => ({ updateStepStatus: vi.fn() }));
+vi.mock("@/lib/trips/actions", () => ({
+  updateStepStatus: vi.fn(),
+  updateStepTrackingMode: vi.fn(),
+}));
 
 const stepId = "5eed0000-0000-4000-8000-000000000009";
+
+const ahmad = "aaaaaaaa-0000-4000-8000-000000000001";
+const siti = "aaaaaaaa-0000-4000-8000-000000000002";
 
 function render(
   status: StepStatus,
   locale: "id" | "en" = "id",
   prerequisites: string[] = [],
+  trackingMode: TrackingMode = "shared",
+  travelers: TravelerStepStatus[] = [],
 ) {
   return renderToStaticMarkup(
     <NextIntlClientProvider
@@ -30,7 +38,9 @@ function render(
           key: "range",
           values: { min: "Rp 10.000.000", max: "Rp 16.000.000" },
         }}
+        trackingMode={trackingMode}
         status={status}
+        travelers={travelers}
         prerequisites={prerequisites}
       />
     </NextIntlClientProvider>,
@@ -66,6 +76,161 @@ describe("StepAccordion", () => {
       'role="radiogroup" aria-label="Status langkah: Pesan tiket pesawat"',
     );
     expect(html).toMatch(/aria-checked="true"[^>]*>Selesai</);
+  });
+
+  describe("tracking mode", () => {
+    const pair = (a: StepStatus, b: StepStatus): TravelerStepStatus[] => [
+      { id: ahmad, name: "Ahmad", status: a },
+      { id: siti, name: "Siti", status: b },
+    ];
+    const radiogroups = (html: string) =>
+      [...html.matchAll(/role="radiogroup" aria-label="([^"]+)"/g)].map(
+        ([, label]) => label,
+      );
+    const badge = (html: string) =>
+      html.match(/<button[^>]*aria-expanded[^>]*>.*?<\/button>/)?.[0] ?? "";
+
+    it("renders a tracking-mode radiogroup with Bersama and Per jamaah", () => {
+      const html = render(
+        "not_started",
+        "id",
+        [],
+        "individual",
+        pair("completed", "not_started"),
+      );
+      const group =
+        html.match(
+          /<div role="radiogroup" aria-label="Pencatatan status: Pesan tiket pesawat"[^>]*>.*?<\/div>/,
+        )?.[0] ?? "";
+      expect(group).toMatch(/aria-checked="false"[^>]*>Bersama</);
+      expect(group).toMatch(/aria-checked="true"[^>]*>Per jamaah</);
+      expect(group).toContain("tap-target");
+
+      const en = render("not_started", "en", [], "shared", []);
+      expect(en).toMatch(/aria-checked="true"[^>]*>Shared</);
+      expect(en).toMatch(/aria-checked="false"[^>]*>Per traveler</);
+    });
+
+    it("renders one status radiogroup per traveler, named after each", () => {
+      const html = render(
+        "not_started",
+        "id",
+        [],
+        "individual",
+        pair("completed", "not_started"),
+      );
+      const statusGroups = radiogroups(html).filter(
+        (label) => !label.startsWith("Pencatatan"),
+      );
+      expect(statusGroups).toEqual([
+        "Status Ahmad: Pesan tiket pesawat",
+        "Status Siti: Pesan tiket pesawat",
+      ]);
+      expect(html).toContain(">Ahmad</p>");
+      expect(html).toContain(">Siti</p>");
+      // Names come before their own control, in loader order.
+      expect(html.indexOf(">Ahmad</p>")).toBeLessThan(
+        html.indexOf("Status Ahmad"),
+      );
+      expect(html.indexOf("Status Ahmad")).toBeLessThan(
+        html.indexOf(">Siti</p>"),
+      );
+    });
+
+    it("renders a shared step with one status radiogroup", () => {
+      const html = render(
+        "in_progress",
+        "id",
+        [],
+        "shared",
+        pair("completed", "completed"),
+      );
+      expect(radiogroups(html)).toEqual([
+        "Pencatatan status: Pesan tiket pesawat",
+        "Status langkah: Pesan tiket pesawat",
+      ]);
+      expect(html).not.toContain("Ahmad");
+      expect(badge(html)).toContain("Sedang dikerjakan");
+    });
+
+    it("keeps the single control for an individual step without travelers", () => {
+      const html = render("completed", "id", [], "individual", []);
+      expect(radiogroups(html)).toEqual([
+        "Pencatatan status: Pesan tiket pesawat",
+        "Status langkah: Pesan tiket pesawat",
+      ]);
+      expect(badge(html)).toContain(">Selesai</span>");
+    });
+
+    it("shows the aggregate status in the header", () => {
+      expect(
+        badge(
+          render(
+            "completed",
+            "id",
+            [],
+            "individual",
+            pair("completed", "not_started"),
+          ),
+        ),
+      ).toContain(">Sedang dikerjakan</span>");
+      expect(
+        badge(
+          render(
+            "not_started",
+            "id",
+            [],
+            "individual",
+            pair("completed", "completed"),
+          ),
+        ),
+      ).toContain(">Selesai</span>");
+      expect(
+        badge(
+          render(
+            "completed",
+            "id",
+            [],
+            "individual",
+            pair("not_started", "not_started"),
+          ),
+        ),
+      ).toContain(">Belum mulai</span>");
+    });
+
+    it("marks a per-traveler step blocked until everyone is done", () => {
+      const titles = ["Paspor"];
+      expect(
+        badge(
+          render(
+            "completed",
+            "id",
+            titles,
+            "individual",
+            pair("completed", "in_progress"),
+          ),
+        ),
+      ).toContain("Menunggu langkah lain");
+      expect(
+        badge(
+          render(
+            "not_started",
+            "id",
+            titles,
+            "individual",
+            pair("completed", "completed"),
+          ),
+        ),
+      ).not.toContain("Menunggu langkah lain");
+    });
+
+    it("renders traveler names as text, never HTML", () => {
+      const html = render("not_started", "id", [], "individual", [
+        { id: ahmad, name: "<b>Ahmad</b>", status: "not_started" },
+      ]);
+      expect(html).not.toContain("<b>Ahmad</b>");
+      expect(html).toContain("&lt;b&gt;Ahmad&lt;/b&gt;");
+    });
   });
 
   describe("prerequisites", () => {

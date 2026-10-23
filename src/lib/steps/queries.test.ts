@@ -50,17 +50,26 @@ const visa = {
   title_en: "Apply for an Umrah visa",
   sort_order: 70,
 };
+// The rows the prerequisites query returns; `is_shared_step` is not passed on.
+const passportRow = { ...passport, is_shared_step: false };
+const visaRow = { ...visa, is_shared_step: false };
+const ahmad = "aaaaaaaa-0000-4000-8000-000000000001";
 
 const ok = (data: unknown) => ({ data, error: null });
 
 function tables(withTrip: boolean) {
   return {
-    preparation_steps: [ok(flights), ok([passport, visa])],
+    preparation_steps: [ok(flights), ok([passportRow, visaRow])],
     trips: ok(withTrip ? trip : null),
     city_cost_overrides: ok([
       { step_id: stepId(9), city: "Surabaya", cost_min: 10000000, cost_max: 16000000 },
     ]),
-    trip_step_progress: ok([{ step_id: stepId(1), status: "completed" }]),
+    // No travelers, so the individual prerequisites use trip-level rows.
+    trip_step_config: ok([]),
+    travelers: ok([]),
+    trip_step_progress: ok([
+      { step_id: stepId(1), traveler_id: null, status: "completed" },
+    ]),
   };
 }
 
@@ -133,6 +142,21 @@ describe("loadStepDetail", () => {
     );
   });
 
+  it.each(["trip_step_config", "travelers", "trip_step_progress"])(
+    "throws on a %s query error",
+    async (table) => {
+      fake = fakeSupabase({
+        tables: {
+          ...tables(true),
+          [table]: { data: null, error: { message: "boom" } },
+        },
+      });
+      await expect(loadStepDetail(stepId(9), tripId)).rejects.toThrow(
+        "Failed to load step details",
+      );
+    },
+  );
+
   it("without a trip param, uses the base cost and no statuses", async () => {
     fake = fakeSupabase({ tables: tables(true) });
     expect(await loadStepDetail(stepId(9), undefined)).toEqual(noTripResult);
@@ -150,10 +174,12 @@ describe("loadStepDetail", () => {
     expect(await loadStepDetail(stepId(9), tripId)).toEqual(noTripResult);
     expect(query("trips").eq).toHaveBeenCalledWith("id", tripId);
     expect(queried()).not.toContain("city_cost_overrides");
+    expect(queried()).not.toContain("trip_step_config");
+    expect(queried()).not.toContain("travelers");
     expect(queried()).not.toContain("trip_step_progress");
   });
 
-  it("with an owned trip, uses the city's override and trip-level progress", async () => {
+  it("with an owned trip, uses the city's override and the trip's progress", async () => {
     fake = fakeSupabase({ tables: tables(true) });
     expect(await loadStepDetail(stepId(9), tripId)).toEqual({
       step: flights,
@@ -176,14 +202,23 @@ describe("loadStepDetail", () => {
       "city",
       "Surabaya",
     );
+    expect(query("trip_step_config").select).toHaveBeenCalledWith(
+      "step_id, tracking_mode",
+    );
+    expect(query("trip_step_config").eq).toHaveBeenCalledWith(
+      "trip_id",
+      tripId,
+    );
+    expect(query("travelers").select).toHaveBeenCalledWith("id");
+    expect(query("travelers").eq).toHaveBeenCalledWith("trip_id", tripId);
+    expect(query("trip_step_progress").select).toHaveBeenCalledWith(
+      "step_id, traveler_id, status",
+    );
     expect(query("trip_step_progress").eq).toHaveBeenCalledWith(
       "trip_id",
       tripId,
     );
-    expect(query("trip_step_progress").is).toHaveBeenCalledWith(
-      "traveler_id",
-      null,
-    );
+    expect(query("trip_step_progress").is).not.toHaveBeenCalled();
     expect(query("trip_step_progress").in).toHaveBeenCalledWith(
       "step_id",
       flights.dependency_step_ids,
@@ -193,8 +228,35 @@ describe("loadStepDetail", () => {
       "id",
       flights.dependency_step_ids,
     );
+    expect(prerequisites.select).toHaveBeenCalledWith(
+      expect.stringContaining("is_shared_step"),
+    );
     expect(prerequisites.eq).toHaveBeenCalledWith("is_published", true);
     expect(prerequisites.order).toHaveBeenCalledWith("sort_order");
+  });
+
+  it("shows the aggregate status of a prerequisite tracked per traveler", async () => {
+    fake = fakeSupabase({
+      tables: {
+        ...tables(true),
+        // Visa is switched to shared; passport stays individual.
+        trip_step_config: ok([{ step_id: stepId(7), tracking_mode: "shared" }]),
+        travelers: ok([
+          { id: ahmad },
+          { id: "aaaaaaaa-0000-4000-8000-000000000002" },
+        ]),
+        trip_step_progress: ok([
+          { step_id: stepId(1), traveler_id: null, status: "completed" },
+          { step_id: stepId(1), traveler_id: ahmad, status: "completed" },
+          { step_id: stepId(7), traveler_id: ahmad, status: "completed" },
+        ]),
+      },
+    });
+    const result = await loadStepDetail(stepId(9), tripId);
+    expect(result.prerequisites).toEqual([
+      { ...passport, status: "in_progress" },
+      { ...visa, status: "not_started" },
+    ]);
   });
 
   it("skips prerequisite and progress queries for a step without dependencies", async () => {

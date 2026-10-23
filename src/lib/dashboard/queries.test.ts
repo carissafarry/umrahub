@@ -44,20 +44,42 @@ describe("loadDashboard", () => {
     expect(await loadDashboard()).toEqual({
       trips: [],
       steps: [],
+      configs: [],
+      travelers: [],
       progress: [],
     });
     expect(fake.from).toHaveBeenCalledTimes(1);
   });
 
   it("selects only display columns of the user's trips, newest first", async () => {
+    const configs = [
+      { trip_id: "trip-1", step_id: "s1", tracking_mode: "shared" },
+    ];
+    const travelers = [{ id: "t1", trip_id: "trip-1" }];
+    const progress = [
+      {
+        trip_id: "trip-1",
+        step_id: "s1",
+        traveler_id: "t1",
+        status: "completed",
+      },
+    ];
     fake = fakeSupabase({
       tables: {
         trips: { data: trips, error: null },
         preparation_steps: { data: [], error: null },
-        trip_step_progress: { data: [], error: null },
+        trip_step_config: { data: configs, error: null },
+        travelers: { data: travelers, error: null },
+        trip_step_progress: { data: progress, error: null },
       },
     });
-    expect(await loadDashboard()).toEqual({ trips, steps: [], progress: [] });
+    expect(await loadDashboard()).toEqual({
+      trips,
+      steps: [],
+      configs,
+      travelers,
+      progress,
+    });
 
     expect(query("trips").select).toHaveBeenCalledWith(
       "id, name, departure_city, planned_departure_date",
@@ -70,36 +92,47 @@ describe("loadDashboard", () => {
       "is_published",
       true,
     );
+    expect(query("preparation_steps").select).toHaveBeenCalledWith(
+      expect.stringContaining("is_shared_step"),
+    );
+    expect(query("trip_step_config").select).toHaveBeenCalledWith(
+      "trip_id, step_id, tracking_mode",
+    );
+    // Ids only: never the minor or disability fields.
+    expect(query("travelers").select).toHaveBeenCalledWith("id, trip_id");
     expect(query("trip_step_progress").select).toHaveBeenCalledWith(
-      "trip_id, step_id, status",
+      "trip_id, step_id, traveler_id, status",
     );
-    expect(query("trip_step_progress").in).toHaveBeenCalledWith("trip_id", [
-      "trip-2",
-      "trip-1",
-    ]);
-    expect(query("trip_step_progress").is).toHaveBeenCalledWith(
-      "traveler_id",
-      null,
-    );
-    expect(fake.from).toHaveBeenCalledTimes(3);
+    for (const table of [
+      "trip_step_config",
+      "travelers",
+      "trip_step_progress",
+    ]) {
+      expect(query(table).in).toHaveBeenCalledWith("trip_id", [
+        "trip-2",
+        "trip-1",
+      ]);
+    }
+    expect(query("trip_step_progress").is).not.toHaveBeenCalled();
+    expect(fake.from).toHaveBeenCalledTimes(5);
   });
 
-  it("throws a generic error without the raw message", async () => {
-    fake = fakeSupabase({
-      tables: {
-        trips: { data: trips, error: null },
-        preparation_steps: { data: [], error: null },
-        trip_step_progress: {
-          data: null,
-          error: { message: "secret detail" },
+  it.each(["trip_step_config", "travelers", "trip_step_progress"])(
+    "throws a generic error without the raw message when %s fails",
+    async (table) => {
+      fake = fakeSupabase({
+        tables: {
+          trips: { data: trips, error: null },
+          preparation_steps: { data: [], error: null },
+          [table]: { data: null, error: { message: "secret detail" } },
         },
-      },
-    });
-    const error = await loadDashboard().catch((caught: Error) => caught);
-    expect(error).toBeInstanceOf(Error);
-    expect((error as Error).message).toBe("Failed to load trip progress");
-    expect((error as Error).message).not.toContain("secret");
-  });
+      });
+      const error = await loadDashboard().catch((caught: Error) => caught);
+      expect(error).toBeInstanceOf(Error);
+      expect((error as Error).message).toBe("Failed to load trip progress");
+      expect((error as Error).message).not.toContain("secret");
+    },
+  );
 
   it("throws a generic error when the trips query fails", async () => {
     fake = fakeSupabase({

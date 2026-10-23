@@ -33,7 +33,7 @@
   "Checklist": {
     "departureCity": "Departing from {city}",
     "progressTitle": "Preparation progress",
-    "progressText": "{done} of {total} steps done",
+    "progressText": "{done} of {total} tasks done",
     "progressPercent": "{percent}%",
     "progressLabel": "Umrah preparation progress",
     "perPersonNote": "All costs are shown per person.",
@@ -62,6 +62,13 @@
       "completed": "Done"
     },
     "statusControlLabel": "Step status: {title}",
+    "travelerStatusLabel": "Status for {name}: {title}",
+    "trackingModeHeading": "Status tracking",
+    "trackingModeLabel": "Status tracking: {title}",
+    "trackingMode": {
+      "shared": "Shared",
+      "individual": "Per traveler"
+    },
     "costLabel": "Estimated cost",
     "perPerson": "per person",
     "cost": {
@@ -185,7 +192,7 @@
     "create": "Create new trip",
     "departureCity": "Departing from {city}",
     "departureMonth": "Planned departure {date}",
-    "progressText": "{done} of {total} steps done",
+    "progressText": "{done} of {total} tasks done",
     "progressPercent": "{percent}%",
     "progressLabel": "{name} preparation progress",
     "cancel": "Cancel",

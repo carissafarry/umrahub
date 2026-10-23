@@ -10,13 +10,22 @@ import {
   ClockIcon,
 } from "@/components/ui/icons";
 import { SegmentedControl } from "@/components/ui/SegmentedControl";
-import { updateStepStatus } from "@/lib/trips/actions";
+import { updateStepStatus, updateStepTrackingMode } from "@/lib/trips/actions";
 import {
+  aggregateStatus,
   stepStatuses,
+  trackingModes,
   type CostText,
   type StepStatus,
+  type TrackingMode,
 } from "@/lib/trips/checklist";
 import { StatusBadge } from "./StatusBadge";
+
+export type TravelerStepStatus = {
+  id: string;
+  name: string;
+  status: StepStatus;
+};
 
 type StepAccordionProps = {
   tripId: string;
@@ -24,13 +33,19 @@ type StepAccordionProps = {
   title: string;
   summary: string | null;
   cost: CostText;
+  trackingMode: TrackingMode;
+  // Trip-level status, shown in shared mode.
   status: StepStatus;
+  // Each traveler's own status in loader order, shown in individual mode.
+  travelers: TravelerStepStatus[];
   // Localized titles of prerequisites that are not completed yet.
   prerequisites: string[];
 };
 
 // One checklist step: a collapsed header with its status badge, expanding to
-// the summary, per-person cost and the status control. Prerequisites are
+// the summary, per-person cost, the tracking-mode switch and one status
+// control (shared) or one per traveler (individual). An individual step on a
+// trip without travelers keeps the single control. Prerequisites are
 // advisory: a blocked step is marked and warned about, never locked.
 export function StepAccordion({
   tripId,
@@ -38,7 +53,9 @@ export function StepAccordion({
   title,
   summary,
   cost,
+  trackingMode,
   status,
+  travelers,
   prerequisites,
 }: StepAccordionProps) {
   const t = useTranslations("Checklist");
@@ -46,30 +63,75 @@ export function StepAccordion({
   const [open, setOpen] = useState(false);
   const [saveFailed, setSaveFailed] = useState(false);
   const [warnPrerequisites, setWarnPrerequisites] = useState(false);
-  // Falls back to the server's `status` when the transition ends: the new
+  // Each falls back to the server's value when its transition ends: the new
   // value after revalidation, or the previous one if saving failed.
+  const [shownMode, setShownMode] = useOptimistic(trackingMode);
   const [shownStatus, setShownStatus] = useOptimistic(status);
+  const [shownTravelers, setTravelerStatus] = useOptimistic(
+    travelers,
+    (current, next: { id: string; status: StepStatus }) =>
+      current.map((traveler) =>
+        traveler.id === next.id
+          ? { ...traveler, status: next.status }
+          : traveler,
+      ),
+  );
   const [, startTransition] = useTransition();
   const panelId = `step-panel-${stepId}`;
-  const blocked = shownStatus !== "completed" && prerequisites.length > 0;
+  const perTraveler = shownMode === "individual" && shownTravelers.length > 0;
+  const headerStatus = perTraveler
+    ? aggregateStatus(shownTravelers.map((traveler) => traveler.status))
+    : shownStatus;
+  const blocked = headerStatus !== "completed" && prerequisites.length > 0;
   const prerequisiteList = new Intl.ListFormat(locale, {
     type: "conjunction",
   }).format(prerequisites);
 
-  function changeStatus(next: StepStatus) {
-    if (next === shownStatus) return;
+  function save(
+    showOptimistic: () => void,
+    action: () => Promise<{ ok: boolean }>,
+  ) {
     setSaveFailed(false);
-    setWarnPrerequisites(next === "completed" && prerequisites.length > 0);
     startTransition(async () => {
-      setShownStatus(next);
+      showOptimistic();
       try {
-        const result = await updateStepStatus(tripId, stepId, next);
+        const result = await action();
         if (!result.ok) setSaveFailed(true);
       } catch {
         setSaveFailed(true);
       }
     });
   }
+
+  function changeStatus(
+    current: StepStatus,
+    next: StepStatus,
+    travelerId: string | null,
+  ) {
+    if (next === current) return;
+    setWarnPrerequisites(next === "completed" && prerequisites.length > 0);
+    save(
+      () =>
+        travelerId === null
+          ? setShownStatus(next)
+          : setTravelerStatus({ id: travelerId, status: next }),
+      () => updateStepStatus(tripId, stepId, next, travelerId),
+    );
+  }
+
+  function changeMode(next: TrackingMode) {
+    if (next === shownMode) return;
+    setWarnPrerequisites(false);
+    save(
+      () => setShownMode(next),
+      () => updateStepTrackingMode(tripId, stepId, next),
+    );
+  }
+
+  const statusOptions = stepStatuses.map((value) => ({
+    value,
+    label: t(`status.${value}`),
+  }));
 
   return (
     <Card as="li">
@@ -91,8 +153,8 @@ export function StepAccordion({
                 </span>
               )}
               <StatusBadge
-                status={shownStatus}
-                label={t(`status.${shownStatus}`)}
+                status={headerStatus}
+                label={t(`status.${headerStatus}`)}
               />
             </span>
           </span>
@@ -129,15 +191,45 @@ export function StepAccordion({
           {t("learnMore")}
           <ArrowRightIcon className="size-4" />
         </Link>
-        <SegmentedControl
-          label={t("statusControlLabel", { title })}
-          options={stepStatuses.map((value) => ({
-            value,
-            label: t(`status.${value}`),
-          }))}
-          value={shownStatus}
-          onChange={changeStatus}
-        />
+        <div className="flex flex-col gap-2">
+          <p className="text-sm text-muted">{t("trackingModeHeading")}</p>
+          <SegmentedControl
+            label={t("trackingModeLabel", { title })}
+            options={trackingModes.map((value) => ({
+              value,
+              label: t(`trackingMode.${value}`),
+            }))}
+            value={shownMode}
+            onChange={changeMode}
+          />
+        </div>
+        {perTraveler ? (
+          <ul className="grid gap-4 md:grid-cols-2">
+            {shownTravelers.map((traveler) => (
+              <li key={traveler.id} className="flex min-w-0 flex-col gap-2">
+                <p className="font-semibold break-words">{traveler.name}</p>
+                <SegmentedControl
+                  label={t("travelerStatusLabel", {
+                    name: traveler.name,
+                    title,
+                  })}
+                  options={statusOptions}
+                  value={traveler.status}
+                  onChange={(next) =>
+                    changeStatus(traveler.status, next, traveler.id)
+                  }
+                />
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <SegmentedControl
+            label={t("statusControlLabel", { title })}
+            options={statusOptions}
+            value={shownStatus}
+            onChange={(next) => changeStatus(shownStatus, next, null)}
+          />
+        )}
         {warnPrerequisites && (
           <p
             role="status"

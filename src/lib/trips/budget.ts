@@ -2,19 +2,16 @@
 // No React or Supabase imports, so it is easy to unit test.
 import {
   groupSteps,
+  isIndividual,
   resolveCost,
   type ChecklistStep,
   type CityCostOverride,
   type CostRange,
+  type StepConfig,
+  type TrackedStep,
 } from "./checklist";
 
-export type BudgetStep = ChecklistStep & { is_shared_step: boolean };
-
-// A per-trip trip_step_config row; it wins over `is_shared_step`.
-export type StepConfig = {
-  step_id: string;
-  tracking_mode: "shared" | "individual";
-};
+export type BudgetStep = ChecklistStep & TrackedStep;
 
 export type StepBudget = {
   step: BudgetStep;
@@ -31,11 +28,6 @@ export type PhaseBudget = {
   steps: StepBudget[];
   total: BudgetTotal;
 };
-
-export function isIndividual(step: BudgetStep, configs: StepConfig[]) {
-  const config = configs.find((row) => row.step_id === step.id);
-  return config ? config.tracking_mode === "individual" : !step.is_shared_step;
-}
 
 const multiply = (amount: number | null, multiplier: number) =>
   amount === null ? null : amount * multiplier;

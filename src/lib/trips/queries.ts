@@ -1,10 +1,11 @@
 import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import type { BudgetStep, StepConfig } from "./budget";
+import type { BudgetStep } from "./budget";
 import {
   isUuid,
   type CityCostOverride,
   type DependentStep,
+  type StepConfig,
   type StepProgress,
 } from "./checklist";
 
@@ -13,6 +14,9 @@ export type ChecklistTrip = {
   name: string;
   departure_city: string;
 };
+
+// Only what the checklist shows; never the minor or disability fields.
+export type ChecklistTraveler = { id: string; name: string };
 
 const stepColumns =
   "id, phase_key, category_key, title_id, title_en, summary_id, summary_en, estimated_cost_min, estimated_cost_max, sort_order";
@@ -43,10 +47,10 @@ async function loadOwnedTrip(id: string) {
 export async function loadTripChecklist(id: string) {
   const { supabase, trip } = await loadOwnedTrip(id);
 
-  const [steps, overrides, progress] = await Promise.all([
+  const [steps, overrides, configs, travelers, progress] = await Promise.all([
     supabase
       .from("preparation_steps")
-      .select(`${stepColumns}, dependency_step_ids`)
+      .select(`${stepColumns}, is_shared_step, dependency_step_ids`)
       .eq("is_published", true)
       .order("sort_order")
       .overrideTypes<DependentStep[], { merge: false }>(),
@@ -56,19 +60,37 @@ export async function loadTripChecklist(id: string) {
       .eq("city", trip.departure_city)
       .overrideTypes<CityCostOverride[], { merge: false }>(),
     supabase
-      .from("trip_step_progress")
-      .select("step_id, status")
+      .from("trip_step_config")
+      .select("step_id, tracking_mode")
       .eq("trip_id", trip.id)
-      .is("traveler_id", null)
+      .overrideTypes<StepConfig[], { merge: false }>(),
+    supabase
+      .from("travelers")
+      .select("id, name")
+      .eq("trip_id", trip.id)
+      .order("created_at")
+      .order("id")
+      .overrideTypes<ChecklistTraveler[], { merge: false }>(),
+    supabase
+      .from("trip_step_progress")
+      .select("step_id, traveler_id, status")
+      .eq("trip_id", trip.id)
       .overrideTypes<StepProgress[], { merge: false }>(),
   ]);
-  const error = steps.error ?? overrides.error ?? progress.error;
+  const error =
+    steps.error ??
+    overrides.error ??
+    configs.error ??
+    travelers.error ??
+    progress.error;
   if (error) throw new Error("Failed to load checklist", { cause: error });
 
   return {
     trip,
     steps: steps.data ?? [],
     overrides: overrides.data ?? [],
+    configs: configs.data ?? [],
+    travelers: travelers.data ?? [],
     progress: progress.data ?? [],
   };
 }
