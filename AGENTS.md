@@ -28,8 +28,8 @@ Scope now: user-facing app only. Admin CMS is out of scope; content is edited vi
 - `src/middleware.ts` — auth session refresh and route protection (see Auth)
 - `src/lib/trips/` — trip checklist logic (grouping, progress, costs), budget logic (`budget.ts`), page data loaders and the `updateStepStatus` / `updateStepTrackingMode` Server Actions (see Trip checklist, Budget)
 - `src/components/trips/` — trip checklist UI (step accordion, progress card) and the budget page body
-- `src/lib/steps/` — step detail data loader and the safe guide-markdown parser (see Step detail)
-- `src/components/steps/` — step detail page body and the `GuideMarkdown` renderer
+- `src/lib/steps/` — step detail data loader, the safe guide-markdown parser, comment validation (`comments.ts`) and the comment Server Actions (`actions.ts`) (see Step detail, Step comments)
+- `src/components/steps/` — step detail page body, the `GuideMarkdown` renderer and the `StepComments` tips section
 - `src/lib/dashboard/` — trip dashboard loader, per-trip progress summary, trip-name rules and the `renameTrip` / `deleteTrip` Server Actions (see Dashboard)
 - `src/components/dashboard/` — dashboard trip card and its rename/delete dialogs (see Dashboard)
 - `src/i18n/` — next-intl setup: locales (`config.ts`), request config (`request.ts`), language Server Action (`actions.ts`)
@@ -76,7 +76,7 @@ All four must pass before a change is ready. Use `build:check`, not `build`, for
 - To check a migration runs, use the local stack if Docker is available: `supabase start` then `supabase db reset --local`. Stop it with `supabase stop` when done.
 - All worktrees share **one** local stack. Before `supabase start`, run `supabase status`: if it is already running, another job owns it. Wait (check every 30s, up to 15 minutes) instead of resetting or stopping it. If it is still busy, skip the local check and say so in your report.
 - Generated types: `supabase gen types typescript --local > src/lib/supabase/database.types.ts` (local stack only).
-- MVP tables: `trips`, `travelers`, `trip_step_config`, `trip_step_progress` are trip-owned (signed-in users read/write only rows of their own trips); `preparation_steps` (published only) and `city_cost_overrides` are read-only for any signed-in user; `notifications` is user-owned (users read and insert only their own rows, for their own trips; update is limited to the read state `is_read`/`read_at`; no delete). `anon` gets nothing.
+- MVP tables: `trips`, `travelers`, `trip_step_config`, `trip_step_progress` are trip-owned (signed-in users read/write only rows of their own trips); `preparation_steps` (published only) and `city_cost_overrides` are read-only for any signed-in user; `notifications` is user-owned (users read and insert only their own rows, for their own trips; update is limited to the read state `is_read`/`read_at`; no delete); `step_comments` is readable by any signed-in user unless hidden, users insert and delete only their own, there is no update, and the author fields are set by a trigger. `anon` gets nothing.
 - Database tests are pgTAP files in `supabase/tests/`; run them with `supabase test db` (local stack only).
 - Preparation-step content is seeded by `supabase/migrations/20261018150410_seed_preparation_steps.sql`:
   - Step ids are fixed: `5eed0000-0000-4000-8000-0000000000NN` (`NN` = step 01–22); `sort_order` is `NN * 10`.
@@ -113,6 +113,15 @@ All four must pass before a change is ready. Use `build:check`, not `build`, for
 - `/steps/[id]?trip=<tripId>` (`src/app/steps/[id]/`) loads through `loadStepDetail` in `src/lib/steps/queries.ts`: signed out → `/`, a non-UUID id or a step that isn't published → `notFound()`. A `trip` param that isn't a UUID or that RLS doesn't return is treated exactly like no trip, so the page never reveals whether a trip exists.
 - Costs, overrides and statuses reuse `src/lib/trips/checklist.ts`; never duplicate that logic. Prerequisite statuses come from the same `stepStatus` as the checklist (it loads the trip's configs, traveler ids and all progress rows of the dependencies), so a prerequisite tracked per traveler shows its aggregate status.
 - **Database markdown is rendered only through `GuideMarkdown`** (`src/components/steps/GuideMarkdown.tsx`, parser `src/lib/steps/markdown.ts`): raw HTML is shown as literal text, only `https:` links become anchors (new tab, `rel="noopener noreferrer"`), and all text goes in as React children. Never use `dangerouslySetInnerHTML`, `innerHTML`, a raw-HTML plugin such as `rehype-raw`, or a markdown library for it. Supported syntax: `#`/`##` (h2), `###`+ (h3), paragraphs, `1.` / `-` / `*` lists with one nested level, `**bold**`, `[text](https://...)`.
+
+## Step comments
+
+- `step_comments` (migration `*_step_comments.sql`): a `before insert` `security definer` trigger fills `author_name` (`full_name`, else `name`, else `''`, never the email) and `author_avatar_url` (`avatar_url`, else `picture`, only if `https://`, else null) from the author's `auth.users` metadata; client values are never kept.
+- RLS `to authenticated`: select visible (`is_hidden = false`) comments on published steps, insert own on a published step, delete own; no update policy. Column grant: `authenticated` may insert only `(step_id, content)` and update nothing. Hiding a comment is setting `is_hidden` in Supabase Studio; there is no moderation UI.
+- Content is 1–1000 characters after trimming: `parseCommentContent` / `maxCommentLength` in `src/lib/steps/comments.ts`, plus a DB check constraint.
+- `postStepComment` and `deleteStepComment` (`src/lib/steps/actions.ts`) validate (`isUuid`, `parseCommentContent`), call `getUser()`, insert only `{ step_id, content }` / delete filtered by both `id` and `user_id`, and `revalidatePath("/steps/<id>")`. Errors are fixed codes; logs are a fixed string plus `error.code` only.
+- `loadStepDetail` loads the 50 newest comments (`created_at desc`, then `id desc`) and maps them to `{ id, authorName, authorAvatarUrl, content, createdAt, isOwn }`; `user_id` never reaches components.
+- `StepComments` (`src/components/steps/StepComments.tsx`, client) sits below the guide: form with the page's only indigo CTA, then the list. Comment text is plain React text (`whitespace-pre-line break-words`): never markdown, HTML, auto-links or `GuideMarkdown`. Only the user's own comments get the delete control, confirmed in a `role="alertdialog"` like `TripActions`.
 
 ## Conventions
 
@@ -200,6 +209,6 @@ Soft indigo direction (reference: `.plans/design-reference.png`). Tokens are CSS
   - `BottomNav` — floating dark pill nav of `next/link` tabs with `activeHref`; its type allows **at most 4 tabs**. Mobile only: hidden from `lg` up, where screens use a top nav.
   - `icons.tsx` — inline SVG icons.
 - Icons are inline SVG using `currentColor` (in `icons.tsx`); no icon library. Mark them `aria-hidden="true"` when text names the control.
-- Hero and decorative art is CSS and inline SVG only: no raster images, `<img>` or `next/image` (the only `<img>` is the signed-in user's remote avatar in `UserMenu`, which is user content). Wrap it in `aria-hidden="true"` with no focusable elements.
+- Hero and decorative art is CSS and inline SVG only: no raster images, `<img>` or `next/image` (the only `<img>`s are remote Google avatars, which are user content: the signed-in user's in `UserMenu` and comment authors' in `StepComments`). Wrap it in `aria-hidden="true"` with no focusable elements.
 - `tap-target` utility gives `min-height`/`min-width` of 2.75rem (44px); put it on every interactive element.
 - `font-sans` is Inter (default body font). `font-arabic` is Noto Naskh Arabic; use it with `lang="ar" dir="rtl"` on Arabic text.
