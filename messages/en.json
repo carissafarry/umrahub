@@ -122,6 +122,31 @@
       "retry": "Try again"
     }
   },
+  "StepComments": {
+    "title": "Tips from pilgrims",
+    "visibilityNote": "Tips are visible to all signed-in Umra Hub users, with your Google name and photo.",
+    "label": "Share your tip",
+    "count": "{count}/{max} characters",
+    "submit": "Post tip",
+    "submitting": "Posting…",
+    "errors": {
+      "invalid": "This tip can't be posted from this page. Reload and try again.",
+      "empty": "Write your tip first.",
+      "tooLong": "Tips can be at most {max} characters.",
+      "failed": "Your tip wasn't posted. Please try again in a moment."
+    },
+    "empty": "No tips yet. Be the first to share one.",
+    "anonymous": "Umra Hub pilgrim",
+    "delete": {
+      "open": "Delete tip",
+      "title": "Delete this tip?",
+      "body": "The tip will be deleted permanently and can't be restored.",
+      "cancel": "Cancel",
+      "confirm": "Delete",
+      "deleting": "Deleting…",
+      "failed": "Your tip wasn't deleted. Please try again in a moment."
+    }
+  },
   "Footer": {
     "text": "© {year} Umra Hub · Your companion for an independent Umrah"
   },

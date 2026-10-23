@@ -122,6 +122,31 @@
       "retry": "Coba lagi"
     }
   },
+  "StepComments": {
+    "title": "Tips dari jemaah",
+    "visibilityNote": "Tips terlihat oleh semua pengguna Umra Hub yang sudah masuk, beserta nama dan foto Google Anda.",
+    "label": "Bagikan tips Anda",
+    "count": "{count}/{max} karakter",
+    "submit": "Kirim tips",
+    "submitting": "Mengirim…",
+    "errors": {
+      "invalid": "Tips tidak bisa dikirim dari halaman ini. Muat ulang lalu coba lagi.",
+      "empty": "Tulis tips Anda terlebih dahulu.",
+      "tooLong": "Tips paling banyak {max} karakter.",
+      "failed": "Tips belum terkirim. Coba lagi sebentar lagi."
+    },
+    "empty": "Belum ada tips. Jadilah yang pertama berbagi.",
+    "anonymous": "Jemaah Umra Hub",
+    "delete": {
+      "open": "Hapus tips",
+      "title": "Hapus tips ini?",
+      "body": "Tips akan dihapus permanen dan tidak bisa dikembalikan.",
+      "cancel": "Batal",
+      "confirm": "Hapus",
+      "deleting": "Menghapus…",
+      "failed": "Tips belum terhapus. Coba lagi sebentar lagi."
+    }
+  },
   "Footer": {
     "text": "© {year} Umra Hub · Teman persiapan Umrah mandiri"
   },

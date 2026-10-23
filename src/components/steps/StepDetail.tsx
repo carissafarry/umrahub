@@ -4,28 +4,33 @@ import { StatusBadge } from "@/components/trips/StatusBadge";
 import { Card } from "@/components/ui/Card";
 import { ArrowRightIcon } from "@/components/ui/icons";
 import { parseMarkdown } from "@/lib/steps/markdown";
+import type { StepComment } from "@/lib/steps/comments";
 import type { DetailStep, Prerequisite } from "@/lib/steps/queries";
 import type { CostText } from "@/lib/trips/checklist";
 import type { ChecklistTrip } from "@/lib/trips/queries";
 import { GuideMarkdown } from "./GuideMarkdown";
+import { StepComments } from "./StepComments";
 
 type StepDetailProps = {
   step: DetailStep;
   trip: ChecklistTrip | null;
   cost: CostText;
   prerequisites: Prerequisite[];
+  comments: StepComment[];
 };
 
 const focusRing =
   "focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-primary";
 
 // The /steps/[id] page body: back link, title and summary, cost and
-// prerequisite cards (sticky side column on desktop) and the full guide.
+// prerequisite cards (sticky side column on desktop), the full guide and
+// the pilgrims' tips below it.
 export async function StepDetail({
   step,
   trip,
   cost,
   prerequisites,
+  comments,
 }: StepDetailProps) {
   const locale = await getLocale();
   const t = await getTranslations("StepDetail");
@@ -119,21 +124,22 @@ export async function StepDetail({
             )}
           </div>
 
-          <section
-            aria-label={t("guideTitle")}
-            className="lg:col-start-1 lg:row-start-2"
-          >
-            <Card className="lg:p-8">
-              {!startsWithSection && (
-                <h2 className="sr-only">{t("guideTitle")}</h2>
-              )}
-              {guide.length > 0 ? (
-                <GuideMarkdown blocks={guide} />
-              ) : (
-                <p className="text-muted">{t("guideEmpty")}</p>
-              )}
-            </Card>
-          </section>
+          <div className="flex flex-col gap-8 lg:col-start-1 lg:row-start-2">
+            <section aria-label={t("guideTitle")}>
+              <Card className="lg:p-8">
+                {!startsWithSection && (
+                  <h2 className="sr-only">{t("guideTitle")}</h2>
+                )}
+                {guide.length > 0 ? (
+                  <GuideMarkdown blocks={guide} />
+                ) : (
+                  <p className="text-muted">{t("guideEmpty")}</p>
+                )}
+              </Card>
+            </section>
+
+            <StepComments stepId={step.id} comments={comments} />
+          </div>
         </div>
       </main>
     </div>
