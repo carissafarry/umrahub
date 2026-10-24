@@ -14,7 +14,7 @@ Scope now: user-facing app only. Admin CMS is out of scope; content is edited vi
 - Tailwind CSS v4 (`src/app/globals.css`, no tailwind.config file)
 - Supabase via `@supabase/ssr`: browser client `src/lib/supabase/client.ts`, server client `src/lib/supabase/server.ts`
 - `next-intl` for i18n, without i18n routing (see i18n)
-- Vitest for unit tests (`*.test.ts` next to the code)
+- Vitest for unit tests (`*.test.ts` next to the code); a component test that needs a DOM opts in with `// @vitest-environment jsdom` (default environment is node)
 - Node 20, npm (never pnpm/yarn — `package-lock.json` is the lockfile)
 
 ## Important paths
@@ -28,8 +28,8 @@ Scope now: user-facing app only. Admin CMS is out of scope; content is edited vi
 - `src/middleware.ts` — auth session refresh and route protection (see Auth)
 - `src/lib/trips/` — trip checklist logic (grouping, progress, costs), budget logic (`budget.ts`), page data loaders and the `updateStepStatus` / `updateStepTrackingMode` Server Actions (see Trip checklist, Budget)
 - `src/components/trips/` — trip checklist UI (step accordion, progress card) and the budget page body
-- `src/lib/steps/` — step detail data loader, the safe guide-markdown parser, comment validation (`comments.ts`) and the comment Server Actions (`actions.ts`) (see Step detail, Step comments)
-- `src/components/steps/` — step detail page body, the `GuideMarkdown` renderer and the `StepComments` tips section
+- `src/lib/steps/` — step detail data loader, the safe guide-markdown parser, comment validation (`comments.ts`), content-flag validation (`flags.ts`) and the comment and flag Server Actions (`actions.ts`) (see Step detail, Step comments, Content flags)
+- `src/components/steps/` — step detail page body, the `GuideMarkdown` renderer, the `ReportOutdatedInfo` report dialog and the `StepComments` tips section
 - `src/lib/dashboard/` — trip dashboard loader, per-trip progress summary, trip-name rules and the `renameTrip` / `deleteTrip` Server Actions (see Dashboard)
 - `src/components/dashboard/` — dashboard trip card and its rename/delete dialogs (see Dashboard)
 - `src/i18n/` — next-intl setup: locales (`config.ts`), request config (`request.ts`), language Server Action (`actions.ts`)
@@ -76,7 +76,7 @@ All four must pass before a change is ready. Use `build:check`, not `build`, for
 - To check a migration runs, use the local stack if Docker is available: `supabase start` then `supabase db reset --local`. Stop it with `supabase stop` when done.
 - All worktrees share **one** local stack. Before `supabase start`, run `supabase status`: if it is already running, another job owns it. Wait (check every 30s, up to 15 minutes) instead of resetting or stopping it. If it is still busy, skip the local check and say so in your report.
 - Generated types: `supabase gen types typescript --local > src/lib/supabase/database.types.ts` (local stack only).
-- MVP tables: `trips`, `travelers`, `trip_step_config`, `trip_step_progress` are trip-owned (signed-in users read/write only rows of their own trips); `preparation_steps` (published only) and `city_cost_overrides` are read-only for any signed-in user; `notifications` is user-owned (users read and insert only their own rows, for their own trips; update is limited to the read state `is_read`/`read_at`; no delete); `step_comments` is readable by any signed-in user unless hidden, users insert and delete only their own, there is no update, and the author fields are set by a trigger. `anon` gets nothing.
+- MVP tables: `trips`, `travelers`, `trip_step_config`, `trip_step_progress` are trip-owned (signed-in users read/write only rows of their own trips); `preparation_steps` (published only) and `city_cost_overrides` are read-only for any signed-in user; `notifications` is user-owned (users read and insert only their own rows, for their own trips; update is limited to the read state `is_read`/`read_at`; no delete); `step_comments` is readable by any signed-in user unless hidden, users insert and delete only their own, there is no update, and the author fields are set by a trigger; `content_flags` is user-owned (users insert only `step_id`, `reason`, on published steps, and read only their own rows; no update or delete; `status` is changed in Supabase Studio). `anon` gets nothing.
 - Database tests are pgTAP files in `supabase/tests/`; run them with `supabase test db` (local stack only).
 - Preparation-step content is seeded by `supabase/migrations/20261018150410_seed_preparation_steps.sql`:
   - Step ids are fixed: `5eed0000-0000-4000-8000-0000000000NN` (`NN` = step 01–22); `sort_order` is `NN * 10`.
@@ -122,6 +122,13 @@ All four must pass before a change is ready. Use `build:check`, not `build`, for
 - `postStepComment` and `deleteStepComment` (`src/lib/steps/actions.ts`) validate (`isUuid`, `parseCommentContent`), call `getUser()`, insert only `{ step_id, content }` / delete filtered by both `id` and `user_id`, and `revalidatePath("/steps/<id>")`. Errors are fixed codes; logs are a fixed string plus `error.code` only.
 - `loadStepDetail` loads the 50 newest comments (`created_at desc`, then `id desc`) and maps them to `{ id, authorName, authorAvatarUrl, content, createdAt, isOwn }`; `user_id` never reaches components.
 - `StepComments` (`src/components/steps/StepComments.tsx`, client) sits below the guide: form with the page's only indigo CTA, then the list. Comment text is plain React text (`whitespace-pre-line break-words`): never markdown, HTML, auto-links or `GuideMarkdown`. Only the user's own comments get the delete control, confirmed in a `role="alertdialog"` like `TripActions`.
+
+## Content flags
+
+- `content_flags` (migration `*_content_flags.sql`): `step_id`, `user_id` (defaults to `auth.uid()`), `reason` (1–500 characters after trimming, check constraint), `status` (`pending` default, `reviewed`, `resolved`; check constraint, not an enum).
+- RLS `to authenticated`: select own, insert own on a published step; no update or delete policy. Column grant: `authenticated` may insert only `(step_id, reason)` and update nothing. Reviewing a flag is setting `status` in Supabase Studio; there is no admin UI, and no page reads flags.
+- `parseFlagReason` / `maxFlagReasonLength` in `src/lib/steps/flags.ts` (shared by client and server). `reportStepContent` (`src/lib/steps/actions.ts`) validates (`isUuid`, `parseFlagReason`), calls `getUser()`, inserts only `{ step_id, reason }` and returns fixed codes; no `revalidatePath`. Logs are a fixed string plus `error.code` only, never the reason.
+- `ReportOutdatedInfo` (`src/components/steps/ReportOutdatedInfo.tsx`, client) sits directly below the guide card: a neutral "Laporkan info usang" pill opens a modal `<dialog>` with the reason textarea, Cancel and an ink-filled (never indigo) submit. Success closes it and shows a polite thank-you next to the button; closing returns focus to the button. Copy is in the `ContentFlags` namespace.
 
 ## Conventions
 
