@@ -147,6 +147,22 @@
       "failed": "Tips belum terhapus. Coba lagi sebentar lagi."
     }
   },
+  "ContentFlags": {
+    "button": "Laporkan info usang",
+    "title": "Laporkan info usang",
+    "intro": "Beri tahu kami bagian panduan ini yang sudah tidak sesuai. Tim Umra Hub akan meninjaunya.",
+    "label": "Apa yang perlu diperbarui?",
+    "count": "{count}/{max} karakter",
+    "submit": "Kirim laporan",
+    "submitting": "Mengirim…",
+    "cancel": "Batal",
+    "success": "Terima kasih, laporan Anda sudah kami terima.",
+    "errors": {
+      "empty": "Tulis alasan laporan Anda terlebih dahulu.",
+      "tooLong": "Alasan paling banyak {max} karakter.",
+      "failed": "Laporan belum terkirim. Coba lagi sebentar lagi."
+    }
+  },
   "Footer": {
     "text": "© {year} Umra Hub · Teman persiapan Umrah mandiri"
   },

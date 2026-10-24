@@ -9,6 +9,7 @@ import type { DetailStep, Prerequisite } from "@/lib/steps/queries";
 import type { CostText } from "@/lib/trips/checklist";
 import type { ChecklistTrip } from "@/lib/trips/queries";
 import { GuideMarkdown } from "./GuideMarkdown";
+import { ReportOutdatedInfo } from "./ReportOutdatedInfo";
 import { StepComments } from "./StepComments";
 
 type StepDetailProps = {
@@ -23,8 +24,8 @@ const focusRing =
   "focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-primary";
 
 // The /steps/[id] page body: back link, title and summary, cost and
-// prerequisite cards (sticky side column on desktop), the full guide and
-// the pilgrims' tips below it.
+// prerequisite cards (sticky side column on desktop), the full guide with
+// its "report outdated info" button, and the pilgrims' tips below it.
 export async function StepDetail({
   step,
   trip,
@@ -125,7 +126,7 @@ export async function StepDetail({
           </div>
 
           <div className="flex min-w-0 flex-col gap-8 lg:col-start-1 lg:row-start-2">
-            <section aria-label={t("guideTitle")}>
+            <section aria-label={t("guideTitle")} className="flex flex-col gap-4">
               <Card className="lg:p-8">
                 {!startsWithSection && (
                   <h2 className="sr-only">{t("guideTitle")}</h2>
@@ -136,6 +137,7 @@ export async function StepDetail({
                   <p className="text-muted">{t("guideEmpty")}</p>
                 )}
               </Card>
+              <ReportOutdatedInfo stepId={step.id} />
             </section>
 
             <StepComments stepId={step.id} comments={comments} />

@@ -147,6 +147,22 @@
       "failed": "Your tip wasn't deleted. Please try again in a moment."
     }
   },
+  "ContentFlags": {
+    "button": "Report outdated info",
+    "title": "Report outdated info",
+    "intro": "Tell us which part of this guide is no longer accurate. The Umra Hub team will review it.",
+    "label": "What needs updating?",
+    "count": "{count}/{max} characters",
+    "submit": "Send report",
+    "submitting": "Sending…",
+    "cancel": "Cancel",
+    "success": "Thank you, we've received your report.",
+    "errors": {
+      "empty": "Write the reason for your report first.",
+      "tooLong": "The reason can be at most {max} characters.",
+      "failed": "Your report wasn't sent. Please try again in a moment."
+    }
+  },
   "Footer": {
     "text": "© {year} Umra Hub · Your companion for an independent Umrah"
   },
