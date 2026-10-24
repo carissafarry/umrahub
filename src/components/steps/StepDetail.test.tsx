@@ -10,6 +10,7 @@ import { StepDetail } from "./StepDetail";
 vi.mock("@/lib/steps/actions", () => ({
   postStepComment: vi.fn(),
   deleteStepComment: vi.fn(),
+  reportStepContent: vi.fn(),
 }));
 
 let locale: "id" | "en" = "id";
@@ -110,10 +111,11 @@ describe("StepDetail", () => {
     expect(html).toContain('href="https://www.nusuk.sa" target="_blank"');
     expect(html).not.toContain("<header");
     expect(html).not.toContain('role="radiogroup"');
-    // Tips come after the guide, with the page's only indigo CTA.
-    expect(html.indexOf("Tips dari jemaah")).toBeGreaterThan(
-      html.indexOf("Langkah-langkah"),
-    );
+    // The report button sits between the guide and the tips; the tips
+    // form has the page's only indigo CTA.
+    const report = html.indexOf(">Laporkan info usang</button>");
+    expect(report).toBeGreaterThan(html.indexOf("Langkah-langkah"));
+    expect(html.indexOf("Tips dari jemaah")).toBeGreaterThan(report);
     expect(html.match(/bg-primary(?![\w-])/g)).toHaveLength(1);
   });
 
@@ -166,6 +168,7 @@ describe("StepDetail", () => {
     expect(html).toMatch(/bg-tile-amber[^"]*">In progress<\/span>/);
     expect(html).toMatch(/<h2[^>]*>Steps<\/h2>/);
     expect(html).toContain("(opens in a new tab)");
+    expect(html).toContain(">Report outdated info</button>");
     expect(html).not.toContain("Langkah");
   });
 
