@@ -11,6 +11,7 @@ import {
   type StepStatus,
 } from "@/lib/trips/checklist";
 import type { ChecklistTrip } from "@/lib/trips/queries";
+import type { StepComment } from "./comments";
 
 export type DetailStep = {
   id: string;
@@ -39,6 +40,18 @@ type PrerequisiteRow = {
 export type Prerequisite = Omit<PrerequisiteRow, "is_shared_step"> & {
   status: StepStatus | null;
 };
+
+type CommentRow = {
+  id: string;
+  user_id: string;
+  author_name: string;
+  author_avatar_url: string | null;
+  content: string;
+  created_at: string;
+};
+
+// The page shows the newest comments only; there is no pagination.
+const commentLimit = 50;
 
 const noRows = { data: [], error: null };
 
@@ -83,7 +96,7 @@ export async function loadStepDetail(
 
   const dependencyIds = step.dependency_step_ids ?? [];
   const tracksPrerequisites = trip !== null && dependencyIds.length > 0;
-  const [overrides, configs, travelers, progress, prerequisites] =
+  const [overrides, configs, travelers, progress, prerequisites, comments] =
     await Promise.all([
       trip
         ? supabase
@@ -124,13 +137,24 @@ export async function loadStepDetail(
             .order("sort_order")
             .overrideTypes<PrerequisiteRow[], { merge: false }>()
         : noRows,
+      supabase
+        .from("step_comments")
+        .select(
+          "id, user_id, author_name, author_avatar_url, content, created_at",
+        )
+        .eq("step_id", step.id)
+        .order("created_at", { ascending: false })
+        .order("id", { ascending: false })
+        .limit(commentLimit)
+        .overrideTypes<CommentRow[], { merge: false }>(),
     ]);
   const error =
     overrides.error ??
     configs.error ??
     travelers.error ??
     progress.error ??
-    prerequisites.error;
+    prerequisites.error ??
+    comments.error;
   if (error) throw new Error("Failed to load step details", { cause: error });
   const tracking = {
     configs: configs.data ?? [],
@@ -150,6 +174,16 @@ export async function loadStepDetail(
         status: trip
           ? stepStatus({ id: row.id, is_shared_step }, tracking)
           : null,
+      }),
+    ),
+    comments: (comments.data ?? []).map(
+      (row): StepComment => ({
+        id: row.id,
+        authorName: row.author_name,
+        authorAvatarUrl: row.author_avatar_url,
+        content: row.content,
+        createdAt: row.created_at,
+        isOwn: row.user_id === user.id,
       }),
     ),
   };

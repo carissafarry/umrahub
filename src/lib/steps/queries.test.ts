@@ -57,6 +57,44 @@ const ahmad = "aaaaaaaa-0000-4000-8000-000000000001";
 
 const ok = (data: unknown) => ({ data, error: null });
 
+// Newest first, as the query orders them; user-1 is the signed-in user.
+const commentRows = [
+  {
+    id: "cccccccc-0000-4000-8000-000000000002",
+    user_id: "user-1",
+    author_name: "Aisyah Rahman",
+    author_avatar_url: "https://lh3.googleusercontent.com/a/aisyah",
+    content: "Bawa fotokopi paspor.",
+    created_at: "2026-10-22T08:00:00+00:00",
+  },
+  {
+    id: "cccccccc-0000-4000-8000-000000000001",
+    user_id: "user-2",
+    author_name: "",
+    author_avatar_url: null,
+    content: "Datang pagi.",
+    created_at: "2026-10-21T08:00:00+00:00",
+  },
+];
+const comments = [
+  {
+    id: "cccccccc-0000-4000-8000-000000000002",
+    authorName: "Aisyah Rahman",
+    authorAvatarUrl: "https://lh3.googleusercontent.com/a/aisyah",
+    content: "Bawa fotokopi paspor.",
+    createdAt: "2026-10-22T08:00:00+00:00",
+    isOwn: true,
+  },
+  {
+    id: "cccccccc-0000-4000-8000-000000000001",
+    authorName: "",
+    authorAvatarUrl: null,
+    content: "Datang pagi.",
+    createdAt: "2026-10-21T08:00:00+00:00",
+    isOwn: false,
+  },
+];
+
 function tables(withTrip: boolean) {
   return {
     preparation_steps: [ok(flights), ok([passportRow, visaRow])],
@@ -70,6 +108,7 @@ function tables(withTrip: boolean) {
     trip_step_progress: ok([
       { step_id: stepId(1), traveler_id: null, status: "completed" },
     ]),
+    step_comments: ok(commentRows),
   };
 }
 
@@ -89,6 +128,7 @@ const noTripResult = {
     { ...passport, status: null },
     { ...visa, status: null },
   ],
+  comments,
 };
 
 describe("loadStepDetail", () => {
@@ -142,7 +182,12 @@ describe("loadStepDetail", () => {
     );
   });
 
-  it.each(["trip_step_config", "travelers", "trip_step_progress"])(
+  it.each([
+    "trip_step_config",
+    "travelers",
+    "trip_step_progress",
+    "step_comments",
+  ])(
     "throws on a %s query error",
     async (table) => {
       fake = fakeSupabase({
@@ -160,13 +205,21 @@ describe("loadStepDetail", () => {
   it("without a trip param, uses the base cost and no statuses", async () => {
     fake = fakeSupabase({ tables: tables(true) });
     expect(await loadStepDetail(stepId(9), undefined)).toEqual(noTripResult);
-    expect(queried()).toEqual(["preparation_steps", "preparation_steps"]);
+    expect(queried()).toEqual([
+      "preparation_steps",
+      "preparation_steps",
+      "step_comments",
+    ]);
   });
 
   it("treats a non-UUID trip param as no trip without querying trips", async () => {
     fake = fakeSupabase({ tables: tables(true) });
     expect(await loadStepDetail(stepId(9), "abc")).toEqual(noTripResult);
-    expect(queried()).toEqual(["preparation_steps", "preparation_steps"]);
+    expect(queried()).toEqual([
+      "preparation_steps",
+      "preparation_steps",
+      "step_comments",
+    ]);
   });
 
   it("treats a trip that isn't the user's (no row) exactly like no trip", async () => {
@@ -192,6 +245,7 @@ describe("loadStepDetail", () => {
         { ...passport, status: "completed" },
         { ...visa, status: "not_started" },
       ],
+      comments,
     });
 
     expect(query("city_cost_overrides").eq).toHaveBeenCalledWith(
@@ -272,6 +326,32 @@ describe("loadStepDetail", () => {
       "preparation_steps",
       "trips",
       "city_cost_overrides",
+      "step_comments",
     ]);
+  });
+
+  it("loads the step's 50 newest comments and marks the user's own", async () => {
+    fake = fakeSupabase({ tables: tables(false) });
+    const result = await loadStepDetail(stepId(9), undefined);
+    expect(result.comments).toEqual(comments);
+    expect(JSON.stringify(result.comments)).not.toContain("user-");
+
+    const builder = query("step_comments");
+    expect(builder.select).toHaveBeenCalledWith(
+      "id, user_id, author_name, author_avatar_url, content, created_at",
+    );
+    expect(builder.eq).toHaveBeenCalledWith("step_id", stepId(9));
+    expect(builder.order.mock.calls).toEqual([
+      ["created_at", { ascending: false }],
+      ["id", { ascending: false }],
+    ]);
+    expect(builder.limit).toHaveBeenCalledWith(50);
+  });
+
+  it("returns no comments when the step has none", async () => {
+    fake = fakeSupabase({
+      tables: { ...tables(false), step_comments: ok([]) },
+    });
+    expect((await loadStepDetail(stepId(9), undefined)).comments).toEqual([]);
   });
 });
