@@ -7,6 +7,11 @@ import type { DetailStep, Prerequisite } from "@/lib/steps/queries";
 import type { CostText } from "@/lib/trips/checklist";
 import { StepDetail } from "./StepDetail";
 
+vi.mock("@/lib/steps/actions", () => ({
+  postStepComment: vi.fn(),
+  deleteStepComment: vi.fn(),
+}));
+
 let locale: "id" | "en" = "id";
 const messages = () => (locale === "id" ? id : en);
 
@@ -61,6 +66,7 @@ async function render(props: {
     trip: null,
     cost,
     prerequisites: [],
+    comments: [],
     ...props,
   });
   return renderToStaticMarkup(
@@ -104,6 +110,11 @@ describe("StepDetail", () => {
     expect(html).toContain('href="https://www.nusuk.sa" target="_blank"');
     expect(html).not.toContain("<header");
     expect(html).not.toContain('role="radiogroup"');
+    // Tips come after the guide, with the page's only indigo CTA.
+    expect(html.indexOf("Tips dari jemaah")).toBeGreaterThan(
+      html.indexOf("Langkah-langkah"),
+    );
+    expect(html.match(/bg-primary(?![\w-])/g)).toHaveLength(1);
   });
 
   it("without a trip, links to onboarding, notes the city and shows no status", async () => {
