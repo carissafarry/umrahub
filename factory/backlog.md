@@ -50,6 +50,8 @@ the orchestrator moves items whose dependencies are all merged from **Menunggu**
 - [x] [infra-051] Complete command list: the dashboard footer and the factory skill description now list every command (/factory <feature>, next [n], run <code>, resume, watch, approve, rework); resume and watch were missing, and the footer commands have a one-line hint each → infra-051
 - [x] [infra-052] Footer hover effect: each command in the dashboard footer highlights on hover, shows a help cursor and an instant hint bubble above it (also on keyboard focus), replacing the slow native title tooltip → infra-052
 - [x] [infra-053] Sync infra branch after PR #20: bring origin/main (be-012 notifications merged by the user) into factory/infra so the open infra PR stays mergeable → infra-053
+- [x] [infra-057] Sync main with merged PR #24: be-016 content flags merged on GitHub; backlog has no open items left → infra-057
+- [x] [infra-056] Sync main with merged PR #22: be-014 step comments merged on GitHub; be-016 content flags moved to Siap → infra-056
 - [x] [infra-055] Sync main with merged PR #21: fe-015 per-traveler step tracking merged on GitHub; factory/infra merged with origin/main → infra-055
 - [x] [infra-054] Backlog bookkeeping: fe-015 claimed and running → infra-054
 - [x] [infra-024] Vercel Web Analytics: installed by the user from the Vercel dashboard (GitHub PR #1: `@vercel/analytics` and `<Analytics />` in `src/app/layout.tsx`); merged into local main → infra-024
@@ -83,13 +85,12 @@ the orchestrator moves items whose dependencies are all merged from **Menunggu**
 ## Siap — gelombang 6
 
 - [x] [fe-013] Step dependencies: hybrid step dependencies — marking a step done while a prerequisite is not done shows a non-blocking warning naming the prerequisite, and blocked steps are visually marked in the checklist → fe-013
-- [ ] [be-014] Step comments: signed-in users can post and delete their own tips on a step detail page, newest first, with display name and avatar; requires a migration with RLS
+- [x] [be-014] Step comments: signed-in users can post and delete their own tips on a step detail page, newest first, with display name and avatar; requires a migration with RLS → be-014
 
 ## Siap — gelombang 7
 
 - [x] [fe-015] Per traveler: trip owner can switch each step between shared and individual; individual steps show one status control per traveler and count toward progress per traveler → fe-015
+- [x] [be-016] Content flags: a "Laporkan info usang" button on each step detail page that records a reason in a content_flags table (migration with RLS, users can only insert and read their own flags) → be-016
 
 ## Menunggu
 
-Gelombang 7
-- [be-016] Content flags: a "Laporkan info usang" button on each step detail page that records a reason in a content_flags table (migration with RLS, users can only insert and read their own flags) (butuh: be-014)
