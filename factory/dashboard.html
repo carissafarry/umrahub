@@ -850,7 +850,7 @@ function renderTask() {
   $('t-num').innerHTML = codeBadge(t)
   $('t-title').textContent = t.title
   $('t-meta').innerHTML = `<span class="pill ${s.key}">${esc(s.label)}</span>
-    <span class="pill">${esc({ fe: 'frontend', be: 'backend', infra: 'infra', spec: 'spesifikasi', '?': 'tipe belum ditentukan' }[t.type])}</span>
+    <span class="pill">${esc({ fe: 'frontend', be: 'backend', infra: 'infra', spec: 'spesifikasi', workflow: 'workflow AI', '?': 'tipe belum ditentukan' }[t.type])}</span>
     ${t.wave ? `<span class="pill">gelombang ${t.wave}</span>` : ''}
     <span class="pill">${esc(t.section)}</span>`
   $('t-back').hidden = !taskTrail.length

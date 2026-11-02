@@ -126,6 +126,8 @@ PR is merged.
 
 Spec changes use their own code type, `spec-NNN` (see AGENTS.md): when you or a builder must change a spec or design document under `.plans/`, add a `[spec-NNN]` line under **Selesai** first (next number from the global counter) and commit it on `factory/infra` as `spec-NNN <message>`; it rides the infra PR. Never fold a spec edit into an infra, be or fe commit.
 
+Changes to the AI workflow itself (agent files and models, prompts, this skill's loop, a driver script, context-saving rules) use their own code type, `workflow-NNN` (own counter from 001), on their own branch `factory/workflow-NNN` with their own PR, and add a row to `factory/workflow-log.md` (see AGENTS.md). Their backlog line goes on `factory/infra` under **Selesai**.
+
 Your own commits (on `factory/infra`) follow the same task-code rule. Factory or tooling changes
 that no backlog task covers get one first: add `- [x] [infra-<next NNN>] <Title>:
 <what changed> → infra-<NNN>` under **Selesai** in `factory/backlog.md` and
