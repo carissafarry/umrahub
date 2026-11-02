@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pratinjau alur Beranda, Cari, Hasil</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#121212; --muted:#5E5E5E; --border:#E4E2DD; --accent:#1D6FB8; --accent-soft:#DCEBFA;
+    --card:#EEF4FB; --card-line:#DCE7F3; --sky-from:#4E9FE5; --sky-to:#CDE6FA;
+    --dusk:#F9E6D5; --dusk-ink:#8A4B1F;
+    --ok:#17734E; --ok-bg:#DDF3E8; --bad:#A32A4B; --bad-bg:#FADDE6; --grey:#5A5A70; --grey-bg:#E7E7EE;
+    --font:"Plus Jakarta Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{background:#D9D7D2;font-family:var(--font);color:var(--ink);padding:28px 16px 60px}
+  .stage{max-width:1380px;margin:0 auto;display:flex;gap:28px;justify-content:center;align-items:flex-start;flex-wrap:wrap}
+  .col{display:flex;flex-direction:column;gap:10px;align-items:center}
+  .cap{font-weight:800;font-size:14px;letter-spacing:-.01em;background:#fff;border-radius:999px;padding:6px 14px}
+  .phone{width:390px;max-width:100%;border-radius:44px;overflow:hidden;background:#fff;box-shadow:0 30px 60px rgba(0,0,0,.18);position:relative;display:flex;flex-direction:column}
+  .hero{height:200px;background:linear-gradient(180deg,var(--sky-from) 0%,#86BDEC 55%,var(--sky-to) 100%);position:relative;padding:18px 18px 0;color:#fff}
+  .hero svg.art{position:absolute;left:0;right:0;bottom:0;width:100%;height:auto;pointer-events:none}
+  .status{display:flex;justify-content:space-between;font-size:13px;font-weight:700;margin-bottom:12px}
+  .top{display:flex;justify-content:space-between;align-items:center;position:relative;z-index:1}
+  .brand{display:flex;align-items:center;gap:8px;font-weight:800;font-size:16px}
+  .brand i{width:26px;height:26px;border-radius:50%;background:#fff;display:inline-flex;align-items:center;justify-content:center}
+  .bell{width:44px;height:44px;border-radius:50%;background:#fff;color:var(--ink);display:flex;align-items:center;justify-content:center;position:relative}
+  .bell b{position:absolute;top:10px;right:11px;width:9px;height:9px;border-radius:50%;background:#F6A15A;border:2px solid #fff}
+  .greet{position:relative;z-index:1;margin-top:14px;font-size:32px;line-height:1.05;font-weight:700;letter-spacing:-.03em;text-shadow:0 1px 10px rgba(20,60,110,.18)}
+  .sheet{margin-top:-28px;border-radius:32px 32px 0 0;background:#fff;position:relative;padding:20px 16px 18px;display:flex;flex-direction:column;gap:16px;flex:1}
+  .pagebar{padding:46px 16px 4px;display:flex;justify-content:space-between;align-items:center}
+  .pagebar h1{margin:0;font-size:32px;letter-spacing:-.03em;font-weight:800}
+  .card{background:var(--card);border:1px solid var(--card-line);border-radius:28px;padding:16px}
+  .card.plain{background:transparent;border:0;padding:0}
+  .row{display:flex;align-items:center;gap:12px}
+  .tile{width:44px;height:44px;border-radius:16px;display:flex;align-items:center;justify-content:center;flex:none}
+  .t-blue{background:var(--accent-soft);color:var(--accent)} .t-dusk{background:var(--dusk);color:var(--dusk-ink)}
+  .t-white{background:#fff;color:var(--ink)}
+  .muted{color:var(--muted)} .lbl{font-size:12px;color:var(--muted);font-weight:500} .val{font-size:16px;font-weight:700;letter-spacing:-.01em}
+  .btn-o{border:1px solid var(--card-line);background:#fff;border-radius:999px;padding:0 14px;min-height:44px;display:inline-flex;align-items:center;justify-content:center;font:600 13px var(--font);color:var(--ink);gap:6px}
+  .btn-p{background:var(--ink);color:#fff;border-radius:999px;min-height:56px;padding:0 8px 0 24px;display:flex;align-items:center;justify-content:space-between;font:700 16px var(--font);gap:10px;width:100%}
+  .btn-p span.ic{width:42px;height:42px;border-radius:50%;background:#fff;color:var(--ink);display:flex;align-items:center;justify-content:center}
+  .sw{width:46px;height:26px;border-radius:999px;background:var(--ink);position:relative;flex:none}
+  .sw:after{content:"";position:absolute;right:3px;top:3px;width:20px;height:20px;border-radius:50%;background:#fff}
+  hr{border:0;border-top:1px solid var(--card-line);margin:14px 0;width:100%}
+  h3.sec{margin:0;font-size:18px;letter-spacing:-.02em;font-weight:800}
+  .tag{display:inline-block;border-radius:999px;padding:3px 10px;font-size:11px;font-weight:700;background:var(--accent-soft);color:var(--accent)}
+  .lr{display:flex;align-items:center;gap:12px;border:1px solid var(--border);border-radius:22px;padding:12px}
+  .lr b{font-size:14px;display:block} .lr span.d{font-size:12px;color:var(--muted)}
+  .chev{margin-left:auto;color:var(--muted)}
+  .chips{display:flex;flex-wrap:wrap;gap:8px}
+  .chip{border:1px solid var(--border);border-radius:999px;min-height:44px;padding:0 16px;display:inline-flex;align-items:center;gap:6px;font:600 14px var(--font);background:#fff}
+  .chip.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+  .cityrow{display:flex;align-items:center;gap:12px;background:#fff;border-radius:22px;padding:10px 12px}
+
+  /* kota */
+  .city{display:flex;align-items:center;gap:14px;padding:14px 16px;border-radius:26px}
+  .c-mk{background:var(--accent-soft)} .c-md{background:var(--dusk)}
+  .city h2{margin:0;font-size:28px;line-height:1;font-weight:800;letter-spacing:-.03em}
+  .city .meta{font-size:13px;font-weight:600;color:var(--muted);margin-top:4px}
+  .city .ic{width:48px;height:48px;border-radius:18px;background:#fff;display:flex;align-items:center;justify-content:center;flex:none}
+  .c-mk .ic{color:var(--accent)} .c-md .ic{color:var(--dusk-ink)}
+  .sub{display:flex;justify-content:space-between;align-items:baseline;gap:8px;padding:0 2px}
+  .sub b{font-size:16px;letter-spacing:-.01em}
+  .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px 6px}
+  .pt{display:flex;flex-direction:column;align-items:center;text-align:center;gap:3px;min-width:0}
+  .av{width:72px;height:72px;border-radius:50%;position:relative;background:#E8E6E0;display:flex;align-items:center;justify-content:center;font-weight:700;color:var(--muted)}
+  .av img{position:absolute;inset:0;width:100%;height:100%;border-radius:50%;object-fit:cover}
+  .badge{position:absolute;left:-2px;bottom:-2px;width:24px;height:24px;border-radius:50%;background:var(--accent);border:3px solid #fff;display:flex;align-items:center;justify-content:center;z-index:2}
+  .badge.no{background:#9A9AA8}
+  .pt b{font-size:13px;margin-top:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+  .pt .rate{font-size:12px;color:var(--muted)}
+  .pill{display:inline-block;border-radius:999px;padding:2px 9px;font-size:11px;font-weight:700;background:var(--accent-soft);color:var(--accent);margin-top:3px}
+  .p-bad{background:var(--bad-bg);color:var(--bad)} .p-grey{background:var(--grey-bg);color:var(--grey)}
+  .route{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:700;color:var(--muted)}
+  .route span.n{background:#fff;border:1px solid var(--card-line);border-radius:999px;padding:3px 10px;color:var(--ink)}
+  .route span.n.hl{background:var(--ink);color:#fff;border-color:var(--ink)}
+  .route i{flex:0 0 20px;border-top:2px dotted #9BB4CF}
+  .dateblk{display:flex;gap:14px;align-items:center}
+  .dd{text-align:center;padding-right:14px;border-right:1px solid var(--card-line)}
+  .dd b{display:block;font-size:32px;line-height:1;font-weight:500;letter-spacing:-.02em}
+  .dd span{font-size:13px;color:var(--muted);font-weight:600;letter-spacing:.06em}
+  .meta2{display:flex;flex-direction:column;gap:6px;font-size:14px}
+  .meta2 div{display:flex;gap:8px;align-items:center}
+  .bar{height:8px;border-radius:6px;background:#D5E1EF;overflow:hidden;display:flex}
+  .bar i{display:block;height:8px}
+  .free{border:1.5px dashed #C9D6E4;border-radius:22px;padding:14px;color:var(--muted);font-size:14px;display:flex;gap:10px;align-items:center}
+  .nav{margin:auto 16px 14px;position:sticky;bottom:14px;background:#fff;border-radius:999px;border:1px solid var(--border);box-shadow:0 10px 30px rgba(18,18,18,.12);padding:6px;display:flex;justify-content:space-between;z-index:5}
+  .nav a{flex:1;text-align:center;font-size:11px;font-weight:600;color:var(--muted);border-radius:999px;display:flex;flex-direction:column;align-items:center;gap:2px;min-height:44px;justify-content:center}
+  .nav a.on{background:var(--ink);color:#fff}
+  .notes{width:300px;max-width:100%;display:flex;flex-direction:column;gap:12px;font-size:14px;line-height:1.5}
+  .notes h2{font-size:18px;margin:0}
+  .notes .n{background:#fff;border-radius:20px;padding:12px 14px}
+  .notes .n b{display:block;margin-bottom:2px}
+  .src{font-size:12px;color:var(--muted)}
+
+  .tabs{max-width:1380px;margin:0 auto 22px;display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+  .tabs button{font:700 14px var(--font);border:0;border-radius:999px;min-height:44px;padding:0 20px;background:#fff;color:var(--ink);cursor:pointer}
+  .tabs button[aria-pressed=true]{background:var(--ink);color:#fff}
+  [hidden]{display:none!important}
+  .ico{display:inline-flex;vertical-align:middle;flex:none}
+  .back{width:44px;height:44px;border-radius:50%;border:1px solid var(--border);display:flex;align-items:center;justify-content:center;background:#fff;flex:none}
+  .pb{padding:46px 16px 6px;display:flex;align-items:center;gap:12px}
+  .pb .t{flex:1;min-width:0} .pb .t b{display:block;font-size:20px;letter-spacing:-.02em;font-weight:800} .pb .t span{font-size:12px;color:var(--muted)}
+  .seg{display:flex;background:#fff;border:1px solid var(--card-line);border-radius:999px;padding:3px;gap:2px}
+  .seg span{flex:1;text-align:center;font-size:12px;font-weight:700;padding:10px 4px;border-radius:999px;color:var(--muted);min-height:44px;display:flex;align-items:center;justify-content:center}
+  .seg span.on{background:var(--ink);color:#fff}
+  .prog{height:10px;border-radius:8px;background:#D5E1EF;overflow:hidden}.prog i{display:block;height:10px;background:var(--ink);border-radius:8px}
+  .circle{width:26px;height:26px;border-radius:50%;border:2px solid #B8C7D9;flex:none;display:flex;align-items:center;justify-content:center;background:#fff}
+  .circle.done{background:var(--ink);border-color:var(--ink);color:#fff}
+  .circle.mid{border-color:var(--accent);background:var(--accent-soft);color:var(--accent)}
+  .srow{display:flex;gap:12px;align-items:center;padding:13px 0;border-top:1px solid var(--card-line)}
+  .srow:first-child{border-top:0}
+  .srow b{font-size:14px;display:block} .srow .d{font-size:12px;color:var(--muted)}
+  .warnbox{background:#FBEBC8;color:#6E4700;border-radius:16px;padding:10px 12px;font-size:12.5px;line-height:1.45}
+  .blk{display:inline-flex;gap:4px;align-items:center;font-size:11px;font-weight:700;color:var(--dusk-ink);background:var(--dusk);border-radius:999px;padding:2px 9px;margin-top:3px}
+  .cal{display:grid;grid-template-columns:repeat(7,1fr);row-gap:4px;text-align:center;font-size:14px;font-weight:600}
+  .cal .h{font-size:11px;color:var(--muted);font-weight:600;padding-bottom:4px}
+  .cal .d{height:42px;display:flex;align-items:center;justify-content:center}
+  .cal .in{background:var(--accent-soft)}
+  .cal .s{background:var(--ink);color:#fff;border-radius:50% 0 0 50%}
+  .cal .e{background:var(--ink);color:#fff;border-radius:0 50% 50% 0}
+  .opt{border:1px solid var(--card-line);background:#fff;border-radius:22px;padding:12px}
+  .opt.sel{border:2px solid var(--ink)}
+  .opt .r{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+  .stp{display:flex;align-items:center;justify-content:space-between;border:1px solid var(--card-line);background:#fff;border-radius:999px;padding:4px 6px 4px 18px}
+  .stp .b{width:40px;height:40px;border-radius:50%;background:var(--card);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:18px}
+  .stp .n{width:36px;text-align:center;font-weight:800;font-size:16px}
+  .tiles3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+  .tiles3 .st{background:#fff;border-radius:18px;padding:10px;font-size:12px;color:var(--muted);display:flex;flex-direction:column;gap:2px}
+  .tiles3 .st b{font-size:18px;color:var(--ink);letter-spacing:-.02em}
+  .nt{border:1px solid var(--card-line);background:var(--card);border-radius:26px;padding:14px;display:flex;flex-direction:column;gap:10px}
+  .sm{width:40px;height:40px;border-radius:50%;background:#E8E6E0;position:relative;flex:none;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;color:var(--muted)}
+  .sm img{position:absolute;inset:0;width:100%;height:100%;border-radius:50%;object-fit:cover}
+  .xl{width:96px;height:96px;font-size:26px}
+  .dot{width:9px;height:9px;border-radius:50%;background:#F6A15A;flex:none}
+  .bw{height:12px;border-radius:8px;background:#E7EEF6;position:relative;margin:6px 0 2px}
+  .bw i{position:absolute;top:0;bottom:0;border-radius:8px;background:var(--ink)}
+  .up{border:1.5px dashed #9BB4CF;border-radius:22px;padding:18px;text-align:center;color:var(--muted);font-size:13px;display:flex;flex-direction:column;align-items:center;gap:6px;background:#fff}
+  .cmt{display:flex;gap:10px;font-size:13px}.cmt b{font-size:13px}
+  .vb{display:inline-flex;width:18px;height:18px;border-radius:50%;background:var(--accent);color:#fff;align-items:center;justify-content:center;vertical-align:-3px}
+  .hl{border:2px solid var(--ink);border-radius:26px;padding:14px;background:#fff}
+  .land{height:330px;background:linear-gradient(180deg,#3F93E0 0%,#86BDEC 55%,#CDE6FA 100%);position:relative;padding:22px 20px 0;color:#fff}
+  .land h1{font-size:38px;line-height:1.04;letter-spacing:-.035em;margin:26px 0 0;font-weight:800;text-shadow:0 1px 12px rgba(20,60,110,.2)}
+  .gbtn{background:var(--ink);color:#fff;border-radius:999px;min-height:56px;padding:0 56px;display:flex;align-items:center;justify-content:center;text-align:center;font:700 16px var(--font);width:100%;position:relative}
+  .gbtn span.ic{position:absolute;left:7px;top:7px;width:42px;height:42px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center}
+
+  .vt{display:inline-flex;gap:6px;align-items:center;border:1px solid var(--card-line);background:#fff;border-radius:999px;padding:0 14px;min-height:44px;font-size:13px;font-weight:700}
+  .vt.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+  .tip{display:flex;flex-direction:column;gap:8px;padding:12px 0;border-top:1px solid var(--card-line);font-size:13px;line-height:1.5}
+  .tip:first-of-type{border-top:0;padding-top:0}
+  .hscroll{display:flex;gap:8px;overflow-x:auto;padding-bottom:2px}
+  .hscroll .chip{flex:none}
+</style>
+</head>
+<body>
+<div class="tabs" id="tabs"></div>
+<div class="stage pane" id="p1">
+
+<!-- 1 BERANDA -->
+<div class="col"><span class="cap">1 · Beranda</span>
+<div class="phone">
+  <div class="hero">
+    <div class="status"><span>12:50</span><span>▂▄▆ ◔ ▭</span></div>
+    <div class="top">
+      <div class="brand"><i><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1D6FB8" stroke-width="2.2" stroke-linecap="round"><path d="M4 20V10a8 8 0 0 1 16 0v10"/><path d="M12 2v3"/></svg></i>Umra Hub</div>
+      <div class="bell"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 17h12l-1.5-2V10a4.5 4.5 0 0 0-9 0v5L6 17z"/><path d="M10 20a2 2 0 0 0 4 0"/></svg><b></b></div>
+    </div>
+    <div class="greet">Selamat pagi,<br>Siti</div>
+    <svg class="art" viewBox="0 0 390 120" preserveAspectRatio="xMidYMax slice" aria-hidden="true"><g fill="#fff" opacity=".55"><ellipse cx="70" cy="86" rx="46" ry="13"/><ellipse cx="104" cy="80" rx="32" ry="12"/><ellipse cx="300" cy="62" rx="40" ry="11"/></g><g fill="#fff" opacity=".7"><path d="M268 120V84c0-14 10-24 24-24s24 10 24 24v36z"/><rect x="324" y="68" width="8" height="52"/><path d="M322 68l6-12 6 12z"/><rect x="252" y="76" width="8" height="44"/><path d="M250 76l6-10 6 10z"/></g></svg>
+  </div>
+  <div class="sheet">
+    <div class="card">
+      <span class="tag">Trip aktif</span>
+      <div class="val" style="font-size:20px;margin:8px 0 2px">Umrah Keluarga 2027</div>
+      <div class="lbl">12–22 Jan 2027 · 70 hari lagi</div>
+      <hr>
+      <div class="row" style="justify-content:space-between"><div class="route"><span class="n">Makkah</span><i></i><span class="n">Madinah</span></div><span class="lbl">3 jamaah</span></div>
+    </div>
+
+    <h3 class="sec">Perlu kamu lakukan</h3>
+    <div class="lr"><div class="tile t-blue"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5 9-10"/></svg></div><div><b>Konfirmasi hadir</b><span class="d">City tour Thaif · jawab sebelum 13 Jan</span></div><span class="chev">›</span></div>
+    <div class="lr"><div class="tile t-dusk"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><rect x="3" y="6" width="18" height="13" rx="3"/><path d="M3 11h18"/></svg></div><div><b>Bayar dan kirim bukti</b><span class="d">Ziarah Madinah · sebelum 18 Jan</span></div><span class="chev">›</span></div>
+
+    <div style="margin-top:6px"><span class="btn-p">Cari jadwal untuk tanggalmu<span class="ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg></span></span></div>
+  </div>
+  <nav class="nav"><a class="on"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11l8-7 8 7v9H4z"/></svg>Beranda</a><a><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>Cari</a><a><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="4" width="14" height="17" rx="3"/><path d="M9 9h6M9 13h6"/></svg>Jadwal saya</a><a><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8l9-4 9 4-9 4z"/><path d="M7 11v5c3 2 7 2 10 0v-5"/></svg>Trip</a></nav>
+</div></div>
+
+<!-- 2 CARI -->
+<div class="col"><span class="cap">2 · Cari (formulir)</span>
+<div class="phone">
+  <div class="pagebar"><h1>Cari jadwal</h1><div class="bell" style="background:#fff;border:1px solid var(--border)"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 17h12l-1.5-2V10a4.5 4.5 0 0 0-9 0v5L6 17z"/><path d="M10 20a2 2 0 0 0 4 0"/></svg><b></b></div></div>
+  <div class="sheet" style="margin-top:0;border-radius:0">
+    <div class="card">
+      <div class="row">
+        <div class="tile t-white"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="15" rx="3"/><path d="M8 3v4M16 3v4M4 10h16"/></svg></div>
+        <div style="flex:1"><div class="lbl">Tanggal Umrah</div><div class="val">12–22 Jan 2027 · 11 hari</div></div>
+        <span class="btn-o">Ubah</span>
+      </div>
+    </div>
+
+    <h3 class="sec">Kamu di mana, kapan?</h3>
+    <div class="card" style="display:flex;flex-direction:column;gap:10px">
+      <div class="cityrow"><div class="tile t-blue"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M12 21s7-6 7-12a7 7 0 0 0-14 0c0 6 7 12 7 12z"/><circle cx="12" cy="9" r="2.5"/></svg></div><div style="flex:1"><div class="val">Makkah</div><div class="lbl">12–18 Jan · 6 malam</div></div><div class="sw"></div></div>
+      <div class="cityrow"><div class="tile t-dusk"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M12 21s7-6 7-12a7 7 0 0 0-14 0c0 6 7 12 7 12z"/><circle cx="12" cy="9" r="2.5"/></svg></div><div style="flex:1"><div class="val">Madinah</div><div class="lbl">18–22 Jan · 4 malam</div></div><div class="sw"></div></div>
+      <div class="lbl" style="padding:0 4px">Tur sehari ke Thaif ada di bawah Makkah.</div>
+    </div>
+
+    <h3 class="sec">Butuh apa?</h3>
+    <div class="chips">
+      <span class="chip on"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5 9-10"/></svg>Muthawif Umrah</span>
+      <span class="chip on"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5 9-10"/></svg>City tour</span>
+      <span class="chip on"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5 9-10"/></svg>Ziarah</span>
+    </div>
+
+    <div class="card"><div class="row"><div style="flex:1"><div class="val" style="font-size:14px">Kabari saya soal kursi kosong</div><div class="lbl">Untuk trip ini</div></div><div class="sw"></div></div></div>
+
+    <span class="btn-p" style="margin-top:4px">Cari<span class="ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg></span></span>
+  </div>
+  <nav class="nav"><a><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11l8-7 8 7v9H4z"/></svg>Beranda</a><a class="on"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>Cari</a><a><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="4" width="14" height="17" rx="3"/><path d="M9 9h6M9 13h6"/></svg>Jadwal saya</a><a><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8l9-4 9 4-9 4z"/><path d="M7 11v5c3 2 7 2 10 0v-5"/></svg>Trip</a></nav>
+</div></div>
+
+<!-- 3 HASIL -->
+<div class="col"><span class="cap">3 · Hasil pencarian</span>
+<div class="phone">
+  <div class="pagebar" style="padding-top:46px"><div class="row"><div class="bell" style="background:#fff;border:1px solid var(--border)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></div><div><div class="val" style="font-size:20px">Hasil untukmu</div><div class="lbl">12–22 Jan 2027 · 3 jenis</div></div></div><span class="btn-o">Ubah</span></div>
+  <div class="sheet" style="margin-top:0;border-radius:0;gap:14px">
+
+    <div class="city c-mk">
+      <div class="ic"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M12 21s7-6 7-12a7 7 0 0 0-14 0c0 6 7 12 7 12z"/><circle cx="12" cy="9" r="2.5"/></svg></div>
+      <div><h2>Makkah</h2><div class="meta">12–18 Jan · 6 malam</div></div>
+    </div>
+
+    <div class="sub"><b>Umrah dengan muthawif</b><span class="lbl">Sel, 13 Jan</span></div>
+    <div class="grid">
+      <div class="pt"><div class="av">RH<img src="https://randomuser.me/api/portraits/men/32.jpg" alt="Foto dummy muthawif" loading="lazy" onerror="this.remove()"><span class="badge"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5 9-10"/></svg></span></div><b>Ust. Rahmat</b><span class="rate">★ 4,8 · 23</span><span class="pill">4 / 6 kursi</span></div>
+      <div class="pt"><div class="av">DZ<img src="https://randomuser.me/api/portraits/men/75.jpg" alt="Foto dummy muthawif" loading="lazy" onerror="this.remove()"><span class="badge"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5 9-10"/></svg></span></div><b>Ust. Dzaki</b><span class="rate">★ 4,6 · 9</span><span class="pill">2 / 8 kursi</span></div>
+      <div class="pt"><div class="av">FA<img src="https://randomuser.me/api/portraits/men/12.jpg" alt="Foto dummy muthawif" loading="lazy" onerror="this.remove()"><span class="badge"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5 9-10"/></svg></span></div><b>Ust. Faris</b><span class="rate">★ 4,9 · 41</span><span class="pill p-bad">Penuh</span></div>
+      <div class="pt"><div class="av">SR<img src="https://randomuser.me/api/portraits/men/52.jpg" alt="Foto dummy muthawif" loading="lazy" onerror="this.remove()"><span class="badge"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5 9-10"/></svg></span></div><b>Ust. Salim</b><span class="rate">★ 4,7 · 15</span><span class="pill">1 / 6 kursi</span></div>
+      <div class="pt"><div class="av">FL<img src="https://randomuser.me/api/portraits/men/86.jpg" alt="Foto dummy muthawif" loading="lazy" onerror="this.remove()"><span class="badge no"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.4" stroke-linecap="round"><path d="M12 7v6M12 17v.5"/></svg></span></div><b>Ust. Fulan</b><span class="rate">★ 3,9 · 4</span><span class="pill p-grey">Belum diverifikasi</span></div>
+      <div class="pt"><div class="av" style="background:var(--ink);color:#fff;font-size:20px">+3</div><b>Lihat semua</b><span class="rate">muthawif lain</span></div>
+    </div>
+
+    <div class="free"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2"/></svg><div><b style="color:var(--ink)">14–15 Jan · Hari bebas</b><br>Atur sendiri.</div></div>
+
+    <div class="sub" style="margin-top:4px"><b>Tur sehari dari Makkah</b></div>
+    <div class="card">
+      <div class="route" style="margin-bottom:12px"><span class="n">Makkah</span><i></i><span class="n hl">Thaif</span><i></i><span class="n">Makkah</span></div>
+      <span class="tag">City tour · opsional</span>
+      <div class="val" style="font-size:20px;margin:8px 0 12px">City tour Thaif</div>
+      <div class="dateblk">
+        <div class="dd"><b>16</b><span>JAN</span></div>
+        <div class="meta2">
+          <div><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>08.00 – 15.00</div>
+          <div><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M12 21s7-6 7-12a7 7 0 0 0-14 0c0 6 7 12 7 12z"/></svg>Titik kumpul di Makkah</div>
+        </div>
+      </div>
+      <div class="row" style="justify-content:space-between;margin:14px 0 8px"><span class="val" style="font-size:14px">Bus · 17 dari 35 fix</span><span class="lbl">9 tertarik</span></div>
+      <div class="bar"><i style="width:49%;background:var(--ink)"></i><i style="width:26%;background:#9FB9D6"></i></div>
+      <div class="row" style="margin-top:14px"><span class="btn-o" style="flex:1">Lihat opsi dan penyedia</span></div>
+    </div>
+
+    <div class="city c-md" style="margin-top:6px">
+      <div class="ic"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M12 21s7-6 7-12a7 7 0 0 0-14 0c0 6 7 12 7 12z"/><circle cx="12" cy="9" r="2.5"/></svg></div>
+      <div><h2>Madinah</h2><div class="meta">18–22 Jan · 4 malam</div></div>
+    </div>
+    <div class="sub"><b>Ziarah Madinah</b><span class="lbl">Rab, 20 Jan</span></div>
+    <div class="grid">
+      <div class="pt"><div class="av">AM<img src="https://randomuser.me/api/portraits/men/44.jpg" alt="Foto dummy muthawif" loading="lazy" onerror="this.remove()"><span class="badge"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5 9-10"/></svg></span></div><b>Ust. Amir</b><span class="rate">★ 4,8 · 19</span><span class="pill">1 / 6 kursi</span></div>
+      <div class="pt"><div class="av">HK<img src="https://randomuser.me/api/portraits/men/61.jpg" alt="Foto dummy muthawif" loading="lazy" onerror="this.remove()"><span class="badge"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5 9-10"/></svg></span></div><b>Ust. Hakim</b><span class="rate">★ 4,5 · 7</span><span class="pill">3 / 8 kursi</span></div>
+      <div class="pt"><div class="av" style="background:var(--ink);color:#fff;font-size:20px">+1</div><b>Lihat semua</b><span class="rate">muthawif lain</span></div>
+    </div>
+  </div>
+  <nav class="nav"><a><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11l8-7 8 7v9H4z"/></svg>Beranda</a><a class="on"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>Cari</a><a><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="4" width="14" height="17" rx="3"/><path d="M9 9h6M9 13h6"/></svg>Jadwal saya</a><a><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8l9-4 9 4-9 4z"/><path d="M7 11v5c3 2 7 2 10 0v-5"/></svg>Trip</a></nav>
+</div></div>
+
+<div class="col"><span class="cap">3b · Semua muthawif</span>
+<div class="phone">
+  <div class="pb"><div class="back"><i class="ico" data-ic="back"></i></div><div class="t"><b>Muthawif untuk Umrah</b><span>Makkah · Sel, 13 Jan · 8 muthawif</span></div></div>
+  <div class="sheet" style="margin-top:0;border-radius:0;gap:10px">
+    <div class="hscroll"><span class="chip on">Semua</span><span class="chip">Terverifikasi</span><span class="chip">Masih ada kursi</span><span class="chip">Rating tertinggi</span></div>
+    <div class="lr"><div class="sm" style="width:56px;height:56px" data-av="men/32" data-i="RH"></div><div style="flex:1;min-width:0"><b>Ust. Rahmat <span class="vb"><i class="ico" data-ic="check" data-s="11"></i></span></b><span class="d">bersama Travel Al-Hidayah</span><span class="d">★ 4,8 · 23 ulasan</span></div><div style="text-align:right"><span class="pill" style="margin:0">4 / 6 kursi</span></div></div>
+    <div class="lr"><div class="sm" style="width:56px;height:56px" data-av="men/75" data-i="DZ"></div><div style="flex:1;min-width:0"><b>Ust. Dzaki <span class="vb"><i class="ico" data-ic="check" data-s="11"></i></span></b><span class="d">Mandiri</span><span class="d">★ 4,6 · 9 ulasan</span></div><div style="text-align:right"><span class="pill" style="margin:0">2 / 8 kursi</span></div></div>
+    <div class="lr"><div class="sm" style="width:56px;height:56px" data-av="men/12" data-i="FA"></div><div style="flex:1;min-width:0"><b>Ust. Faris <span class="vb"><i class="ico" data-ic="check" data-s="11"></i></span></b><span class="d">bersama Travel Safa</span><span class="d">★ 4,9 · 41 ulasan</span></div><div style="text-align:right"><span class="pill p-bad" style="margin:0">Penuh</span></div></div>
+    <div class="lr"><div class="sm" style="width:56px;height:56px" data-av="men/52" data-i="SR"></div><div style="flex:1;min-width:0"><b>Ust. Salim <span class="vb"><i class="ico" data-ic="check" data-s="11"></i></span></b><span class="d">bersama Travel Safa</span><span class="d">★ 4,7 · 15 ulasan</span></div><div style="text-align:right"><span class="pill" style="margin:0">1 / 6 kursi</span></div></div>
+    <div class="lr"><div class="sm" style="width:56px;height:56px" data-av="men/22" data-i="HS"></div><div style="flex:1;min-width:0"><b>Ust. Hasan <span class="vb"><i class="ico" data-ic="check" data-s="11"></i></span></b><span class="d">Mandiri</span><span class="d">★ 4,5 · 12 ulasan</span></div><div style="text-align:right"><span class="pill" style="margin:0">5 / 8 kursi</span></div></div>
+    <div class="lr"><div class="sm" style="width:56px;height:56px" data-av="men/86" data-i="FL"></div><div style="flex:1;min-width:0"><b>Ust. Fulan</b><span class="d">Mandiri</span><span class="d">★ 3,9 · 4 ulasan</span></div><div style="text-align:right"><span class="pill p-grey" style="margin:0">Belum diverifikasi</span></div></div>
+    <div class="lbl" style="text-align:center;padding:4px 0">Menampilkan 6 dari 8 · geser untuk memuat lagi</div>
+  </div>
+</div></div>
+
+<aside class="notes">
+  <h2>Yang berubah</h2>
+  <div class="n"><b>Beranda dan Cari dipisah</b>Beranda: sapaan, trip aktif, tugas, dan satu tombol "Cari jadwal". Cari: formulir dengan satu tombol "Cari".</div>
+  <div class="n"><b>Kota jadi pita besar</b>Makkah dan Madinah berupa pita 28px dengan ikon, tanggal, dan jumlah malam. Makkah biru siang, Madinah oranye sore.</div>
+  <div class="n"><b>Thaif di dalam Makkah</b>Thaif ada di bawah pita Makkah sebagai "Tur sehari dari Makkah", dengan jalur Makkah, Thaif, Makkah.</div>
+  <div class="n"><b>Konsekuensi</b>Trip perlu tanggal per kota (Makkah 12–18, Madinah 18–22), bukan hanya satu rentang.</div>
+  <p class="src">Foto portrait dummy dari randomuser.me. Mobile 390. Nama dan angka dummy.</p>
+</aside>
+
+</div>
+<div class="stage pane" id="p2" hidden>
+<div class="col"><span class="cap">4 · Detail jadwal</span>
+<div class="phone">
+  <div class="pb"><div class="back"><i class="ico" data-ic="back"></i></div><div class="t"><b>City tour Thaif</b><span>Tur sehari dari Makkah</span></div></div>
+  <div class="sheet" style="margin-top:0;border-radius:0">
+    <div class="card">
+      <span class="tag">City tour · opsional</span>
+      <div class="dateblk" style="margin:12px 0 14px"><div class="dd"><b>16</b><span>JAN</span></div><div class="meta2"><div><i class="ico" data-ic="clock" data-s="16"></i>08.00 – 15.00</div><div><i class="ico" data-ic="pin" data-s="16"></i>Titik kumpul di Makkah</div></div></div>
+      <div class="row" style="background:#fff;border-radius:20px;padding:10px 12px"><div class="sm" data-av="men/46" data-i="WT"></div><div style="flex:1;min-width:0"><b style="font-size:14px">Wisata Thaif Bersama <span class="vb"><i class="ico" data-ic="check" data-s="11"></i></span></b><div class="lbl">★ 4,4 · 17 ulasan</div></div><i class="ico chev" data-ic="chev"></i></div>
+    </div>
+    <div class="tiles3"><div class="st">Fix<b>17</b>orang</div><div class="st">Tertarik<b>9</b>orang</div><div class="st">Tenggat<b>13 Jan</b>hadir</div></div>
+    <h3 class="sec">Opsi kendaraan</h3>
+    <div class="opt"><div class="r"><b>Bus</b><b>SAR 40</b></div><div class="lbl">Minimum 35 orang</div><div class="bar" style="margin:8px 0 4px"><i style="width:49%;background:var(--ink)"></i></div><div class="lbl">17 dari 35 fix</div></div>
+    <div class="opt sel"><div class="r"><b>Hiace</b><b>SAR 60</b></div><div class="lbl">12–15 orang · <b style="color:var(--ok)">terpenuhi</b></div><div class="bar" style="margin:8px 0 4px"><i style="width:100%;background:var(--ink)"></i></div></div>
+    <div class="opt"><div class="r"><b>Mobil pribadi</b><b>SAR 80</b></div><div class="lbl">1–4 orang · tersedia</div></div>
+    <div class="lbl">Harga final ditentukan saat tenggat, dari jumlah yang fix.</div>
+    <div class="stp"><span style="font-weight:700;font-size:14px">Jumlah kursi</span><span class="row" style="gap:4px"><span class="b">−</span><span class="n">2</span><span class="b">+</span></span></div>
+    <span class="btn-p">Saya tertarik<span class="ic"><i class="ico" data-ic="arrow"></i></span></span>
+  </div>
+</div></div>
+
+<div class="col"><span class="cap">5 · Konfirmasi hadir</span>
+<div class="phone">
+  <div class="pb"><div class="back"><i class="ico" data-ic="back"></i></div><div class="t"><b>Konfirmasi hadir</b><span>City tour Thaif · 16 Jan</span></div></div>
+  <div class="sheet" style="margin-top:0;border-radius:0">
+    <div class="nt">
+      <div class="row"><div class="sm" data-av="men/46" data-i="WT"></div><div style="flex:1"><b style="font-size:14px">Wisata Thaif Bersama</b><div class="lbl"><span style="color:var(--accent);font-weight:700">Penyedia</span> · 10 Jan, 09.00</div></div><i class="ico" data-ic="mega" style="color:var(--muted)"></i></div>
+      <div style="font-size:14px;line-height:1.5">Mohon konfirmasi kehadiran sebelum <b>13 Jan</b>. Yang tidak menjawab tidak kami hitung.</div>
+    </div>
+    <div class="stp"><span style="font-weight:700;font-size:14px">Jumlah kursi</span><span class="row" style="gap:4px"><span class="b">−</span><span class="n">2</span><span class="b">+</span></span></div>
+    <div class="lbl">Jumlah masih bisa diubah sampai kamu menjawab.</div>
+    <div style="flex:1"></div>
+    <span class="btn-p">Saya fix ikut<span class="ic"><i class="ico" data-ic="check"></i></span></span>
+    <span class="btn-o" style="width:100%">Tidak ikut</span>
+  </div>
+</div></div>
+
+<div class="col"><span class="cap">6 · Tawaran opsi</span>
+<div class="phone">
+  <div class="pb"><div class="back"><i class="ico" data-ic="back"></i></div><div class="t"><b>Tawaran opsi</b><span>City tour Thaif · 16 Jan</span></div></div>
+  <div class="sheet" style="margin-top:0;border-radius:0">
+    <div class="warnbox">Bus butuh 35 orang, yang fix baru 17. Penyedia menawarkan opsi lain.</div>
+    <div class="hl"><div class="lbl">Tawaran</div><div class="val" style="font-size:22px;margin:2px 0">Hiace · SAR 60</div><div class="lbl">per orang · 12–15 orang</div><hr><div class="row" style="justify-content:space-between"><span>2 kursi × SAR 60</span><b>SAR 120</b></div><div class="lbl" style="margin-top:4px">Dibanding bus: SAR 80</div></div>
+    <div class="row" style="gap:10px"><i class="ico" data-ic="chat" style="color:var(--accent)"></i><span style="font-size:13px">Ada pertanyaan? Diskusikan di grup penyedia.</span></div>
+    <span class="btn-o" style="width:100%">Buka grup diskusi</span>
+    <div style="flex:1"></div>
+    <span class="btn-p">Setuju SAR 60<span class="ic"><i class="ico" data-ic="check"></i></span></span>
+    <span class="btn-o" style="width:100%">Tidak ikut</span>
+  </div>
+</div></div>
+
+<div class="col"><span class="cap">7 · Final dan pembayaran</span>
+<div class="phone">
+  <div class="pb"><div class="back"><i class="ico" data-ic="back"></i></div><div class="t"><b>Pembayaran</b><span>City tour Thaif · 16 Jan</span></div></div>
+  <div class="sheet" style="margin-top:0;border-radius:0">
+    <span class="pill" style="background:#FBEBC8;color:#8A5A00;align-self:flex-start;margin:0">Menunggu pembayaran · sebelum 15 Jan</span>
+    <div class="card"><div class="row" style="justify-content:space-between"><div><div class="val">Hiace · 2 kursi</div><div class="lbl">SAR 60 per orang</div></div><div class="val" style="font-size:20px">SAR 120</div></div></div>
+    <div class="card"><div class="lbl">Transfer ke penyedia</div><div class="val" style="margin:4px 0 2px">Bank X · 1234 5678 90</div><div class="lbl">a.n. PT Wisata Thaif Bersama</div><div style="margin-top:10px"><span class="btn-o"><i class="ico" data-ic="copy" data-s="16"></i>Salin nomor</span></div></div>
+    <div class="up"><i class="ico" data-ic="img" data-s="28"></i><b style="color:var(--ink);font-size:14px">Unggah bukti pembayaran</b>Gambar, maksimal 1 MB</div>
+    <div class="lr"><div class="tile t-blue"><i class="ico" data-ic="chat"></i></div><div><b>Buka grup final</b><span class="d">Khusus peserta yang fix</span></div><i class="ico chev" data-ic="chev"></i></div>
+    <div style="flex:1"></div>
+    <span class="btn-p">Kirim bukti<span class="ic"><i class="ico" data-ic="arrow"></i></span></span>
+    <div class="lbl" style="text-align:center">Setelah dikirim, tidak ada tombol batal.</div>
+  </div>
+</div></div>
+
+<div class="col"><span class="cap">8 · Jadwal saya</span>
+<div class="phone">
+  <div class="pagebar"><h1>Jadwal saya</h1></div>
+  <div class="sheet" style="margin-top:0;border-radius:0">
+    <div class="chips"><span class="chip on">Semua</span><span class="chip">Perlu tindakan</span><span class="chip">Aman</span></div>
+    <h3 class="sec">Perlu kamu lakukan</h3>
+    <div class="lr"><div class="tile t-blue"><i class="ico" data-ic="check"></i></div><div><b>Konfirmasi hadir</b><span class="d">City tour Thaif · sebelum 13 Jan</span></div><i class="ico chev" data-ic="chev"></i></div>
+    <div class="lr"><div class="tile t-dusk"><i class="ico" data-ic="card"></i></div><div><b>Bayar dan kirim bukti</b><span class="d">Ziarah Madinah · sebelum 18 Jan</span></div><i class="ico chev" data-ic="chev"></i></div>
+    <h3 class="sec">Semua jadwal</h3>
+    <div class="card" style="padding:4px 16px">
+      <div class="srow"><div style="flex:1"><b>Umrah · Ust. Rahmat</b><span class="d">Sel, 13 Jan · 2 kursi</span></div><span class="pill p-ok" style="background:var(--ok-bg);color:var(--ok)">Terkonfirmasi</span></div>
+      <div class="srow"><div style="flex:1"><b>City tour Thaif</b><span class="d">Sab, 16 Jan · 2 kursi</span></div><span class="pill" style="background:#FBEBC8;color:#8A5A00">Konfirmasi hadir</span></div>
+      <div class="srow"><div style="flex:1"><b>Ziarah Madinah</b><span class="d">Rab, 20 Jan · 2 kursi</span></div><span class="pill" style="background:#FBEBC8;color:#8A5A00">Menunggu bayar</span></div>
+      <div class="srow"><div style="flex:1"><b>Tur Badar</b><span class="d">Kam, 21 Jan · 1 kursi</span></div><span class="pill">Bukti dikirim</span></div>
+      <div class="srow"><div style="flex:1"><b>Tur Uhud</b><span class="d">Jum, 22 Jan</span></div><span class="pill p-grey">Tertarik</span></div>
+    </div>
+  </div>
+  <nav class="nav" data-on="sesi"></nav>
+</div></div>
+
+<div class="col"><span class="cap">9 · Profil muthawif</span>
+<div class="phone">
+  <div class="pb"><div class="back"><i class="ico" data-ic="back"></i></div><div class="t"><b>Profil</b></div></div>
+  <div class="sheet" style="margin-top:0;border-radius:0">
+    <div style="display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center">
+      <div class="sm xl" data-av="men/32" data-i="RH"></div>
+      <div class="val" style="font-size:22px">Ust. Rahmat Hidayat <span class="vb" style="width:22px;height:22px"><i class="ico" data-ic="check" data-s="13"></i></span></div>
+      <div class="lbl">Muthawif · Makkah · terverifikasi Okt 2026</div>
+      <div style="font-size:14px">★ <b>4,8</b> · 23 ulasan</div>
+    </div>
+    <div class="hl"><div class="lbl" style="font-weight:700;letter-spacing:.06em">AFILIASI</div><div class="row" style="margin-top:8px"><div class="sm" data-av="women/44" data-i="AH"></div><div style="flex:1"><b style="font-size:14px">Travel Al-Hidayah <span class="vb"><i class="ico" data-ic="check" data-s="11"></i></span></b><div class="lbl">Bekerja di sini sejak 2022</div></div><i class="ico chev" data-ic="chev"></i></div></div>
+    <h3 class="sec">Ulasan</h3>
+    <div class="card"><div class="cmt"><div class="sm" style="width:34px;height:34px" data-i="SR"></div><div><b>Siti R.</b> ★ 5<br>Sabar membimbing, jadwal jelas dan tepat waktu.</div></div><hr><div class="cmt"><div class="sm" style="width:34px;height:34px" data-i="BA"></div><div><b>Budi A.</b> ★ 4<br>Penjelasan manasik mudah dipahami.</div></div></div>
+    <h3 class="sec">Jadwal tersedia</h3>
+    <div class="lr"><div style="flex:1"><b>Umrah · Sel, 13 Jan</b><span class="d">4 / 6 kursi</span></div><i class="ico chev" data-ic="chev"></i></div>
+    <span class="btn-p">Hubungi lewat WhatsApp<span class="ic"><i class="ico" data-ic="chat"></i></span></span>
+  </div>
+</div></div>
+
+</div>
+<div class="stage pane" id="p3" hidden>
+<div class="col"><span class="cap">10 · Landing</span>
+<div class="phone">
+  <div class="land">
+    <div class="status"><span>12:50</span><span>▂▄▆ ◔ ▭</span></div>
+    <div class="brand"><i><i class="ico" data-ic="dome" data-s="14" style="color:#1D6FB8"></i></i>Umra Hub</div>
+    <h1>Siapkan Umrah mandirimu dengan tenang</h1>
+    <svg class="art" style="position:absolute;left:0;right:0;bottom:0;width:100%" viewBox="0 0 390 120" preserveAspectRatio="xMidYMax slice" aria-hidden="true"><g fill="#fff" opacity=".55"><ellipse cx="70" cy="86" rx="46" ry="13"/><ellipse cx="300" cy="62" rx="40" ry="11"/></g><g fill="#fff" opacity=".7"><path d="M268 120V84c0-14 10-24 24-24s24 10 24 24v36z"/><rect x="324" y="68" width="8" height="52"/><path d="M322 68l6-12 6 12z"/><rect x="252" y="76" width="8" height="44"/><path d="M250 76l6-10 6 10z"/></g></svg>
+  </div>
+  <div class="sheet" style="margin-top:-28px">
+    <div style="font-size:15px;line-height:1.55;color:var(--muted)">Panduan langkah demi langkah, anggaran yang jelas, dan muthawif yang bisa kamu percaya, dalam satu tempat.</div>
+    <div class="lr"><div class="tile t-blue"><i class="ico" data-ic="doc"></i></div><div><b>Checklist persiapan</b><span class="d">22 langkah, dari paspor sampai keberangkatan</span></div></div>
+    <div class="lr"><div class="tile t-dusk"><i class="ico" data-ic="card"></i></div><div><b>Anggaran per jamaah</b><span class="d">Perkiraan biaya yang mudah dipahami</span></div></div>
+    <div class="lr"><div class="tile t-blue"><i class="ico" data-ic="search"></i></div><div><b>Cari muthawif dan teman seperjalanan</b><span class="d">Patungan agar lebih hemat</span></div></div>
+    <div style="flex:1"></div>
+    <span class="gbtn">Masuk dengan Google<span class="ic"><svg width="22" height="22" viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg></span></span>
+  </div>
+</div></div>
+
+<div class="col"><span class="cap">11 · Onboarding tanggal</span>
+<div class="phone">
+  <div style="padding:46px 16px 0;display:flex;gap:6px"><div class="prog" style="flex:1"><i style="width:100%"></i></div><div class="prog" style="flex:1"><i style="width:60%"></i></div><div class="prog" style="flex:1"></div><div class="prog" style="flex:1"></div><div class="prog" style="flex:1"></div></div>
+  <div class="sheet" style="margin-top:0;border-radius:0">
+    <div><div class="lbl">Langkah 2 dari 5</div><h1 style="margin:2px 0 0;font-size:30px;letter-spacing:-.03em">Kapan kamu berangkat?</h1></div>
+    <div class="chips"><span class="chip">9 hari</span><span class="chip on">11 hari</span><span class="chip">14 hari</span></div>
+    <div class="card">
+      <div class="row" style="justify-content:space-between;margin-bottom:10px"><b style="font-size:16px">Januari 2027</b><span class="lbl">‹ &nbsp; ›</span></div>
+      <div class="cal" id="cal"></div>
+    </div>
+    <div class="lbl">Belum pasti? Pilih perkiraan, bisa diubah nanti.</div>
+    <div style="flex:1"></div>
+    <span class="btn-p">Next<span class="ic"><i class="ico" data-ic="arrow"></i></span></span>
+  </div>
+</div></div>
+
+<div class="col"><span class="cap">12 · Trip saya</span>
+<div class="phone">
+  <div class="pagebar"><h1>Trip saya</h1><div class="bell" style="background:#fff;border:1px solid var(--border)"><i class="ico" data-ic="bell"></i><b></b></div></div>
+  <div class="sheet" style="margin-top:0;border-radius:0">
+    <div class="card">
+      <div class="row" style="justify-content:space-between;align-items:flex-start"><div><span class="tag">Berikutnya</span><div class="val" style="font-size:20px;margin:8px 0 2px">Umrah Keluarga 2027</div><div class="lbl">12–22 Jan 2027 · Jakarta · 3 jamaah</div></div><div class="back" style="background:#fff;border-color:var(--card-line)"><i class="ico" data-ic="more"></i></div></div>
+      <div class="row" style="justify-content:space-between;margin:16px 0 8px"><b style="font-size:14px">18 dari 45 tugas</b><b>40%</b></div>
+      <div class="prog"><i style="width:40%"></i></div>
+    </div>
+    <div class="card">
+      <div class="row" style="justify-content:space-between;align-items:flex-start"><div><div class="val" style="font-size:18px;margin:0 0 2px">Umrah Ayah</div><div class="lbl">Mar 2027 · Surabaya · 1 jamaah</div></div><div class="back" style="background:#fff;border-color:var(--card-line)"><i class="ico" data-ic="more"></i></div></div>
+      <div class="row" style="justify-content:space-between;margin:16px 0 8px"><b style="font-size:14px">3 dari 22 tugas</b><b>14%</b></div>
+      <div class="prog"><i style="width:14%"></i></div>
+    </div>
+    <div style="flex:1"></div>
+    <span class="btn-p">Buat trip baru<span class="ic"><i class="ico" data-ic="plus"></i></span></span>
+  </div>
+  <nav class="nav" data-on="trip"></nav>
+</div></div>
+
+<div class="col"><span class="cap">13 · Checklist trip</span>
+<div class="phone">
+  <div class="pb"><div class="back"><i class="ico" data-ic="back"></i></div><div class="t"><b>Umrah Keluarga 2027</b><span>12–22 Jan 2027</span></div></div>
+  <div class="sheet" style="margin-top:0;border-radius:0;gap:14px">
+    <div class="card"><div class="row" style="justify-content:space-between"><b style="font-size:14px">18 dari 45 tugas</b><b style="font-size:22px">40%</b></div><div class="prog" style="margin:10px 0"><i style="width:40%"></i></div><div class="row" style="justify-content:space-between"><span class="lbl">Anggaran perkiraan</span><b style="font-size:14px">Rp 38–52 jt ›</b></div></div>
+    <div class="row" style="gap:8px;flex-wrap:wrap"><b style="font-size:18px;letter-spacing:-.02em">2–3 bulan sebelum</b><span class="tag">Dokumen</span></div>
+    <div class="card" style="padding:4px 16px">
+      <div class="srow"><span class="circle done"><i class="ico" data-ic="check" data-s="14"></i></span><div style="flex:1"><b>Paspor aktif</b><span class="d">Rp 350 rb per orang</span></div><i class="ico chev" data-ic="chev"></i></div>
+      <div style="border-top:1px solid var(--card-line);padding:12px 0;display:flex;flex-direction:column;gap:10px">
+        <div class="row"><span class="circle mid"><span style="width:8px;height:8px;border-radius:50%;background:var(--accent)"></span></span><div style="flex:1"><b style="font-size:14px">Pengajuan visa Umrah</b><div class="d lbl">Rp 1,2–1,8 jt per orang</div></div></div>
+        <div class="lbl">Siapkan dokumen dan ajukan lewat penyedia visa resmi.</div>
+        <div class="seg"><span>Belum mulai</span><span class="on">Sedang</span><span>Selesai</span></div>
+        <div class="seg"><span class="on">Bersama</span><span>Per jamaah</span></div>
+        <div class="warnbox">Visa biasanya butuh paspor aktif. Paspor Ayah belum selesai.</div>
+        <div class="row" style="justify-content:space-between"><span style="font-weight:700;font-size:13px;color:var(--accent)">Pelajari lebih lanjut ›</span></div>
+      </div>
+      <div class="srow"><span class="circle"></span><div style="flex:1"><b>Asuransi perjalanan</b><span class="d">Rp 150–300 rb per orang</span><br><span class="blk"><i class="ico" data-ic="lock" data-s="11"></i>Menunggu: Pengajuan visa</span></div><i class="ico chev" data-ic="chev"></i></div>
+    </div>
+  </div>
+</div></div>
+
+<div class="col"><span class="cap">14 · Detail langkah</span>
+<div class="phone">
+  <div class="pb"><div class="back"><i class="ico" data-ic="back"></i></div><div class="t"><b>Pengajuan visa Umrah</b><span>Dokumen · 2–3 bulan sebelum</span></div></div>
+  <div class="sheet" style="margin-top:0;border-radius:0">
+    <div class="card"><div class="lbl">Perkiraan biaya per orang · Jakarta</div><div class="val" style="font-size:22px;margin-top:2px">Rp 1,2 – 1,8 jt</div><div class="lbl" style="margin-top:2px">Harga perkiraan, dapat berubah</div></div>
+    <h3 class="sec">Yang perlu selesai dulu</h3>
+    <div class="card" style="padding:4px 16px"><div class="srow"><span class="circle done"><i class="ico" data-ic="check" data-s="14"></i></span><b>Paspor aktif</b></div><div class="srow"><span class="circle mid"><span style="width:8px;height:8px;border-radius:50%;background:var(--accent)"></span></span><b>Foto sesuai ketentuan</b></div></div>
+    <h3 class="sec">Panduan</h3>
+    <div style="font-size:14px;line-height:1.6"><b>Persiapan dokumen</b><ol style="margin:6px 0 0;padding-left:20px"><li>Paspor dengan masa berlaku di atas 6 bulan</li><li>Foto berwarna latar putih</li><li>Bukti pemesanan penerbangan</li></ol></div>
+    <span class="btn-o" style="align-self:flex-start"><i class="ico" data-ic="flag" data-s="16"></i>Laporkan info usang</span>
+    <div class="row" style="justify-content:space-between"><h3 class="sec">Tips dari jamaah</h3><span class="lbl" style="font-weight:700">Paling membantu ▾</span></div>
+    <div class="card"><div class="row" style="margin-bottom:12px"><div class="sm" style="width:36px;height:36px" data-i="SR"></div><div class="field" style="flex:1;border:1px solid var(--card-line);background:#fff;border-radius:999px;padding:10px 14px;color:var(--muted);font-size:13px">Bagikan tipsmu...</div></div>
+      <div class="tip"><div class="row"><div class="sm" style="width:34px;height:34px" data-i="BA"></div><div style="flex:1"><b>Budi A.</b> <span class="lbl">· 2 minggu lalu</span></div><span class="tag" style="background:var(--ok-bg);color:var(--ok)">Paling membantu</span></div>Ajukan 3 bulan sebelum berangkat supaya aman. Saya sempat telat dan harus bayar ekspres.<div class="row" style="gap:8px"><span class="vt on"><i class="ico" data-ic="up" data-s="16"></i>Membantu · 24</span><span class="vt"><i class="ico" data-ic="down" data-s="16"></i>Kurang · 1</span></div></div>
+      <div class="tip"><div class="row"><div class="sm" style="width:34px;height:34px" data-i="DN"></div><div style="flex:1"><b>Dina N.</b> <span class="lbl">· 1 bulan lalu</span></div></div>Foto harus latar putih polos, jangan pakai kerudung berwarna terang.<div class="row" style="gap:8px"><span class="vt"><i class="ico" data-ic="up" data-s="16"></i>Membantu · 9</span><span class="vt"><i class="ico" data-ic="down" data-s="16"></i>Kurang · 0</span></div></div>
+      <div class="tip"><div class="row"><div class="sm" style="width:34px;height:34px" data-i="RK"></div><div style="flex:1"><b>Rudi K.</b> <span class="lbl">· 3 bulan lalu</span></div></div>Katanya sekarang tidak perlu lagi.<div class="row" style="gap:8px"><span class="vt"><i class="ico" data-ic="up" data-s="16"></i>Membantu · 1</span><span class="vt on"><i class="ico" data-ic="down" data-s="16"></i>Kurang · 7</span></div></div>
+    </div>
+    <div style="flex:1"></div>
+    <span class="btn-p">Tandai selesai<span class="ic"><i class="ico" data-ic="check"></i></span></span>
+  </div>
+</div></div>
+
+<div class="col"><span class="cap">15 · Anggaran</span>
+<div class="phone">
+  <div class="pb"><div class="back"><i class="ico" data-ic="back"></i></div><div class="t"><b>Anggaran</b><span>3 jamaah · Jakarta</span></div></div>
+  <div class="sheet" style="margin-top:0;border-radius:0">
+    <div class="card"><div class="lbl">Total perkiraan</div><div class="val" style="font-size:28px;letter-spacing:-.03em;margin:2px 0">Rp 38,2 – 52,4 jt</div><div class="lbl">Harga perkiraan, dapat berubah</div></div>
+    <h3 class="sec">Per tahap</h3>
+    <div><div class="row" style="justify-content:space-between"><b style="font-size:13px">3–6 bulan sebelum</b><span class="lbl">Rp 3,0–4,5 jt</span></div><div class="bw"><i style="left:6%;width:14%"></i></div></div>
+    <div><div class="row" style="justify-content:space-between"><b style="font-size:13px">2–3 bulan sebelum</b><span class="lbl">Rp 24–31 jt</span></div><div class="bw"><i style="left:35%;width:42%"></i></div></div>
+    <div><div class="row" style="justify-content:space-between"><b style="font-size:13px">1 bulan sebelum</b><span class="lbl">Rp 6–9 jt</span></div><div class="bw"><i style="left:10%;width:22%"></i></div></div>
+    <div><div class="row" style="justify-content:space-between"><b style="font-size:13px">1 minggu sebelum</b><span class="lbl">Rp 2–3 jt</span></div><div class="bw"><i style="left:5%;width:10%"></i></div></div>
+    <div><div class="row" style="justify-content:space-between"><b style="font-size:13px">Hari keberangkatan</b><span class="lbl">Rp 3–5 jt</span></div><div class="bw"><i style="left:8%;width:12%"></i></div></div>
+    <div class="lbl">Tiket dan akomodasi dikalikan jumlah jamaah.</div>
+  </div>
+</div></div>
+
+<div class="col"><span class="cap">16 · Notifikasi</span>
+<div class="phone">
+  <div class="pb"><div class="back"><i class="ico" data-ic="back"></i></div><div class="t"><b>Notifikasi</b><span>2 belum dibaca</span></div><span class="btn-o">Tandai dibaca</span></div>
+  <div class="sheet" style="margin-top:0;border-radius:0;gap:10px">
+    <div class="lr" style="background:var(--card);border-color:var(--card-line)"><div class="tile t-dusk"><i class="ico" data-ic="clock"></i></div><div style="flex:1"><b>3 bulan menuju keberangkatan</b><span class="d">Perpanjang paspor butuh 2–4 minggu.</span></div><span class="dot"></span></div>
+    <div class="lr" style="background:var(--card);border-color:var(--card-line)"><div class="tile t-blue"><i class="ico" data-ic="check"></i></div><div style="flex:1"><b>Konfirmasi hadir diminta</b><span class="d">City tour Thaif · sebelum 13 Jan</span></div><span class="dot"></span></div>
+    <div class="lr"><div class="tile t-blue"><i class="ico" data-ic="card"></i></div><div style="flex:1"><b>Pembayaran terkonfirmasi</b><span class="d">Umrah 13 Jan · kursi aman</span></div></div>
+    <div class="lr"><div class="tile t-dusk"><i class="ico" data-ic="doc"></i></div><div style="flex:1"><b>Konten diperbarui</b><span class="d">Panduan visa Umrah diperbarui.</span></div></div>
+  </div>
+  <nav class="nav" data-on="beranda"></nav>
+</div></div>
+
+</div>
+<script>
+(function(){
+  var P = {
+    back:'<path d="M15 5l-7 7 7 7"/>', check:'<path d="M5 12l5 5 9-10"/>', chev:'<path d="M9 5l7 7-7 7"/>',
+    pin:'<path d="M12 21s7-6 7-12a7 7 0 0 0-14 0c0 6 7 12 7 12z"/><circle cx="12" cy="9" r="2.5"/>',
+    clock:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>', arrow:'<path d="M7 17L17 7M9 7h8v8"/>',
+    mega:'<path d="M4 10v4h3l7 4V6L7 10H4z"/><path d="M17 9a4 4 0 0 1 0 6"/>',
+    chat:'<path d="M5 6h14a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H11l-5 3v-3H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2z"/>',
+    copy:'<rect x="8" y="8" width="12" height="12" rx="3"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/>',
+    img:'<rect x="3" y="5" width="18" height="14" rx="3"/><circle cx="9" cy="10" r="1.6"/><path d="M4 18l5-5 4 4 3-3 4 4"/>',
+    card:'<rect x="3" y="6" width="18" height="13" rx="3"/><path d="M3 11h18"/>',
+    search:'<circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/>',
+    bell:'<path d="M6 17h12l-1.5-2V10a4.5 4.5 0 0 0-9 0v5L6 17z"/><path d="M10 20a2 2 0 0 0 4 0"/>',
+    more:'<circle cx="5" cy="12" r="1.2"/><circle cx="12" cy="12" r="1.2"/><circle cx="19" cy="12" r="1.2"/>',
+    plus:'<path d="M12 5v14M5 12h14"/>', lock:'<rect x="5" y="11" width="14" height="9" rx="2.5"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>',
+    doc:'<rect x="5" y="4" width="14" height="17" rx="3"/><path d="M9 9h6M9 13h6"/>',
+    flag:'<path d="M6 21V4M6 5h11l-2 4 2 4H6"/>', dome:'<path d="M4 20V10a8 8 0 0 1 16 0v10"/><path d="M12 2v3"/>',
+    up:'<path d="M7 11v9H4v-9h3zM7 11l4-7a2 2 0 0 1 2 2v3h6a2 2 0 0 1 2 2l-1 6a2 2 0 0 1-2 2H7"/>',
+    down:'<path d="M17 13V4h3v9h-3zM17 13l-4 7a2 2 0 0 1-2-2v-3H5a2 2 0 0 1-2-2l1-6a2 2 0 0 1 2-2h11"/>',
+    home:'<path d="M4 11l8-7 8 7v9H4z"/>', cap:'<path d="M3 8l9-4 9 4-9 4z"/><path d="M7 11v5c3 2 7 2 10 0v-5"/>'
+  };
+  function svg(n,s,sw){return '<svg width="'+s+'" height="'+s+'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="'+sw+'" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+(P[n]||'')+'</svg>';}
+  document.querySelectorAll('[data-ic]').forEach(function(el){
+    var s=el.getAttribute('data-s')||20, sw=(el.getAttribute('data-ic')==='check'&&s<=14)?3:1.7;
+    el.innerHTML=svg(el.getAttribute('data-ic'),s,sw);
+  });
+  document.querySelectorAll('[data-av]').forEach(function(el){
+    var i=el.getAttribute('data-i')||'';
+    el.innerHTML=i+'<img src="https://randomuser.me/api/portraits/'+el.getAttribute('data-av')+'.jpg" alt="Foto dummy" loading="lazy" onerror="this.remove()">';
+  });
+  var items=[['beranda','Beranda','home'],['cari','Cari','search'],['sesi','Jadwal saya','doc'],['trip','Trip','cap']];
+  document.querySelectorAll('nav.nav[data-on]').forEach(function(nv){
+    var on=nv.getAttribute('data-on');
+    nv.innerHTML=items.map(function(it){return '<a'+(it[0]===on?' class="on"':'')+'>'+svg(it[2],20,1.7)+it[1]+'</a>';}).join('');
+  });
+  var cal=document.getElementById('cal');
+  if(cal){
+    var h='';['Min','Sen','Sel','Rab','Kam','Jum','Sab'].forEach(function(d){h+='<div class="h">'+d+'</div>';});
+    for(var b=0;b<5;b++)h+='<div class="d"></div>';
+    for(var d=1;d<=31;d++){var c=d===12?' s':(d===22?' e':(d>12&&d<22?' in':''));h+='<div class="d'+c+'">'+d+'</div>';}
+    cal.innerHTML=h;
+  }
+  var tabs=[['p1','Alur Cari'],['p2','Jadwal dan profil'],['p3','Halaman lama, gaya baru']];
+  var bar=document.getElementById('tabs');
+  bar.innerHTML=tabs.map(function(t,i){return '<button type="button" data-t="'+t[0]+'" aria-pressed="'+(i===0)+'">'+t[1]+'</button>';}).join('');
+  bar.addEventListener('click',function(e){
+    var b=e.target.closest('button'); if(!b)return;
+    var id=b.getAttribute('data-t');
+    bar.querySelectorAll('button').forEach(function(x){x.setAttribute('aria-pressed',String(x===b));});
+    document.querySelectorAll('.pane').forEach(function(p){p.hidden=(p.id!==id);});
+  });
+})();
+
+</script>
+</body>
+</html>
