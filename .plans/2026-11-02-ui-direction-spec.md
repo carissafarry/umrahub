@@ -47,7 +47,7 @@ Nilai di bawah adalah **usulan**. Setiap nilai harus lolos uji kontras di `src/a
 | `--primary` | `#121212` | CTA pil tinta |
 | `--primary-strong` | `#2A2A2A` | Ujung gradien CTA, boleh sama dengan `--primary` |
 | `--primary-foreground` | `#FFFFFF` | Teks dan ikon di atas CTA |
-| `--accent` (baru) | `#1D6FB8` | Biru langit tua, aman untuk teks di atas putih (perkiraan kontras sekitar 5:1, akan diuji) |
+| `--accent` (baru) | `#1A68AD` | Biru langit tua. Kontras terukur: 5,79:1 di atas putih, 5,23:1 di atas kartu, 4,77:1 di atas `--accent-soft`. Nilai awal `#1D6FB8` hanya 4,31:1 di atas `--accent-soft` (teks tag) sehingga gagal 4,5:1 (spec-086) |
 | `--accent-foreground` (baru) | `#FFFFFF` | |
 | `--accent-soft` (baru) | `#DCEBFA` | Latar tag dan ubin biru muda |
 | `--sky-day-from` / `--sky-day-to` (baru) | `#4E9FE5` / `#CDE6FA` | Gradien hero siang |
