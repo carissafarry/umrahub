@@ -112,6 +112,12 @@ echo "worktrees:"
 git worktree list | tail -n +2 | sed 's/^/  - /'
 [ "$(git worktree list | wc -l | tr -d ' ')" = "1" ] && note "none besides the main checkout"
 
+# Restart interrupted jobs only while capacity allows (SKILL.md: Capacity).
+if [ -f factory/capacity.mjs ]; then
+  echo "capacity:"
+  node factory/capacity.mjs status | sed 's/^/  /'
+fi
+
 echo
 if [ $action -eq 1 ]; then
   echo "ACTION REQUIRED: run /factory resume now (re-arm the watcher, then handle every '!' line above). Do not wait for the user, except for decisions only they can make."

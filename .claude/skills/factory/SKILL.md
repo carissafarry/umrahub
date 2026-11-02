@@ -54,6 +54,27 @@ started or was handed.
 - Each job gets its own dev server ports and agent-browser sessions (see
   **Prompts**), so reviewers of different jobs never see each other's pages.
 
+## Capacity (workflow-003)
+
+Running many jobs at once overloads the machine (the shared local Supabase stack and several
+`next build` and test runs at the same time) and burns tokens on waiting. So at most **2 jobs run
+agents at once, and at most 1 of them uses the local Supabase stack** (every `be-*` job, or any job
+whose `job.json` has `"db": true`). A job holds a slot only in stage `spec`, `build`, `review` or
+`approve`; `pr`, `needs-human` and `merged` hold none.
+
+Before you start a job, resume one (`/factory resume`, a builder resume, `/factory rework`) or spawn
+any agent for a job that is not running yet, run:
+
+```bash
+node factory/capacity.mjs check <job-id>   # exit 0 = go, exit 2 = wait
+node factory/capacity.mjs status           # who holds the slots
+```
+
+On exit 2 do not start it: tell the user which jobs hold the slots and start it when one leaves the
+four stages. `/factory next <n>` claims only as many items as `status` leaves room for. Limits can be
+changed with `FACTORY_MAX_JOBS` and `FACTORY_MAX_DB_JOBS`. Pick the next job so that the free slot is
+not wasted: a front-end job can run next to a database job, but not two database jobs.
+
 ## Files
 
 `<repo>` is the main checkout (`git rev-parse --show-toplevel` from your
