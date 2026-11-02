@@ -1,28 +1,47 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f4f2fe;
-  --background-from: #e8e6fd;
+  color-scheme: light;
+  --background: #ffffff;
+  --background-from: #ffffff;
   --background-to: #ffffff;
-  --surface: #ffffff;
-  --foreground: #14142b;
-  --muted: #555670;
-  --border: #e4e2f5;
-  --primary: #5b5bf0;
-  --primary-strong: #4f46e5;
+  --surface: #eef4fb;
+  --surface-line: #dce7f3;
+  --surface-raised: #ffffff;
+  --foreground: #121212;
+  --muted: #5e5e5e;
+  --border: #e4e2dd;
+  --primary: #121212;
+  --primary-strong: #2a2a2a;
   --primary-foreground: #ffffff;
-  --nav: #16162a;
-  --nav-foreground: #e6e6f2;
-  --tile-amber: #fff1d6;
+  --accent: #1a68ad;
+  --accent-foreground: #ffffff;
+  --accent-soft: #dcebfa;
+  --sky-day-from: #4e9fe5;
+  --sky-day-to: #cde6fa;
+  --sky-dusk-from: #f6a15a;
+  --sky-dusk-mid: #d4709a;
+  --sky-dusk-to: #6c5bc4;
+  --dusk-tile: #f9e6d5;
+  --dusk-ink: #8a4b1f;
+  --success: #17734e;
+  --success-soft: #ddf3e8;
+  --warning: #8a5a00;
+  --warning-soft: #fbebc8;
+  --danger: #a32a4b;
+  --danger-soft: #fadde6;
+  --nav: #ffffff;
+  --nav-foreground: #121212;
+  --tile-amber: #f7e3c4;
   --tile-amber-foreground: #b45309;
-  --tile-green: #dcf5e3;
+  --tile-green: #d9f0e3;
   --tile-green-foreground: #15803d;
-  --tile-blue: #dceafe;
+  --tile-blue: #dce7fb;
   --tile-blue-foreground: #1d4ed8;
-  --tile-violet: #ece9fe;
+  --tile-violet: #e9e1f8;
   --tile-violet-foreground: #5b21b6;
-  --shadow-card: 0 12px 32px -12px rgb(79 70 229 / 0.22),
-    0 2px 6px rgb(20 20 43 / 0.04);
+  --shadow-card: none;
+  --shadow-float: 0 10px 30px rgb(18 18 18 / 0.12);
 }
 
 @theme inline {
@@ -30,12 +49,30 @@
   --color-background-from: var(--background-from);
   --color-background-to: var(--background-to);
   --color-surface: var(--surface);
+  --color-surface-line: var(--surface-line);
+  --color-surface-raised: var(--surface-raised);
   --color-foreground: var(--foreground);
   --color-muted: var(--muted);
   --color-border: var(--border);
   --color-primary: var(--primary);
   --color-primary-strong: var(--primary-strong);
   --color-primary-foreground: var(--primary-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent-soft: var(--accent-soft);
+  --color-sky-day-from: var(--sky-day-from);
+  --color-sky-day-to: var(--sky-day-to);
+  --color-sky-dusk-from: var(--sky-dusk-from);
+  --color-sky-dusk-mid: var(--sky-dusk-mid);
+  --color-sky-dusk-to: var(--sky-dusk-to);
+  --color-dusk-tile: var(--dusk-tile);
+  --color-dusk-ink: var(--dusk-ink);
+  --color-success: var(--success);
+  --color-success-soft: var(--success-soft);
+  --color-warning: var(--warning);
+  --color-warning-soft: var(--warning-soft);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
   --color-nav: var(--nav);
   --color-nav-foreground: var(--nav-foreground);
   --color-tile-amber: var(--tile-amber);
@@ -47,35 +84,9 @@
   --color-tile-violet: var(--tile-violet);
   --color-tile-violet-foreground: var(--tile-violet-foreground);
   --shadow-card: var(--shadow-card);
-  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --shadow-float: var(--shadow-float);
+  --font-sans: var(--font-plus-jakarta-sans), ui-sans-serif, system-ui, sans-serif;
   --font-arabic: var(--font-naskh-arabic), serif;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #10132a;
-    --background-from: #181c3a;
-    --background-to: #0b0d1e;
-    --surface: #1c2142;
-    --foreground: #f4f4fb;
-    --muted: #aeb2cc;
-    --border: #2e3463;
-    --primary: #5b5bf0;
-    --primary-strong: #4f46e5;
-    --primary-foreground: #ffffff;
-    --nav: #2b3166;
-    --nav-foreground: #eceefb;
-    --tile-amber: #3b2e14;
-    --tile-amber-foreground: #fcd34d;
-    --tile-green: #13352a;
-    --tile-green-foreground: #86efac;
-    --tile-blue: #172a52;
-    --tile-blue-foreground: #93c5fd;
-    --tile-violet: #2a2459;
-    --tile-violet-foreground: #c4b5fd;
-    --shadow-card: 0 12px 32px -12px rgb(0 0 0 / 0.55),
-      0 2px 6px rgb(0 0 0 / 0.2);
-  }
 }
 
 @utility tap-target {
