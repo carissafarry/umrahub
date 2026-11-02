@@ -22,7 +22,7 @@ type TripBudgetProps = {
 const focusRing =
   "focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-primary";
 
-// The /trips/[id]/budget page body: back link, heading, the total with a
+// The /trips/[id]/budget page body: back link, heading, the total card and
 // per-phase bar chart (on top on phones, sticky side column on desktop) and
 // the step totals grouped by phase.
 export async function TripBudget({
@@ -58,7 +58,7 @@ export async function TripBudget({
       <main className="flex flex-col gap-6 pt-2 pb-10 lg:gap-8 lg:pt-8 lg:pb-16">
         <Link
           href={`/trips/${trip.id}`}
-          className={`tap-target inline-flex items-center gap-2 self-start rounded-full border border-border bg-surface px-4 font-medium text-foreground shadow-card ${focusRing}`}
+          className={`tap-target inline-flex items-center gap-2 self-start rounded-full border border-border bg-surface-raised px-4 text-sm font-semibold text-foreground ${focusRing}`}
         >
           <ArrowRightIcon className="size-4 rotate-180" />
           {t("backToChecklist")}
@@ -75,44 +75,50 @@ export async function TripBudget({
         </div>
 
         <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_22rem] lg:items-start lg:gap-10">
-          <Card
-            as="section"
-            className="flex flex-col gap-5 lg:sticky lg:top-6 lg:col-start-2 lg:row-start-1 lg:p-7"
-          >
-            <div className="flex flex-col gap-1">
-              <h2 className="text-lg font-semibold">{t("totalTitle")}</h2>
-              <p className="text-2xl font-bold">{range(budget.total)}</p>
-              <p className="text-sm text-muted">{t("totalNote")}</p>
-            </div>
+          <div className="flex flex-col gap-5 lg:sticky lg:top-6 lg:col-start-2 lg:row-start-1">
+            <Card as="section" className="flex flex-col gap-1 lg:p-7">
+              <h2 className="text-sm font-medium text-muted">
+                {t("totalTitle")}
+              </h2>
+              <p className="text-[1.75rem] leading-tight font-bold tracking-tight">
+                {range(budget.total)}
+              </p>
+              <p className="text-sm text-muted">{tChecklist("disclaimer")}</p>
+            </Card>
             {budget.phases.length > 0 && (
-              <ul aria-label={t("chartLabel")} className="flex flex-col gap-4">
-                {budget.phases.map((phase) => (
-                  <li key={phase.key} className="flex flex-col gap-1.5">
-                    <div className="flex flex-col text-sm">
-                      <span className="font-medium">{phaseLabel(phase.key)}</span>
-                      <span className="text-muted">{range(phase.total)}</span>
-                    </div>
-                    <div
-                      aria-hidden="true"
-                      className="flex h-3 overflow-hidden rounded-full bg-tile-violet"
-                    >
+              <section className="flex flex-col gap-3">
+                <h2 className="text-lg font-bold tracking-tight">
+                  {t("perPhaseTitle")}
+                </h2>
+                <ul aria-label={t("chartLabel")} className="flex flex-col gap-4">
+                  {budget.phases.map((phase) => (
+                    <li key={phase.key} className="flex flex-col gap-1.5">
+                      <div className="flex flex-wrap items-baseline justify-between gap-x-3 text-sm">
+                        <span className="font-bold">{phaseLabel(phase.key)}</span>
+                        <span className="text-muted">{range(phase.total)}</span>
+                      </div>
                       <div
-                        className="h-full bg-primary"
-                        style={{ width: `${percent(phase.total.min)}%` }}
-                      />
-                      <div
-                        className="h-full bg-primary/40"
-                        style={{
-                          width: `${percent(phase.total.max - phase.total.min)}%`,
-                        }}
-                      />
-                    </div>
-                  </li>
-                ))}
-              </ul>
+                        aria-hidden="true"
+                        className="flex h-3 overflow-hidden rounded-full bg-surface-line"
+                      >
+                        <div
+                          className="h-full bg-primary"
+                          style={{ width: `${percent(phase.total.min)}%` }}
+                        />
+                        <div
+                          className="h-full bg-primary/40"
+                          style={{
+                            width: `${percent(phase.total.max - phase.total.min)}%`,
+                          }}
+                        />
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              </section>
             )}
-            <p className="text-sm text-muted">{tChecklist("disclaimer")}</p>
-          </Card>
+            <p className="text-sm text-muted">{t("totalNote")}</p>
+          </div>
 
           <div className="flex flex-col gap-8 lg:col-start-1 lg:row-start-1">
             {budget.phases.length === 0 && (
@@ -127,46 +133,47 @@ export async function TripBudget({
                 <div className="flex flex-col gap-1 md:flex-row md:items-baseline md:justify-between md:gap-4">
                   <h2
                     id={`budget-phase-${phase.key}`}
-                    className="text-xl font-semibold lg:text-2xl"
+                    className="text-lg font-bold tracking-tight lg:text-2xl"
                   >
                     {phaseLabel(phase.key)}
                   </h2>
-                  <p className="md:shrink-0">
+                  <p className="text-sm md:shrink-0">
                     <span className="text-muted">{t("phaseTotal")}: </span>
                     <span className="font-semibold">{range(phase.total)}</span>
                   </p>
                 </div>
-                <Card className="lg:p-7">
-                  <ul className="flex flex-col divide-y divide-border">
-                    {phase.steps.map(({ step, perPerson, individual, multiplier, total }) => {
-                      const hasCost = costText(total).key !== "none";
-                      return (
-                        <li
-                          key={step.id}
-                          className="flex flex-col gap-1 py-3 first:pt-0 last:pb-0 md:flex-row md:items-start md:justify-between md:gap-6"
-                        >
-                          <p className="font-medium">
-                            {locale === "en" ? step.title_en : step.title_id}
+                <Card
+                  as="ul"
+                  className="flex flex-col divide-y divide-surface-line px-4 py-1"
+                >
+                  {phase.steps.map(({ step, perPerson, individual, multiplier, total }) => {
+                    const hasCost = costText(total).key !== "none";
+                    return (
+                      <li
+                        key={step.id}
+                        className="flex flex-col gap-1 py-3 md:flex-row md:items-start md:justify-between md:gap-6"
+                      >
+                        <p className="text-sm font-bold">
+                          {locale === "en" ? step.title_en : step.title_id}
+                        </p>
+                        <div className="flex flex-col text-sm md:items-end md:text-right">
+                          <p className={hasCost ? "font-semibold" : "text-muted"}>
+                            {range(total)}
                           </p>
-                          <div className="flex flex-col md:items-end md:text-right">
-                            <p className={hasCost ? "font-semibold" : "text-muted"}>
-                              {range(total)}
+                          {hasCost && (
+                            <p className="text-xs text-muted">
+                              {individual
+                                ? t("perPersonTimes", {
+                                    amount: range(perPerson),
+                                    count: multiplier,
+                                  })
+                                : t("shared")}
                             </p>
-                            {hasCost && (
-                              <p className="text-sm text-muted">
-                                {individual
-                                  ? t("perPersonTimes", {
-                                      amount: range(perPerson),
-                                      count: multiplier,
-                                    })
-                                  : t("shared")}
-                              </p>
-                            )}
-                          </div>
-                        </li>
-                      );
-                    })}
-                  </ul>
+                          )}
+                        </div>
+                      </li>
+                    );
+                  })}
                 </Card>
               </section>
             ))}
