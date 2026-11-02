@@ -22,9 +22,9 @@ type PostError = Extract<PostCommentResult, { ok: false }>["error"];
 const focusRing =
   "focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-primary";
 const dialogClassName =
-  "m-auto w-[calc(100%-2.5rem)] max-w-md rounded-3xl bg-surface p-6 text-foreground shadow-card backdrop:bg-foreground/60";
+  "m-auto w-[calc(100%-2.5rem)] max-w-md rounded-3xl bg-surface p-6 text-foreground shadow-float backdrop:bg-foreground/60";
 const pillClassName = `tap-target inline-flex items-center justify-center gap-2 rounded-full px-6 font-semibold disabled:opacity-60 ${focusRing}`;
-const neutralClassName = `${pillClassName} border border-border bg-surface text-foreground shadow-card`;
+const neutralClassName = `${pillClassName} border border-border bg-surface-raised text-foreground`;
 // Destructive: ink-filled, never indigo (the design system has no danger colour).
 const destructiveClassName = `${pillClassName} bg-foreground text-background`;
 
@@ -49,7 +49,7 @@ export function StepComments({
       </div>
       <CommentForm stepId={stepId} />
       {comments.length > 0 ? (
-        <ul className="flex flex-col divide-y divide-border">
+        <ul className="flex flex-col divide-y divide-surface-line">
           {comments.map((comment) => (
             <CommentItem key={comment.id} stepId={stepId} comment={comment} />
           ))}
@@ -97,7 +97,7 @@ function CommentForm({ stepId }: { stepId: string }) {
         aria-invalid={error === "empty" || error === "tooLong"}
         aria-describedby={`${id}-count ${id}-error`}
         onChange={(event) => setDraft(event.target.value)}
-        className={`tap-target w-full resize-y rounded-2xl border border-border bg-surface px-4 py-3 text-base text-foreground ${focusRing}`}
+        className={`tap-target w-full resize-y rounded-2xl border border-border bg-surface-raised px-4 py-3 text-base text-foreground ${focusRing}`}
       />
       <p id={`${id}-count`} className="self-end text-sm text-muted">
         {t("count", { count: draft.length, max: maxCommentLength })}
@@ -137,12 +137,12 @@ function CommentItem({
           referrerPolicy="no-referrer"
           width={40}
           height={40}
-          className="size-10 shrink-0 rounded-full bg-surface object-cover shadow-card"
+          className="size-10 shrink-0 rounded-full bg-surface-raised object-cover"
         />
       ) : (
         <span
           aria-hidden="true"
-          className="flex size-10 shrink-0 items-center justify-center rounded-full bg-tile-violet font-semibold text-tile-violet-foreground shadow-card"
+          className="flex size-10 shrink-0 items-center justify-center rounded-full bg-tile-violet font-semibold text-tile-violet-foreground"
         >
           {name.charAt(0).toUpperCase()}
         </span>
