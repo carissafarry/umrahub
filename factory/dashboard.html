@@ -770,7 +770,7 @@ async function loadInfraPending() {
 function statusOf(t) {
   const job = t.job && jobs.find((j) => j.id === t.job)
   // Infra tasks are checked off in the backlog when committed, but only count as done once their PR is merged.
-  if (t.type === 'infra' && infraPending.has(t.code)) return { key: 'human', label: 'Merge PR di GitHub' }
+  if ((t.type === 'infra' || t.type === 'spec') && infraPending.has(t.code)) return { key: 'human', label: 'Merge PR di GitHub' }
   if (t.section.startsWith('Selesai') || job?.stage === 'merged') return { key: 'done', label: 'Selesai' }
   if (job?.stage === 'needs-human') return { key: 'human', label: 'Butuh kamu' }
   if (job?.stage === 'pr') return { key: 'human', label: 'Merge PR di GitHub' }
@@ -850,7 +850,7 @@ function renderTask() {
   $('t-num').innerHTML = codeBadge(t)
   $('t-title').textContent = t.title
   $('t-meta').innerHTML = `<span class="pill ${s.key}">${esc(s.label)}</span>
-    <span class="pill">${esc({ fe: 'frontend', be: 'backend', infra: 'infra', '?': 'tipe belum ditentukan' }[t.type])}</span>
+    <span class="pill">${esc({ fe: 'frontend', be: 'backend', infra: 'infra', spec: 'spesifikasi', '?': 'tipe belum ditentukan' }[t.type])}</span>
     ${t.wave ? `<span class="pill">gelombang ${t.wave}</span>` : ''}
     <span class="pill">${esc(t.section)}</span>`
   $('t-back').hidden = !taskTrail.length

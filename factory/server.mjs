@@ -15,13 +15,13 @@ const INBOX = join(ROOT, 'inbox')
 const TAKEN = join(INBOX, 'taken')
 // AI-generated, user-editable requirement docs per backlog task.
 const REQS = join(ROOT, 'requirements')
-const TASK_CODE = /^(infra|be|fe|\?)-\d{3}$/
+const TASK_CODE = /^(infra|be|fe|spec|\?)-\d{3}$/
 const reqFile = (code) => join(REQS, `${code.replace('?', 'q')}.md`)
 const PORT = Number(process.env.PORT || 8000)
 const NEW_SECTION = '## Baru — belum dicek'
 const TYPES = { '.html': 'text/html; charset=utf-8', '.md': 'text/markdown; charset=utf-8', '.json': 'application/json; charset=utf-8', '.mjs': 'text/javascript; charset=utf-8' }
-const TYPES_TASK = ['infra', 'be', 'fe', '?']
-const ITEM = /^- (?:\[( |x)\] )?\[(infra|be|fe|\?)-(\d{3})\] (.+?): (.*?)(?: → (\S+))?$/
+const TYPES_TASK = ['infra', 'be', 'fe', 'spec', '?']
+const ITEM = /^- (?:\[( |x)\] )?\[(infra|be|fe|spec|\?)-(\d{3})\] (.+?): (.*?)(?: → (\S+))?$/
 
 function send(res, status, body, type = 'text/plain; charset=utf-8') {
   res.writeHead(status, { 'Content-Type': type, 'Cache-Control': 'no-store' })
@@ -56,7 +56,7 @@ function parseBacklog(text) {
 }
 
 async function nextNumber(text) {
-  const nums = [...text.matchAll(/\[(?:infra|be|fe|\?)-(\d{3})\]/g)].map((m) => Number(m[1]))
+  const nums = [...text.matchAll(/\[(?:infra|be|fe|spec|\?)-(\d{3})\]/g)].map((m) => Number(m[1]))
   try {
     for (const d of await readdir(JOBS)) {
       const m = d.match(/^(?:[a-z]+-)?(\d{3})(?:-|$)/)
@@ -183,7 +183,7 @@ const git = (args) => new Promise((done) => {
 
 // Task codes in the commit subjects of a git range, newest task first.
 async function codesIn(range) {
-  const codes = (await git(['log', range, '--format=%s'])).split('\n').map((s) => s.match(/^((?:infra|be|fe)-\d{3})\b/)?.[1]).filter(Boolean)
+  const codes = (await git(['log', range, '--format=%s'])).split('\n').map((s) => s.match(/^((?:infra|be|fe|spec)-\d{3})\b/)?.[1]).filter(Boolean)
   return [...new Set(codes)].sort((a, b) => Number(b.slice(-3)) - Number(a.slice(-3)))
 }
 
@@ -242,7 +242,7 @@ createServer(async (req, res) => {
     if (jobTasks && req.method === 'GET') {
       return send(res, 200, JSON.stringify(await branchTasks(jobTasks[1])), TYPES['.json'])
     }
-    const taskPr = pathname.match(/^\/api\/tasks\/((?:infra|be|fe)-\d{3})\/group$/)
+    const taskPr = pathname.match(/^\/api\/tasks\/((?:infra|be|fe|spec)-\d{3})\/group$/)
     if (taskPr && req.method === 'GET') {
       return send(res, 200, JSON.stringify(await taskGroup(taskPr[1])), TYPES['.json'])
     }
