@@ -50,6 +50,10 @@ the orchestrator moves items whose dependencies are all merged from **Menunggu**
 - [x] [infra-051] Complete command list: the dashboard footer and the factory skill description now list every command (/factory <feature>, next [n], run <code>, resume, watch, approve, rework); resume and watch were missing, and the footer commands have a one-line hint each → infra-051
 - [x] [infra-052] Footer hover effect: each command in the dashboard footer highlights on hover, shows a help cursor and an instant hint bubble above it (also on keyboard focus), replacing the slow native title tooltip → infra-052
 - [x] [infra-053] Sync infra branch after PR #20: bring origin/main (be-012 notifications merged by the user) into factory/infra so the open infra PR stays mergeable → infra-053
+- [x] [infra-093] Backlog bookkeeping: workflow-005 (driver reviewer selection, PR #32) added; fe-081 ran through the driver and is waiting for merge in PR #33 → infra-093
+- [x] [workflow-005] Driver reviewer selection: the driver runs only the reviewers named with --reviewers or FACTORY_REVIEWERS, records the others as skipped and tells the approver they were waived, plus workflow-log findings from the first real driver run (fe-081) → workflow-005
+- [x] [infra-092] Sync main with merged PR #30 and PR #31: workflow-004 slim mode and the infra bookkeeping merged on GitHub; fe-081 claimed and run through the driver → infra-092
+- [x] [infra-091] Sync main with merged PR #29: fe-066 new theme merged on GitHub; fe-068 and fe-081 moved to Siap → infra-091
 - [x] [infra-090] Sync main with merged PR #28: workflow-003 job capacity limit merged on GitHub; factory/infra merged with origin/main → infra-090
 - [x] [infra-089] Backlog bookkeeping after the 2026-11-02 sync: lines for workflow-003 (job capacity limit, PR #28) and workflow-004 (slim mode and context measuring, PR #30), plus infra-pr25, workflow-001 and workflow-002 merged → infra-089
 - [x] [workflow-004] Slim mode for factory agents: the driver gets --slim (FACTORY_SLIM=1) that starts agents without user plugins, MCP servers and skills (start-up context 14,133 to 5,918 tokens in one measurement), plus factory/measure-context.sh to re-measure, and workflow-log rows for workflow-002 to 004 → workflow-004
@@ -115,12 +119,14 @@ Cari dan Gabung Jadwal, MVP-1. Read first: `.plans/2026-11-02-cari-dan-gabung-ja
 - [x] [fe-066] New theme: replace the soft indigo tokens in src/app/globals.css with the sky theme from the UI direction spec (white background, light-blue cards without shadow, ink pill CTA, sky accent and hero gradients), remove the dark-mode block, load Plus Jakarta Sans with next/font, update design-tokens.test.ts for the light theme only, restyle the ui primitives (Button, Chip, Card, BottomNav) and update the Design system section of AGENTS.md including the relaxed photo rule; no page layout changes beyond what the primitives cause (ticket fe-066, story US-13) → fe-066
 - [x] [be-078] Tip ratings: step_comment_votes table (one vote per user per comment, value +1 or -1, no voting on your own comment) with RLS and tests, Server Actions to vote and clear a vote, and the step detail loader ordering tips by most helpful then newest with vote counts and the viewer's own vote; UI comes in fe-079 (ticket be-078, story US-12) → be-078
 
+- [ ] [fe-068] Beranda and navigation: /dashboard becomes the Beranda (greeting, active trip, tasks that need action, one "Cari jadwal untuk tanggalmu" CTA that is enabled once fe-069 exists), the old trip list moves to /trips (tab "Trip"), new header with bell and account menu, bottom nav and top nav; add tabs only for routes that exist. Open question: where account, language and sign-out live (proposal in the design doc section 10b: profile icon in the header opening a bottom sheet) (ticket fe-068, story US-2)
+- [x] [fe-081] New style for checklist, step detail and budget: apply the new layout patterns to /trips/[id], /steps/[id] and /trips/[id]/budget with no behaviour change (ticket fe-081, story US-13) → fe-081
+
 ## Menunggu
 
 Gelombang 9
 - [be-064] Jadwal schema: schedules (provider, service type, city, date, three deadlines, discussion and final group links, is_dummy), schedule_options (vehicle format, minimum, capacity, price in SAR), participations (trip, schedule, seats, status, created_by), payment_proofs, and an is_trip_member(trip_id) function used by every new policy (owner only for now); users may set only interested, fix, declined, cancelled and paid_claimed, while confirmed and lapsed are admin-only; pgTAP tests (ticket be-064, stories US-5 to US-8) (butuh: be-063)
 - [fe-062] Onboarding dates: date step with a range calendar, duration chips, per-city dates (Makkah and Madinah) in the wizard and the new-trip wizard, wizard button labelled "Next"; reference screen "Onboarding tanggal" in the preview (ticket fe-062, story US-1) (butuh: be-061, fe-066)
-- [fe-068] Beranda and navigation: /dashboard becomes the Beranda (greeting, active trip, tasks that need action, one "Cari jadwal untuk tanggalmu" CTA that is enabled once fe-069 exists), the old trip list moves to /trips (tab "Trip"), new header with bell and account menu, bottom nav and top nav; add tabs only for routes that exist. Open question: where account, language and sign-out live (proposal in the design doc section 10b: profile icon in the header opening a bottom sheet) (ticket fe-068, story US-2) (butuh: fe-066)
 - [fe-079] Tip ratings UI: "Membantu" and "Kurang" buttons with counts on each tip in the step detail, own vote highlighted, "Paling membantu" tag on the top tip, sort control; reference screen "Detail langkah" in the preview (ticket fe-079, story US-12) (butuh: be-078, fe-066)
 
 Gelombang 10
@@ -142,7 +148,6 @@ Gelombang 12
 
 Gelombang 13
 - [fe-080] New style for landing, onboarding steps and the trip list: apply the new layout patterns to /, the other onboarding steps and /trips including rename and delete dialogs, with no behaviour change (ticket fe-080, story US-13) (butuh: fe-066, fe-068)
-- [fe-081] New style for checklist, step detail and budget: apply the new layout patterns to /trips/[id], /steps/[id] and /trips/[id]/budget with no behaviour change (ticket fe-081, story US-13) (butuh: fe-066)
 - [fe-082] Final QA: check every new and restyled screen at 390, 768 and 1280, keyboard and screen reader basics, token contrast, Lighthouse mobile above 90 on key pages, id and en key parity, and empty and error states (ticket fe-082) (butuh: fe-062, fe-068, fe-069, fe-071, fe-073, fe-074, fe-076, fe-077, fe-079, fe-080, fe-081)
 - [infra-060] Studio runbook for jadwal: admin notes for marking participants fix, confirmed or lapsed and for opening seat offers through Supabase Studio, with example SQL (ticket infra-060, story US-15) (butuh: be-070)
 
