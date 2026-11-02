@@ -50,6 +50,8 @@ the orchestrator moves items whose dependencies are all merged from **Menunggu**
 - [x] [infra-051] Complete command list: the dashboard footer and the factory skill description now list every command (/factory <feature>, next [n], run <code>, resume, watch, approve, rework); resume and watch were missing, and the footer commands have a one-line hint each → infra-051
 - [x] [infra-052] Footer hover effect: each command in the dashboard footer highlights on hover, shows a help cursor and an instant hint bubble above it (also on keyboard focus), replacing the slow native title tooltip → infra-052
 - [x] [infra-053] Sync infra branch after PR #20: bring origin/main (be-012 notifications merged by the user) into factory/infra so the open infra PR stays mergeable → infra-053
+- [x] [infra-059] Backlog for Cari dan Gabung Jadwal MVP-1: 22 tasks (be-017 to fe-038 plus infra-060) in waves 8 to 13, with user stories and ticket details in .plans/2026-11-02-cari-jadwal-mvp1-stories-and-tickets.md → infra-059
+- [x] [infra-058] Design docs and preview for Cari dan Gabung Jadwal: design document, UI direction spec and the HTML preview (.plans/design-preview/cari-jadwal-preview-v3.html) saved in the repo → infra-058
 - [x] [infra-057] Sync main with merged PR #24: be-016 content flags merged on GitHub; backlog has no open items left → infra-057
 - [x] [infra-056] Sync main with merged PR #22: be-014 step comments merged on GitHub; be-016 content flags moved to Siap → infra-056
 - [x] [infra-055] Sync main with merged PR #21: fe-015 per-traveler step tracking merged on GitHub; factory/infra merged with origin/main → infra-055
@@ -92,5 +94,43 @@ the orchestrator moves items whose dependencies are all merged from **Menunggu**
 - [x] [fe-015] Per traveler: trip owner can switch each step between shared and individual; individual steps show one status control per traveler and count toward progress per traveler → fe-015
 - [x] [be-016] Content flags: a "Laporkan info usang" button on each step detail page that records a reason in a content_flags table (migration with RLS, users can only insert and read their own flags) → be-016
 
+## Siap — gelombang 8
+
+Cari dan Gabung Jadwal, MVP-1. Read first: `.plans/2026-11-02-cari-dan-gabung-jadwal-design.md` (what to build), `.plans/2026-11-02-ui-direction-spec.md` (look and feel), `.plans/2026-11-02-cari-jadwal-mvp1-stories-and-tickets.md` (user stories and per-ticket detail) and the HTML preview `.plans/design-preview/cari-jadwal-preview-v3.html` (reference screens; the preview wins for visuals). UI term is "Jadwal", never "sesi". These four have no dependencies and can run in parallel.
+
+- [ ] [be-017] Trip dates per city: migration adding trips.planned_return_date and a trip_legs table (trip, city Makkah or Madinah, start and end date, sort order) with owner-only RLS and pgTAP tests; extend onboarding validation and createOnboardingTrip to accept the return date and one or two city legs (ticket be-017, story US-1)
+- [ ] [be-019] Provider catalog schema: providers (muthawif or travel, name, bio, WhatsApp contact, bank account text, is_dummy), provider_affiliations (relationship type, status, dates, confirmed by both sides), provider_verifications (status, date, expiry, criteria met, reviewer; results only, never documents), service_types, provider_catalog_items and provider_reviews (stars 1 to 5, text, display name like "Siti R."), read-only RLS for signed-in users, pgTAP tests (ticket be-019, story US-10)
+- [ ] [fe-022] New theme: replace the soft indigo tokens in src/app/globals.css with the sky theme from the UI direction spec (white background, light-blue cards without shadow, ink pill CTA, sky accent and hero gradients), remove the dark-mode block, load Plus Jakarta Sans with next/font, update design-tokens.test.ts for the light theme only, restyle the ui primitives (Button, Chip, Card, BottomNav) and update the Design system section of AGENTS.md including the relaxed photo rule; no page layout changes beyond what the primitives cause (ticket fe-022, story US-13)
+- [ ] [be-034] Tip ratings: step_comment_votes table (one vote per user per comment, value +1 or -1, no voting on your own comment) with RLS and tests, Server Actions to vote and clear a vote, and the step detail loader ordering tips by most helpful then newest with vote counts and the viewer's own vote; UI comes in fe-035 (ticket be-034, story US-12)
+
 ## Menunggu
+
+Gelombang 9
+- [be-020] Jadwal schema: schedules (provider, service type, city, date, three deadlines, discussion and final group links, is_dummy), schedule_options (vehicle format, minimum, capacity, price in SAR), participations (trip, schedule, seats, status, created_by), payment_proofs, and an is_trip_member(trip_id) function used by every new policy (owner only for now); users may set only interested, fix, declined, cancelled and paid_claimed, while confirmed and lapsed are admin-only; pgTAP tests (ticket be-020, stories US-5 to US-8) (butuh: be-019)
+- [fe-018] Onboarding dates: date step with a range calendar, duration chips, per-city dates (Makkah and Madinah) in the wizard and the new-trip wizard, wizard button labelled "Next"; reference screen "Onboarding tanggal" in the preview (ticket fe-018, story US-1) (butuh: be-017, fe-022)
+- [fe-024] Beranda and navigation: /dashboard becomes the Beranda (greeting, active trip, tasks that need action, one "Cari jadwal untuk tanggalmu" CTA that is enabled once fe-025 exists), the old trip list moves to /trips (tab "Trip"), new header with bell and account menu, bottom nav and top nav; add tabs only for routes that exist. Open question: where account, language and sign-out live (proposal in the design doc section 10b: profile icon in the header opening a bottom sheet) (ticket fe-024, story US-2) (butuh: fe-022)
+- [fe-035] Tip ratings UI: "Membantu" and "Kurang" buttons with counts on each tip in the step detail, own vote highlighted, "Paling membantu" tag on the top tip, sort control; reference screen "Detail langkah" in the preview (ticket fe-035, story US-12) (butuh: be-034, fe-022)
+
+Gelombang 10
+- [be-021] Dummy data: idempotent upsert migration with about 10 providers (muthawif and travel, some affiliated, one unverified), jadwal in Makkah, Thaif (day trip from Makkah) and Madinah for January 2027 with vehicle options, dummy reviews and catalog items, all is_dummy = true (ticket be-021, story US-14) (butuh: be-019, be-020)
+- [be-031] Status notifications: database trigger inserting a notification for the trip owner when a participation status changes, with new notification types in the notifications table and fixed id and en copy keys (ticket be-031, story US-11) (butuh: be-020)
+- [fe-033] Provider profiles: muthawif and travel profile pages (verified badge with date, prominent affiliation card, read-only reviews, catalog cards, available jadwal, WhatsApp button, unverified warning text "Belum diverifikasi Umra Hub. Periksa sendiri sebelum membayar.") and a catalog item detail page. Open question: catalog shape (proposal: card list opening a detail page) (ticket fe-033, story US-10) (butuh: be-019, be-021, fe-022)
+
+Gelombang 11
+- [be-023] Jadwal search: loader searchSchedules(trip, kinds) grouping results per city with day trips under their city, and a capacity function returning confirmed, fix and interested counts per option without exposing who the participants are (ticket be-023, stories US-3 and US-4) (butuh: be-017, be-020, be-021)
+- [be-026] Participation actions: expressInterest, setSeats, cancelInterest, confirmAttendance, respondToOption as Server Actions with trip-membership checks, validation and a pure, tested status-transition table; no cancel after payment proof (ticket be-026, stories US-5 to US-7) (butuh: be-020)
+- [be-028] Payment proof storage: private bucket, images only up to 1 MB, RLS so only the trip owner, the provider and admins can read, an upload action that sets paid_claimed, and a function that deletes proofs 30 days after the jadwal ends (scheduling it is a manual step noted in the PR) (ticket be-028, story US-8) (butuh: be-026)
+
+Gelombang 12
+- [fe-025] Cari: /cari search form (trip dates, per-city rows, kinds chips, "Kabari saya soal kursi kosong" toggle placeholder), results page with large city bands, muthawif tiles and the Thaif day trip under Makkah, and the "Semua muthawif" list; adds the Cari tab. Open question: tapping a tile opens the jadwal detail (proposal) (ticket fe-025, stories US-3 and US-4) (butuh: be-023, fe-024)
+- [fe-027] Jadwal detail and interest: vehicle options with progress, seat stepper, deadlines, "Saya tertarik" CTA, state after interest, cancel dialog (ticket fe-027, stories US-4 and US-5) (butuh: be-026, be-023, fe-025)
+- [fe-030] Jadwal saya: tasks that need action and the list of jadwal with status pills; adds the Jadwal saya tab (ticket fe-030, story US-9) (butuh: be-026, fe-024)
+- [fe-029] Attendance and payment screens: konfirmasi hadir, tawaran opsi, final and pembayaran (bank account, copy button, proof upload, final group link) and the states after each action (ticket fe-029, stories US-6 to US-8) (butuh: be-028, fe-027)
+- [fe-032] Notifications restyle: notifications page in the new style with rows for the new notification types (ticket fe-032, story US-11) (butuh: be-031, fe-022)
+
+Gelombang 13
+- [fe-036] New style for landing, onboarding steps and the trip list: apply the new layout patterns to /, the other onboarding steps and /trips including rename and delete dialogs, with no behaviour change (ticket fe-036, story US-13) (butuh: fe-022, fe-024)
+- [fe-037] New style for checklist, step detail and budget: apply the new layout patterns to /trips/[id], /steps/[id] and /trips/[id]/budget with no behaviour change (ticket fe-037, story US-13) (butuh: fe-022)
+- [fe-038] Final QA: check every new and restyled screen at 390, 768 and 1280, keyboard and screen reader basics, token contrast, Lighthouse mobile above 90 on key pages, id and en key parity, and empty and error states (ticket fe-038) (butuh: fe-018, fe-024, fe-025, fe-027, fe-029, fe-030, fe-032, fe-033, fe-035, fe-036, fe-037)
+- [infra-060] Studio runbook for jadwal: admin notes for marking participants fix, confirmed or lapsed and for opening seat offers through Supabase Studio, with example SQL (ticket infra-060, story US-15) (butuh: be-026)
 
