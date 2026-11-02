@@ -12,20 +12,15 @@ function parseTokens(block: string): Record<string, string> {
   return tokens;
 }
 
-// Returns the body of the first `:root { ... }` block at or after `from`.
-function rootBlock(from: number): string {
-  const start = css.indexOf(":root", from);
-  if (from === -1 || start === -1) throw new Error("Missing :root block");
+// Returns the body of the first `:root { ... }` block.
+function rootBlock(): string {
+  const start = css.indexOf(":root");
+  if (start === -1) throw new Error("Missing :root block");
   const open = css.indexOf("{", start);
   return css.slice(open + 1, css.indexOf("}", open));
 }
 
-const themes = {
-  light: parseTokens(rootBlock(0)),
-  dark: parseTokens(
-    rootBlock(css.indexOf("@media (prefers-color-scheme: dark)")),
-  ),
-};
+const tokens = parseTokens(rootBlock());
 
 function luminance(hex: string): number {
   const [r, g, b] = [1, 3, 5].map((i) => {
@@ -51,6 +46,16 @@ const pairs: [string, string, number][] = [
   ["--primary-foreground", "--primary", 4.5],
   ["--primary-foreground", "--primary-strong", 4.5],
   ["--nav-foreground", "--nav", 4.5],
+  ["--foreground", "--surface-raised", 7],
+  ["--muted", "--surface-raised", 4.5],
+  ["--accent", "--background", 4.5],
+  ["--accent", "--surface", 4.5],
+  ["--accent", "--accent-soft", 4.5],
+  ["--accent-foreground", "--accent", 4.5],
+  ["--dusk-ink", "--dusk-tile", 4.5],
+  ["--success", "--success-soft", 4.5],
+  ["--warning", "--warning-soft", 4.5],
+  ["--danger", "--danger-soft", 4.5],
   ...(["amber", "green", "blue", "violet"].map((hue) => [
     `--tile-${hue}-foreground`,
     `--tile-${hue}`,
@@ -58,7 +63,11 @@ const pairs: [string, string, number][] = [
   ]) as [string, string, number][]),
 ];
 
-describe.each(Object.entries(themes))("%s theme tokens", (_, tokens) => {
+describe("theme tokens", () => {
+  it("has a single light theme with no dark-mode block", () => {
+    expect(css).not.toContain("prefers-color-scheme");
+  });
+
   it.each(pairs)("%s on %s is at least %d:1", (fg, bg, min) => {
     expect(tokens[fg], fg).toMatch(/^#[0-9a-fA-F]{6}$/);
     expect(tokens[bg], bg).toMatch(/^#[0-9a-fA-F]{6}$/);
