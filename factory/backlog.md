@@ -50,8 +50,8 @@ the orchestrator moves items whose dependencies are all merged from **Menunggu**
 - [x] [infra-051] Complete command list: the dashboard footer and the factory skill description now list every command (/factory <feature>, next [n], run <code>, resume, watch, approve, rework); resume and watch were missing, and the footer commands have a one-line hint each → infra-051
 - [x] [infra-052] Footer hover effect: each command in the dashboard footer highlights on hover, shows a help cursor and an instant hint bubble above it (also on keyboard focus), replacing the slow native title tooltip → infra-052
 - [x] [infra-053] Sync infra branch after PR #20: bring origin/main (be-012 notifications merged by the user) into factory/infra so the open infra PR stays mergeable → infra-053
-- [x] [infra-059] Backlog for Cari dan Gabung Jadwal MVP-1: 22 tasks (be-061 to fe-082 plus infra-060) in waves 8 to 13, with user stories and ticket details in .plans/2026-11-02-cari-jadwal-mvp1-stories-and-tickets.md → infra-059
-- [x] [infra-058] Design docs and preview for Cari dan Gabung Jadwal: design document, UI direction spec and the HTML preview (.plans/design-preview/cari-jadwal-preview-v3.html) saved in the repo → infra-058
+- [x] [spec-059] User stories and backlog for Cari dan Gabung Jadwal MVP-1: 22 tasks (be-061 to fe-082 plus infra-060) in waves 8 to 13, with user stories and ticket details in .plans/2026-11-02-cari-jadwal-mvp1-stories-and-tickets.md → spec-059
+- [x] [spec-058] Design docs and preview for Cari dan Gabung Jadwal: design document, UI direction spec and the HTML preview (.plans/design-preview/cari-jadwal-preview-v3.html) saved in the repo → spec-058
 - [x] [infra-057] Sync main with merged PR #24: be-016 content flags merged on GitHub; backlog has no open items left → infra-057
 - [x] [infra-056] Sync main with merged PR #22: be-014 step comments merged on GitHub; be-016 content flags moved to Siap → infra-056
 - [x] [infra-055] Sync main with merged PR #21: fe-015 per-traveler step tracking merged on GitHub; factory/infra merged with origin/main → infra-055
