@@ -136,6 +136,31 @@ export function ClockIcon({ className }: IconProps) {
   );
 }
 
+export function CheckIcon({ className }: IconProps) {
+  return (
+    <Svg className={className}>
+      <path d="M5 12l5 5 9-10" />
+    </Svg>
+  );
+}
+
+export function LockIcon({ className }: IconProps) {
+  return (
+    <Svg className={className}>
+      <rect x="5" y="11" width="14" height="9" rx="2.5" />
+      <path d="M8 11V8a4 4 0 0 1 8 0v3" />
+    </Svg>
+  );
+}
+
+export function FlagIcon({ className }: IconProps) {
+  return (
+    <Svg className={className}>
+      <path d="M6 21V4M6 5h11l-2 4 2 4H6" />
+    </Svg>
+  );
+}
+
 export function SparkleIcon({ className }: IconProps) {
   return (
     <Svg className={className}>

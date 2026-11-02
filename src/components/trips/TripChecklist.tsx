@@ -1,6 +1,5 @@
-import Link from "next/link";
 import { getLocale, getTranslations } from "next-intl/server";
-import { ArrowRightIcon } from "@/components/ui/icons";
+import { Card } from "@/components/ui/Card";
 import {
   computeProgress,
   costText,
@@ -28,7 +27,8 @@ type TripChecklistProps = {
 };
 
 // The /trips/[id] page body: trip heading, progress card (sticky side panel
-// on desktop) and the steps grouped by phase then category.
+// on desktop) and the steps grouped by phase, with one card of rows per
+// category.
 export async function TripChecklist({
   trip,
   steps,
@@ -64,18 +64,14 @@ export async function TripChecklist({
         </div>
 
         <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_22rem] lg:items-start lg:gap-10">
-          <div className="flex flex-col gap-4 lg:sticky lg:top-6 lg:col-start-2 lg:row-start-1">
-            <ProgressCard {...computeProgress(steps, tracking)} />
-            <Link
-              href={`/trips/${trip.id}/budget`}
-              className="tap-target inline-flex items-center gap-2 self-start rounded-full border border-border bg-surface px-4 font-medium text-foreground shadow-card focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-primary"
-            >
-              {t("budgetLink")}
-              <ArrowRightIcon className="size-4" />
-            </Link>
+          <div className="lg:sticky lg:top-6 lg:col-start-2 lg:row-start-1">
+            <ProgressCard
+              {...computeProgress(steps, tracking)}
+              budgetHref={`/trips/${trip.id}/budget`}
+            />
           </div>
 
-          <div className="flex flex-col gap-10 lg:col-start-1 lg:row-start-1">
+          <div className="flex flex-col gap-8 lg:col-start-1 lg:row-start-1">
             {phases.length === 0 && (
               <p className="text-lg text-muted">{t("empty")}</p>
             )}
@@ -83,20 +79,23 @@ export async function TripChecklist({
               <section
                 key={phase.key}
                 aria-labelledby={`phase-${phase.key}`}
-                className="flex flex-col gap-6"
+                className="flex flex-col gap-4"
               >
                 <h2
                   id={`phase-${phase.key}`}
-                  className="text-xl font-semibold lg:text-2xl"
+                  className="text-lg font-bold tracking-tight lg:text-2xl"
                 >
                   {label("phases", phase.key)}
                 </h2>
                 {phase.categories.map((category) => (
-                  <div key={category.key} className="flex flex-col gap-3">
-                    <h3 className="font-semibold text-muted">
+                  <div key={category.key} className="flex flex-col gap-2">
+                    <h3 className="self-start rounded-full bg-accent-soft px-2.5 py-0.5 text-xs font-bold text-accent">
                       {label("categories", category.key)}
                     </h3>
-                    <ul className="flex flex-col gap-3">
+                    <Card
+                      as="ul"
+                      className="flex flex-col divide-y divide-surface-line px-4 py-1"
+                    >
                       {category.steps.map((step) => (
                         <StepAccordion
                           key={step.id}
@@ -130,7 +129,7 @@ export async function TripChecklist({
                           ).map(title)}
                         />
                       ))}
-                    </ul>
+                    </Card>
                   </div>
                 ))}
               </section>
