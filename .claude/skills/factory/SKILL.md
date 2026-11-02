@@ -527,3 +527,12 @@ checkbox, decides what counts as done, and any report you write says "waiting
 for merge" until the `PR … MERGED` event arrives. Never build a dashboard
 status or a report that treats a checked-off task as done without looking at
 its PR.
+
+## Driver
+
+`node factory/driver.mjs run <job-id>` is an alternative way to run **one job**
+through this loop without an orchestrator conversation: a Node script that starts
+each agent as a fresh `claude -p` process, resumes the builder session on
+CHANGES, writes `job.json` and `usage.jsonl`, and opens the PR. It never merges.
+It does not replace this skill: the loop above remains the reference, and the
+driver must match it. See `factory/driver.md`.
