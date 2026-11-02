@@ -152,7 +152,8 @@
   .vt.on{background:var(--ink);color:#fff;border-color:var(--ink)}
   .tip{display:flex;flex-direction:column;gap:8px;padding:12px 0;border-top:1px solid var(--card-line);font-size:13px;line-height:1.5}
   .tip:first-of-type{border-top:0;padding-top:0}
-  .hscroll{display:flex;gap:8px;overflow-x:auto;padding-bottom:2px}
+  .hscroll{display:flex;gap:8px;overflow-x:auto;padding-bottom:2px;scrollbar-width:none;-ms-overflow-style:none}
+  .hscroll::-webkit-scrollbar{display:none}
   .hscroll .chip{flex:none}
 </style>
 </head>
