@@ -12,6 +12,7 @@ Aturan: kode `workflow-NNN` (penghitung sendiri dari 001), branch `factory/workf
 | workflow-002 | 2026-11-02 | Skrip pengendali `factory/driver.mjs` (PR #27, sudah merge): loop factory dengan langkah mekanis di kode, tiap agen lewat `claude -p` dalam konteks baru, token per langkah dicatat di `usage.jsonl`. | Sesi orkestrator yang panjang membaca ulang percakapan besar setiap kali satu agen selesai. | Orkestrasi hampir tidak memakai token model. Bekal agen lebih kecil (lihat workflow-004). | Belum dijalankan dengan agen sungguhan. Bekal agen headless 14.133 token, dibanding sekitar 40 ribu pada agen di dalam sesi interaktif (dari transkrip). |
 | workflow-003 | 2026-11-02 | Batas kapasitas `factory/capacity.mjs` (PR #28): paling banyak 2 job berjalan, 1 di antaranya memakai Supabase lokal. | Empat job paralel membuat load average sekitar 330, OrbStack memakai 95 sampai 137% CPU lebih dari 24 menit, dan builder berjalan 14 sampai 60 menit. | Tidak ada antrean di stack database, durasi job lebih pendek, agen berhenti membuang token menunggu. | Diuji pada state nyata: job database kedua dan job ketiga ditolak. Belum ada angka durasi sebelum dan sesudah. |
 | workflow-004 | 2026-11-02 | Mode hemat di skrip pengendali (`--slim` atau `FACTORY_SLIM=1`) dan skrip ukur `factory/measure-context.sh`. | Setiap agen mulai dengan puluhan ribu token bekal (plugin, MCP, skill global) yang tidak dipakai agen factory. | Bekal agen turun sekitar separuh. Risiko: hook milik pengguna (misalnya penulis ulang perintah penghemat token) ikut terlewat, sehingga keluaran alat bisa lebih besar. | Bekal reviewer-code: 14.133 menjadi 5.918 token (−58%) pada satu pengukuran. Belum dibandingkan pada job sungguhan. |
+| workflow-005 | 2026-11-02 | Pilihan reviewer di skrip pengendali: `--reviewers code,security` atau `FACTORY_REVIEWERS`. Reviewer yang tidak dipilih dicatat `skipped` (tidak pernah `PASS`) dan approver diberi tahu bahwa reviewnya dibebaskan atas keputusan pengguna. | Tiket tanpa UI (skema database) tidak butuh reviewer UX dan UI, dan tiket yang hanya mengubah halaman bertanda login tidak bisa dilihat agen headless. Tiap reviewer yang tidak perlu memakai sekitar 40 sampai 50 ribu token. | Satu sampai tiga agen lebih sedikit per putaran review. Risiko: pemilihan yang salah melewatkan temuan. | Dipakai pertama kali pada fe-081 (hanya reviewer code). Belum ada angka. |
 
 ## Baseline (spec-writer dengan opus, gelombang 8, 2026-11-02)
 
@@ -61,7 +62,10 @@ Dua sumber boros: bekal awal agen sekitar 40 ribu token (agen kecil seperti revi
 ## Ide berikutnya (belum dikerjakan)
 
 - Kurangi jumlah giliran builder lewat prompt: kelompokkan perintah, jangan menunggu dengan pengecekan berulang, baca hanya bagian berkas yang perlu.
-- Validasi bertingkat (tes terkait saat membangun, tes penuh sekali di akhir) dan reviewer menurut jenis tiket (workflow-005 dan 006).
+- Validasi bertingkat (tes terkait saat membangun, tes penuh sekali di akhir).
+- Pilihan reviewer otomatis menurut jenis tiket (be tanpa UI: code dan keamanan; fe: code, UI, UX), bukan lewat opsi manual.
+- **Temuan dari fe-081 (belum diperbaiki):** builder menjalankan dev server di Bash tanpa melepasnya, jadi panggilan alatnya menggantung 20 menit lebih padahal `build.md` sudah READY. Perlu aturan di `builder.md`: dev server selalu dijalankan dengan `nohup ... &` dan keluarannya dialihkan. Skrip pengendali juga sebaiknya punya batas waktu per agen (sekarang tiga jam).
+- Rute pratinjau di `build.md` yang masih berisi `[id]` membuat skrip pengendali berhenti. Builder sebaiknya diberi id trip nyata di prompt-nya.
 
 - Sesi orkestrator baru dengan konteks kecil untuk setiap gelombang, bukan satu sesi panjang.
 - Skrip pengendali loop (langkah mekanis di luar model, agen dipanggil lewat `claude -p` dalam konteks kecil).
