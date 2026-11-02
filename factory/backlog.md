@@ -50,6 +50,7 @@ the orchestrator moves items whose dependencies are all merged from **Menunggu**
 - [x] [infra-051] Complete command list: the dashboard footer and the factory skill description now list every command (/factory <feature>, next [n], run <code>, resume, watch, approve, rework); resume and watch were missing, and the footer commands have a one-line hint each → infra-051
 - [x] [infra-052] Footer hover effect: each command in the dashboard footer highlights on hover, shows a help cursor and an instant hint bubble above it (also on keyboard focus), replacing the slow native title tooltip → infra-052
 - [x] [infra-053] Sync infra branch after PR #20: bring origin/main (be-012 notifications merged by the user) into factory/infra so the open infra PR stays mergeable → infra-053
+- [x] [infra-092] Sync main with merged PR #30 and PR #31: workflow-004 slim mode and the infra bookkeeping merged on GitHub; fe-081 claimed and run through the driver → infra-092
 - [x] [infra-091] Sync main with merged PR #29: fe-066 new theme merged on GitHub; fe-068 and fe-081 moved to Siap → infra-091
 - [x] [infra-090] Sync main with merged PR #28: workflow-003 job capacity limit merged on GitHub; factory/infra merged with origin/main → infra-090
 - [x] [infra-089] Backlog bookkeeping after the 2026-11-02 sync: lines for workflow-003 (job capacity limit, PR #28) and workflow-004 (slim mode and context measuring, PR #30), plus infra-pr25, workflow-001 and workflow-002 merged → infra-089
