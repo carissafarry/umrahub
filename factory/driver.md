@@ -93,6 +93,18 @@ No conversation history is carried between steps, so every transition costs only
 agent runs. The driver does not do: backlog claiming, worktree creation, triage,
 dashboard inbox requests, the PR-merged cleanup, `/factory rework`, or `watch.sh`.
 
+## Slim mode (workflow-004)
+
+`node factory/driver.mjs run <job-id> --slim` (or `FACTORY_SLIM=1`) starts every agent with
+`--setting-sources project,local --strict-mcp-config --disable-slash-commands`: no user-level plugins,
+MCP servers or skills. In `factory/measure-context.sh` (reviewer-code on haiku, one tiny call per
+configuration) the start-up context went from 14,133 to 5,918 tokens. It is **off by default** because
+it also skips the user's own hooks, such as a token-saving command rewriter, so the tool output the
+agents read may get bigger. Run one cheap job with and without `--slim` and compare
+`node factory/driver.mjs usage <job-id>` before turning it on for good. Re-measure the start-up context
+any time with `bash factory/measure-context.sh [agent]` (a failed or timed-out call stops the script;
+it never retries).
+
 ## Known gaps / TODO
 
 - Not run against real agents (it costs money): only the fake-shim tests and one

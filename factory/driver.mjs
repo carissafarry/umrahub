@@ -88,10 +88,16 @@ const reviewPrompt = (c, key, round) => `${paths(c)} Review round ${round}.${rev
 
 // ---------- running one agent ----------
 
+// Slim mode (workflow-004): the agents do not use the user's plugins, MCP servers or skills, and leaving them out
+// cut an agent's start-up context from about 14k to about 6k tokens (factory/measure-context.sh). It also skips the
+// user's own hooks (for example a token-saving command rewriter), so compare `usage` totals before trusting it.
+const SLIM_FLAGS = ['--setting-sources', 'project,local', '--strict-mcp-config', '--disable-slash-commands']
+
 function claudeArgs(c, agent, o, resume) {
   if (o.permissionMode === 'bypassPermissions') throw new Stop('refusing bypassPermissions: the driver never skips permissions')
   const args = ['-p', '--agent', agent, '--output-format', 'json', '--permission-mode', o.permissionMode,
     '--add-dir', resolve(c.job.worktree), '--allowedTools', ...o.allowedTools.split(/\s+/).filter(Boolean)]
+  if (o.slim) args.push(...SLIM_FLAGS)
   if (process.env.FACTORY_MAX_BUDGET_USD) args.push('--max-budget-usd', process.env.FACTORY_MAX_BUDGET_USD)
   if (resume) args.push('--resume', resume)
   return args
@@ -339,11 +345,12 @@ async function usage(root, id) {
 
 function parseArgs(argv) {
   const [cmd, id, ...rest] = argv
-  const o = { cmd, id, dryRun: false, from: null,
+  const o = { cmd, id, dryRun: false, from: null, slim: process.env.FACTORY_SLIM === '1',
     permissionMode: process.env.FACTORY_PERMISSION_MODE || 'acceptEdits',
     allowedTools: process.env.FACTORY_ALLOWED_TOOLS || DEFAULT_TOOLS }
   for (let i = 0; i < rest.length; i++) {
     if (rest[i] === '--dry-run') o.dryRun = true
+    else if (rest[i] === '--slim') o.slim = true
     else if (rest[i] === '--from') o.from = rest[++i]
     else if (rest[i] === '--permission-mode') o.permissionMode = rest[++i]
     else if (rest[i] === '--allowed-tools') o.allowedTools = rest[++i]
