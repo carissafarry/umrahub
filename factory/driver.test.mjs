@@ -153,6 +153,23 @@ test('permission mode: env var, CLI flag wins, bypassPermissions refused', async
   assert.equal((await calls(t)).length, 0)
 })
 
+test('slim mode adds the start-up trimming flags only when asked (flag or FACTORY_SLIM=1)', async () => {
+  const flags = ['--setting-sources', 'project,local', '--strict-mcp-config', '--disable-slash-commands']
+  let t = await setup('be-907', { spec: true })
+  await drive(t, ['run', 'be-907'])
+  for (const c of (await calls(t)).filter((x) => x.tool === 'claude')) assert.ok(!c.args.includes('--strict-mcp-config'))
+  t = await setup('be-908', { spec: true })
+  await drive(t, ['run', 'be-908', '--slim'])
+  for (const c of (await calls(t)).filter((x) => x.tool === 'claude')) {
+    for (const f of flags) assert.ok(c.args.includes(f), `${c.agent} misses ${f}`)
+    assert.equal(c.args[c.args.indexOf('--setting-sources') + 1], 'project,local')
+    assert.ok(!c.args.includes('--dangerously-skip-permissions'))
+  }
+  t = await setup('be-909', { spec: true })
+  await drive(t, ['run', 'be-909'], { FACTORY_SLIM: '1' })
+  assert.ok((await calls(t)).find((x) => x.tool === 'claude').args.includes('--disable-slash-commands'))
+})
+
 test('one CHANGES round: same builder session is resumed, then PASS', async () => {
   const t = await setup('be-906', { spec: true })
   const r = await drive(t, ['run', 'be-906'], { FAKE_VERDICTS: JSON.stringify({ 1: { security: 'CHANGES' } }) })
