@@ -20,6 +20,9 @@ const own: StepComment = {
   content: "Bawa fotokopi paspor.\nSimpan di map.",
   createdAt: "2026-10-22T08:00:00+00:00",
   isOwn: true,
+  helpfulCount: 0,
+  unhelpfulCount: 0,
+  viewerVote: null,
 };
 const other: StepComment = {
   id: "cccccccc-0000-4000-8000-000000000002",
@@ -28,6 +31,9 @@ const other: StepComment = {
   content: "Datang pagi.",
   createdAt: "2026-10-21T08:00:00+00:00",
   isOwn: false,
+  helpfulCount: 0,
+  unhelpfulCount: 0,
+  viewerVote: null,
 };
 const nameless: StepComment = {
   id: "cccccccc-0000-4000-8000-000000000001",
@@ -36,6 +42,9 @@ const nameless: StepComment = {
   content: "Tanpa nama.",
   createdAt: "2026-10-20T08:00:00+00:00",
   isOwn: false,
+  helpfulCount: 0,
+  unhelpfulCount: 0,
+  viewerVote: null,
 };
 
 function render(comments: StepComment[], locale: "id" | "en" = "id") {
