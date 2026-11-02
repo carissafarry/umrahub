@@ -10,7 +10,7 @@ type ReportError = "empty" | "tooLong" | "failed";
 const focusRing =
   "focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-primary";
 const dialogClassName =
-  "m-auto w-[calc(100%-2.5rem)] max-w-md rounded-3xl bg-surface p-6 text-foreground shadow-card backdrop:bg-nav/60";
+  "m-auto w-[calc(100%-2.5rem)] max-w-md rounded-3xl bg-surface p-6 text-foreground shadow-card backdrop:bg-foreground/60";
 const pillClassName = `tap-target inline-flex items-center justify-center gap-2 rounded-full px-6 font-semibold disabled:opacity-60 ${focusRing}`;
 const neutralClassName = `${pillClassName} border border-border bg-surface text-foreground shadow-card`;
 // Ink-filled, never indigo: the comment form owns the page's indigo CTA.
