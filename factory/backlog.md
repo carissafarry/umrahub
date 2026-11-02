@@ -50,6 +50,8 @@ the orchestrator moves items whose dependencies are all merged from **Menunggu**
 - [x] [infra-051] Complete command list: the dashboard footer and the factory skill description now list every command (/factory <feature>, next [n], run <code>, resume, watch, approve, rework); resume and watch were missing, and the footer commands have a one-line hint each → infra-051
 - [x] [infra-052] Footer hover effect: each command in the dashboard footer highlights on hover, shows a help cursor and an instant hint bubble above it (also on keyboard focus), replacing the slow native title tooltip → infra-052
 - [x] [infra-053] Sync infra branch after PR #20: bring origin/main (be-012 notifications merged by the user) into factory/infra so the open infra PR stays mergeable → infra-053
+- [x] [infra-093] Backlog bookkeeping: workflow-005 (driver reviewer selection, PR #32) added; fe-081 ran through the driver and is waiting for merge in PR #33 → infra-093
+- [x] [workflow-005] Driver reviewer selection: the driver runs only the reviewers named with --reviewers or FACTORY_REVIEWERS, records the others as skipped and tells the approver they were waived, plus workflow-log findings from the first real driver run (fe-081) → workflow-005
 - [x] [infra-092] Sync main with merged PR #30 and PR #31: workflow-004 slim mode and the infra bookkeeping merged on GitHub; fe-081 claimed and run through the driver → infra-092
 - [x] [infra-091] Sync main with merged PR #29: fe-066 new theme merged on GitHub; fe-068 and fe-081 moved to Siap → infra-091
 - [x] [infra-090] Sync main with merged PR #28: workflow-003 job capacity limit merged on GitHub; factory/infra merged with origin/main → infra-090
@@ -118,7 +120,7 @@ Cari dan Gabung Jadwal, MVP-1. Read first: `.plans/2026-11-02-cari-dan-gabung-ja
 - [x] [be-078] Tip ratings: step_comment_votes table (one vote per user per comment, value +1 or -1, no voting on your own comment) with RLS and tests, Server Actions to vote and clear a vote, and the step detail loader ordering tips by most helpful then newest with vote counts and the viewer's own vote; UI comes in fe-079 (ticket be-078, story US-12) → be-078
 
 - [ ] [fe-068] Beranda and navigation: /dashboard becomes the Beranda (greeting, active trip, tasks that need action, one "Cari jadwal untuk tanggalmu" CTA that is enabled once fe-069 exists), the old trip list moves to /trips (tab "Trip"), new header with bell and account menu, bottom nav and top nav; add tabs only for routes that exist. Open question: where account, language and sign-out live (proposal in the design doc section 10b: profile icon in the header opening a bottom sheet) (ticket fe-068, story US-2)
-- [ ] [fe-081] New style for checklist, step detail and budget: apply the new layout patterns to /trips/[id], /steps/[id] and /trips/[id]/budget with no behaviour change (ticket fe-081, story US-13)
+- [x] [fe-081] New style for checklist, step detail and budget: apply the new layout patterns to /trips/[id], /steps/[id] and /trips/[id]/budget with no behaviour change (ticket fe-081, story US-13) → fe-081
 
 ## Menunggu
 
