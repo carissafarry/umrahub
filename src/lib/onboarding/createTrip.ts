@@ -34,7 +34,8 @@ export async function findLatestTripId(
   return { ok: true, tripId: data?.[0]?.id ?? null };
 }
 
-// Writes the trip, its travelers and, for a valid passport, step 01 progress.
+// Writes the trip, its travelers, its city legs (dated input) and, for a
+// valid passport, step 01 progress.
 // `user_id` is left to its auth.uid() default; RLS scopes every write.
 export async function createOnboardingTrip(
   supabase: SupabaseClient,
@@ -43,13 +44,20 @@ export async function createOnboardingTrip(
   now: Date = new Date(),
 ): Promise<CreateTripResult> {
   const month = String(input.month).padStart(2, "0");
+  // Undated input only knows the month: departure on the 1st, no return date.
+  const dates = input.departureDate
+    ? {
+        planned_departure_date: input.departureDate,
+        planned_return_date: input.returnDate,
+      }
+    : { planned_departure_date: `${input.year}-${month}-01` };
 
   const { data: trip, error: tripError } = await supabase
     .from("trips")
     .insert({
       name,
       departure_city: input.city,
-      planned_departure_date: `${input.year}-${month}-01`,
+      ...dates,
       has_disabilities: input.travelers.some((t) => t.hasDisability),
       has_minors: input.travelers.some((t) => t.isMinor),
       disability_notes: input.disabilityNotes,
@@ -77,6 +85,22 @@ export async function createOnboardingTrip(
   if (travelersError || !travelers) {
     logFailure("travelers insert", travelersError);
     return rollback(supabase, tripId);
+  }
+
+  if (input.legs.length > 0) {
+    const { error: legsError } = await supabase.from("trip_legs").insert(
+      input.legs.map((leg, index) => ({
+        trip_id: tripId,
+        city: leg.city,
+        start_date: leg.startDate,
+        end_date: leg.endDate,
+        sort_order: index + 1,
+      })),
+    );
+    if (legsError) {
+      logFailure("legs insert", legsError);
+      return rollback(supabase, tripId);
+    }
   }
 
   if (input.passport === "valid") {
