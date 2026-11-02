@@ -36,7 +36,9 @@ describe("AppBottomNav", () => {
     );
     expect(html).toContain('aria-label="Navigation.label"');
     expect(hrefs(html)).toEqual(["/dashboard", "/trips/new"]);
-    expect(html).toMatch(/aria-label="Navigation.home" aria-current="page"/);
+    const current = html.match(/<a [^>]*aria-current="page"[^>]*>.*?<\/a>/)![0];
+    expect(current).toContain('href="/dashboard"');
+    expect(current).toMatch(/>Navigation\.home<\/a>$/);
     expect(html).toContain("lg:hidden");
   });
 });

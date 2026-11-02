@@ -2,6 +2,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { BottomNav, type BottomNavItem } from "./BottomNav";
 import { Button, ButtonLink } from "./Button";
+import { Card } from "./Card";
 import { Chip } from "./Chip";
 import { IconButton } from "./IconButton";
 import { HomeIcon } from "./icons";
@@ -57,6 +58,40 @@ describe("ui primitives", () => {
     );
     expect(current).toHaveLength(1);
     expect(current[0]).toContain('href="/checklist"');
+  });
+
+  it("BottomNav shows each item's label as visible text", () => {
+    const item = (href: string, label: string): BottomNavItem => ({
+      href,
+      label,
+      icon: <HomeIcon />,
+    });
+    const html = renderToStaticMarkup(
+      <BottomNav
+        items={[item("/", "Beranda"), item("/checklist", "Checklist")]}
+        activeHref="/"
+      />,
+    );
+    const links = html.match(/<a [^>]*>.*?<\/a>/g) ?? [];
+    expect(links).toHaveLength(2);
+    expect(links[0]).toMatch(/<\/span>Beranda<\/a>$/);
+    expect(links[1]).toMatch(/<\/span>Checklist<\/a>$/);
+    expect(html).not.toContain("aria-label=\"Beranda\"");
+  });
+
+  it("Card has a surface line and no shadow", () => {
+    const html = renderToStaticMarkup(<Card>Isi</Card>);
+    expect(html).toContain("border-surface-line");
+    expect(html).not.toContain("shadow-card");
+  });
+
+  it("Chip is bordered when unselected and ink when selected", () => {
+    expect(renderToStaticMarkup(<Chip>Jakarta</Chip>)).toContain(
+      "border-border",
+    );
+    expect(renderToStaticMarkup(<Chip selected>Jakarta</Chip>)).toContain(
+      "bg-primary",
+    );
   });
 
   it("BottomNav items type rejects a fifth item", () => {

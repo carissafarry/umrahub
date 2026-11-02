@@ -1,13 +1,13 @@
 import type { Metadata } from "next";
-import { Inter, Noto_Naskh_Arabic } from "next/font/google";
+import { Noto_Naskh_Arabic, Plus_Jakarta_Sans } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getTranslations } from "next-intl/server";
 import { SiteHeader } from "@/components/SiteHeader";
 import "./globals.css";
 
-const inter = Inter({
-  variable: "--font-inter",
+const plusJakartaSans = Plus_Jakarta_Sans({
+  variable: "--font-plus-jakarta-sans",
   subsets: ["latin"],
 });
 
@@ -34,7 +34,7 @@ export default async function RootLayout({
   return (
     <html
       lang={locale}
-      className={`${inter.variable} ${notoNaskhArabic.variable}`}
+      className={`${plusJakartaSans.variable} ${notoNaskhArabic.variable}`}
     >
       <body className="flex min-h-screen flex-col antialiased">
         <NextIntlClientProvider>
