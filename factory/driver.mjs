@@ -1,6 +1,6 @@
 // Factory driver: runs one job through spec -> build -> review -> approve -> PR without an
 // orchestrator conversation. Every agent is a fresh `claude -p` process. See factory/driver.md.
-//   node factory/driver.mjs run <job-id> [--from <stage>] [--dry-run] [--permission-mode <m>] [--allowed-tools "<rules>"]
+//   node factory/driver.mjs run <job-id> [--from <stage>] [--dry-run] [--permission-mode <m>] [--allowed-tools "<rules>"] [--agent-timeout <minutes>]
 //   node factory/driver.mjs usage <job-id>
 // Never merges a PR and never pushes to main.
 import { execFile, spawn } from 'node:child_process'
@@ -14,7 +14,7 @@ const HERE = dirname(fileURLToPath(import.meta.url))
 const MAX_RESUMES = 2
 const GH_REPO = process.env.FACTORY_GH_REPO || 'carissafarry/umrahub'
 const REVIEWERS = { security: 'reviewer-security', ux: 'reviewer-ux', ui: 'reviewer-ui', code: 'reviewer-code' }
-const DEFAULT_TOOLS = 'Bash(git:*) Bash(npm:*) Bash(npx:*) Bash(node:*) Bash(supabase:*) Bash(gh:*) Bash(agent-browser:*) Bash(lsof:*) Bash(curl:*)'
+const DEFAULT_TOOLS = 'Bash(git:*) Bash(npm:*) Bash(npx:*) Bash(node:*) Bash(supabase:*) Bash(gh:*) Bash(agent-browser:*) Bash(lsof:*) Bash(curl:*) Bash(ls:*) Bash(cat:*) Bash(grep:*) Bash(head:*) Bash(tail:*) Bash(wc:*)'
 
 class Stop extends Error {} // a reason to set needs-human
 
@@ -109,8 +109,10 @@ async function runAgent(c, agent, prompt, o, { round = 0, file, resume } = {}) {
   const started = Date.now()
   let out
   try {
-    out = await run('claude', claudeArgs(c, agent, o, resume), { cwd: c.root, input: prompt, timeout: 3 * 60 * 60 * 1000 })
+    // execFile kills only the child it started (SIGTERM) when the timeout passes; never retried.
+    out = await run('claude', claudeArgs(c, agent, o, resume), { cwd: c.root, input: prompt, timeout: o.agentTimeoutMin * 60 * 1000 })
   } catch (e) {
+    if (e.killed) throw new Stop(`${agent} timed out after ${o.agentTimeoutMin} min and was stopped (no retry); see factory/driver.md "Agent timeout"`)
     out = e.stdout || ''
     if (!out.trim().startsWith('{')) throw new Stop(`${agent} failed to run: ${(e.stderr || e.message).slice(0, 300)}`)
   }
@@ -124,8 +126,13 @@ async function runAgent(c, agent, prompt, o, { round = 0, file, resume } = {}) {
     cacheReadTokens: u.cache_read_input_tokens ?? null, cacheCreationTokens: u.cache_creation_input_tokens ?? null,
     costUsd: res.total_cost_usd ?? null, durationMs: res.duration_ms ?? Date.now() - started, numTurns: res.num_turns ?? null,
   }) + '\n')
-  const denied = (res.permission_denials || []).map((d) => d.tool_name || 'tool').join(', ')
+  const denials = res.permission_denials || []
+  const denied = denials.map((d) => d.tool_name || 'tool').join(', ')
   if (denied) await log(c, `${agent}: permission denied for ${denied}`)
+  for (const d of denials) { // the command text shows which rule to allow; truncated, one line
+    const cmd = d.tool_input?.command ?? d.tool_input?.file_path
+    if (typeof cmd === 'string') await log(c, `${agent}: denied ${d.tool_name || 'tool'}: ${cmd.replace(/\s+/g, ' ').slice(0, 120)}`)
+  }
   const hint = denied ? ` (denied: ${denied}; see factory/driver.md)` : ''
   if (res.is_error || res.subtype !== 'success') throw new Stop(`${agent} ended with ${res.subtype || 'error'}${hint}`)
   // An empty run or a missing/stale file means the agent did not do its job (for example a denied tool).
@@ -353,7 +360,8 @@ function parseArgs(argv) {
   const o = { cmd, id, dryRun: false, from: null, slim: process.env.FACTORY_SLIM === '1',
     reviewers: (process.env.FACTORY_REVIEWERS || Object.keys(REVIEWERS).join(',')).split(',').map((s) => s.trim()).filter(Boolean),
     permissionMode: process.env.FACTORY_PERMISSION_MODE || 'acceptEdits',
-    allowedTools: process.env.FACTORY_ALLOWED_TOOLS || DEFAULT_TOOLS }
+    allowedTools: process.env.FACTORY_ALLOWED_TOOLS || DEFAULT_TOOLS,
+    agentTimeoutMin: Number(process.env.FACTORY_AGENT_TIMEOUT_MIN) || 45 }
   for (let i = 0; i < rest.length; i++) {
     if (rest[i] === '--dry-run') o.dryRun = true
     else if (rest[i] === '--slim') o.slim = true
@@ -361,6 +369,7 @@ function parseArgs(argv) {
     else if (rest[i] === '--from') o.from = rest[++i]
     else if (rest[i] === '--permission-mode') o.permissionMode = rest[++i]
     else if (rest[i] === '--allowed-tools') o.allowedTools = rest[++i]
+    else if (rest[i] === '--agent-timeout') o.agentTimeoutMin = Number(rest[++i])
     else throw new Stop(`unknown option ${rest[i]}`)
   }
   return o
@@ -368,6 +377,7 @@ function parseArgs(argv) {
 
 async function main() {
   const o = parseArgs(process.argv.slice(2))
+  if (!(o.agentTimeoutMin > 0)) throw new Stop('--agent-timeout / FACTORY_AGENT_TIMEOUT_MIN must be a positive number of minutes')
   if (!['run', 'usage'].includes(o.cmd) || !o.id) throw new Stop('usage: node factory/driver.mjs run|usage <job-id> [--from <stage>] [--dry-run]')
   const root = await repoRoot()
   if (o.cmd === 'usage') return usage(root, o.id)
