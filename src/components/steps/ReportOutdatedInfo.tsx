@@ -2,6 +2,7 @@
 
 import { useId, useRef, useState, useTransition, type FormEvent } from "react";
 import { useTranslations } from "next-intl";
+import { FlagIcon } from "@/components/ui/icons";
 import { reportStepContent } from "@/lib/steps/actions";
 import { maxFlagReasonLength, parseFlagReason } from "@/lib/steps/flags";
 
@@ -10,9 +11,9 @@ type ReportError = "empty" | "tooLong" | "failed";
 const focusRing =
   "focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-primary";
 const dialogClassName =
-  "m-auto w-[calc(100%-2.5rem)] max-w-md rounded-3xl bg-surface p-6 text-foreground shadow-card backdrop:bg-foreground/60";
+  "m-auto w-[calc(100%-2.5rem)] max-w-md rounded-3xl bg-surface p-6 text-foreground shadow-float backdrop:bg-foreground/60";
 const pillClassName = `tap-target inline-flex items-center justify-center gap-2 rounded-full px-6 font-semibold disabled:opacity-60 ${focusRing}`;
-const neutralClassName = `${pillClassName} border border-border bg-surface text-foreground shadow-card`;
+const neutralClassName = `${pillClassName} border border-border bg-surface-raised text-foreground`;
 // Ink-filled, never indigo: the comment form owns the page's indigo CTA.
 const inkClassName = `${pillClassName} bg-foreground text-background`;
 
@@ -63,6 +64,7 @@ export function ReportOutdatedInfo({ stepId }: { stepId: string }) {
         className={`${neutralClassName} self-start`}
         onClick={open}
       >
+        <FlagIcon className="size-4" />
         {t("button")}
       </button>
       <p aria-live="polite" className="font-medium text-foreground">
@@ -97,7 +99,7 @@ export function ReportOutdatedInfo({ stepId }: { stepId: string }) {
               aria-invalid={error === "empty" || error === "tooLong"}
               aria-describedby={`${id}-count ${id}-error`}
               onChange={(event) => setDraft(event.target.value)}
-              className={`tap-target w-full resize-y rounded-2xl border border-border bg-surface px-4 py-3 text-base text-foreground ${focusRing}`}
+              className={`tap-target w-full resize-y rounded-2xl border border-border bg-surface-raised px-4 py-3 text-base text-foreground ${focusRing}`}
             />
             <p id={`${id}-count`} className="self-end text-sm text-muted">
               {t("count", { count: draft.length, max: maxFlagReasonLength })}

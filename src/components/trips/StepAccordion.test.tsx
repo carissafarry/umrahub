@@ -62,9 +62,9 @@ describe("StepAccordion", () => {
 
   it("shows the status as badge text", () => {
     expect(render("not_started")).toContain("Belum mulai");
-    expect(render("in_progress")).toContain("bg-tile-amber");
+    expect(render("in_progress")).toContain("bg-warning-soft");
     const done = render("completed", "en");
-    expect(done).toContain("bg-tile-green");
+    expect(done).toContain("bg-success-soft");
     expect(done).toContain(">Done</span>");
   });
 
@@ -146,8 +146,8 @@ describe("StepAccordion", () => {
         pair("completed", "completed"),
       );
       expect(radiogroups(html)).toEqual([
-        "Pencatatan status: Pesan tiket pesawat",
         "Status langkah: Pesan tiket pesawat",
+        "Pencatatan status: Pesan tiket pesawat",
       ]);
       expect(html).not.toContain("Ahmad");
       expect(badge(html)).toContain("Sedang dikerjakan");
@@ -156,8 +156,8 @@ describe("StepAccordion", () => {
     it("keeps the single control for an individual step without travelers", () => {
       const html = render("completed", "id", [], "individual", []);
       expect(radiogroups(html)).toEqual([
-        "Pencatatan status: Pesan tiket pesawat",
         "Status langkah: Pesan tiket pesawat",
+        "Pencatatan status: Pesan tiket pesawat",
       ]);
       expect(badge(html)).toContain(">Selesai</span>");
     });
@@ -259,7 +259,7 @@ describe("StepAccordion", () => {
           expect(button).toMatch(
             new RegExp(`<svg[^>]*aria-hidden="true"[^>]*>.*?</svg>${marker}<`),
           );
-          expect(button).toContain("bg-tile-blue");
+          expect(button).toContain("bg-dusk-tile");
           expect(button).not.toContain("bg-primary");
           const panel = html.slice(html.indexOf('<div id="step-panel-'));
           expect(panel).toContain(line);
@@ -295,10 +295,10 @@ describe("StepAccordion", () => {
       expect(link).toContain("tap-target");
       expect(link).toContain("text-primary");
       expect(link).toMatch(new RegExp(`>${text}<svg[^>]*aria-hidden="true"`));
-      // Inside the panel, after the cost and before the status control.
+      // Inside the panel, after the cost and the status control.
       const panel = html.slice(html.indexOf('<div id="step-panel-'));
       expect(panel.indexOf(href)).toBeGreaterThan(panel.indexOf("per "));
-      expect(panel.indexOf(href)).toBeLessThan(panel.indexOf('role="radiogroup"'));
+      expect(panel.indexOf(href)).toBeGreaterThan(panel.indexOf('role="radiogroup"'));
     }
   });
 });

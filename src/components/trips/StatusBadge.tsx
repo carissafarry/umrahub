@@ -1,12 +1,12 @@
 import type { StepStatus } from "@/lib/trips/checklist";
 
 const badgeClassName: Record<StepStatus, string> = {
-  completed: "bg-tile-green text-tile-green-foreground",
-  in_progress: "bg-tile-amber text-tile-amber-foreground",
-  not_started: "border border-border text-muted",
+  completed: "bg-success-soft text-success",
+  in_progress: "bg-warning-soft text-warning",
+  not_started: "border border-border bg-surface-raised text-muted",
 };
 
-// Step status pill, shared by the checklist accordion and the step detail page.
+// Step status pill, shared by the checklist rows and the step detail page.
 export function StatusBadge({
   status,
   label,
@@ -16,7 +16,7 @@ export function StatusBadge({
 }) {
   return (
     <span
-      className={`shrink-0 self-start rounded-full px-3 py-1 text-sm font-medium md:self-center ${badgeClassName[status]}`}
+      className={`shrink-0 rounded-full px-2.5 py-0.5 text-xs font-bold ${badgeClassName[status]}`}
     >
       {label}
     </span>

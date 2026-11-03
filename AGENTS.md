@@ -27,7 +27,7 @@ Scope now: user-facing app only. Admin CMS is out of scope; content is edited vi
 - `src/lib/onboarding/` — onboarding wizard validation and trip creation (see Onboarding)
 - `src/middleware.ts` — auth session refresh and route protection (see Auth)
 - `src/lib/trips/` — trip checklist logic (grouping, progress, costs), budget logic (`budget.ts`), page data loaders and the `updateStepStatus` / `updateStepTrackingMode` Server Actions (see Trip checklist, Budget)
-- `src/components/trips/` — trip checklist UI (step accordion, progress card) and the budget page body
+- `src/components/trips/` — trip checklist UI (expandable step rows, status pill and circle, progress card) and the budget page body
 - `src/lib/steps/` — step detail data loader, the safe guide-markdown parser, comment validation (`comments.ts`), content-flag validation (`flags.ts`) and the comment and flag Server Actions (`actions.ts`) (see Step detail, Step comments, Content flags)
 - `src/components/steps/` — step detail page body, the `GuideMarkdown` renderer, the `ReportOutdatedInfo` report dialog and the `StepComments` tips section
 - `src/lib/dashboard/` — trip dashboard loader, per-trip progress summary, trip-name rules and the `renameTrip` / `deleteTrip` Server Actions (see Dashboard)
@@ -102,7 +102,7 @@ All four must pass before a change is ready. Use `build:check`, not `build`, for
 
 ## Budget
 
-- `/trips/[id]/budget` (`src/app/trips/[id]/budget/`) loads through `loadTripBudget` in `src/lib/trips/queries.ts`, with the same guards as `loadTripChecklist` (shared `loadOwnedTrip`). `/trips/[id]` links to it below the progress card.
+- `/trips/[id]/budget` (`src/app/trips/[id]/budget/`) loads through `loadTripBudget` in `src/lib/trips/queries.ts`, with the same guards as `loadTripChecklist` (shared `loadOwnedTrip`). `/trips/[id]` links to it inside the progress card.
 - Totals come from `computeBudget` in `src/lib/trips/budget.ts` (pure, reuses `resolveCost`/`groupSteps`); reuse it, never duplicate the budget logic.
 - A step is individual when its `trip_step_config.tracking_mode` is `'individual'`; with no config row for the step, when `is_shared_step = false`. That rule is `isIndividual` in `src/lib/trips/checklist.ts` (with the `StepConfig` type); `budget.ts` imports it. Individual steps are multiplied by the trip's `travelers` count (at least 1), shared steps by 1.
 - Summing: a null min counts as 0, a null max counts as the min (or 0). Such steps still show `Checklist.cost.none`. All published steps count, whatever their status.
@@ -128,7 +128,7 @@ All four must pass before a change is ready. Use `build:check`, not `build`, for
 - `content_flags` (migration `*_content_flags.sql`): `step_id`, `user_id` (defaults to `auth.uid()`), `reason` (1–500 characters after trimming, check constraint), `status` (`pending` default, `reviewed`, `resolved`; check constraint, not an enum).
 - RLS `to authenticated`: select own, insert own on a published step; no update or delete policy. Column grant: `authenticated` may insert only `(step_id, reason)` and update nothing. Reviewing a flag is setting `status` in Supabase Studio; there is no admin UI, and no page reads flags.
 - `parseFlagReason` / `maxFlagReasonLength` in `src/lib/steps/flags.ts` (shared by client and server). `reportStepContent` (`src/lib/steps/actions.ts`) validates (`isUuid`, `parseFlagReason`), calls `getUser()`, inserts only `{ step_id, reason }` and returns fixed codes; no `revalidatePath`. Logs are a fixed string plus `error.code` only, never the reason.
-- `ReportOutdatedInfo` (`src/components/steps/ReportOutdatedInfo.tsx`, client) sits directly below the guide card: a neutral "Laporkan info usang" pill opens a modal `<dialog>` with the reason textarea, Cancel and an ink-filled submit (a plain button, never the primary `Button`). Success closes it and shows a polite thank-you next to the button; closing returns focus to the button. Copy is in the `ContentFlags` namespace.
+- `ReportOutdatedInfo` (`src/components/steps/ReportOutdatedInfo.tsx`, client) sits directly below the guide: a white outline "Laporkan info usang" pill opens a modal `<dialog>` with the reason textarea, Cancel and an ink-filled submit (a plain button, never the primary `Button`). Success closes it and shows a polite thank-you next to the button; closing returns focus to the button. Copy is in the `ContentFlags` namespace.
 
 ## Conventions
 
