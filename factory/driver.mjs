@@ -223,7 +223,8 @@ async function stageReview(c, o, round) {
   const todo = []
   for (const key of Object.keys(REVIEWERS)) {
     const f = join(dir, `review-${key}.md`)
-    if (existsSync(f)) reviews[key] = await verdictOf(f) // written before a restart
+    if (!o.reviewers.includes(key)) reviews[key] = 'skipped' // chosen by the user, never counted as PASS
+    else if (existsSync(f)) reviews[key] = await verdictOf(f) // written before a restart
     else todo.push(key)
   }
   await save(c, { stage: 'review', round, reviews })
@@ -245,7 +246,11 @@ async function stageApprove(c, o, round) {
   const file = join(c.dir, 'decision.md')
   await save(c, { stage: 'approve' })
   await log(c, 'running approver')
-  await runAgent(c, 'approver', `${paths(c)} Final round: ${round}.${tail(c)}`, o, { round, file })
+  const skipped = Object.keys(REVIEWERS).filter((k) => !o.reviewers.includes(k))
+  const waived = skipped.length
+    ? ` Orchestrator note: the ${skipped.join(', ')} review(s) were skipped by the user's decision for this job; treat them as waived, not as failures, and say so in decision.md.`
+    : ''
+  await runAgent(c, 'approver', `${paths(c)} Final round: ${round}.${waived}${tail(c)}`, o, { round, file })
   const first = await firstLine(file)
   if (first !== 'APPROVE')
     throw new Stop(first === 'ESCALATE' ? `approver escalated: see ${file}` : `decision.md starts with "${first}", expected APPROVE or ESCALATE`)
@@ -314,7 +319,7 @@ function plan(c, o) {
   const step = (agent, prompt) => lines.push(`  claude ${claudeArgs(c, agent, o).join(' ')}\n    prompt: ${prompt}`)
   step('spec-writer', specPrompt(c))
   step('builder', buildPrompt(c, 1))
-  for (const [k, a] of Object.entries(REVIEWERS)) step(a, reviewPrompt(c, k, 1))
+  for (const [k, a] of Object.entries(REVIEWERS)) if (o.reviewers.includes(k)) step(a, reviewPrompt(c, k, 1))
   lines.push(`  on CHANGES: resume the builder session (up to ${MAX_RESUMES} times), then review the next round`)
   step('approver', `${paths(c)} Final round: N.${tail(c)}`)
   lines.push(`  on APPROVE: git push -u origin ${c.job.branch}; gh pr create (title "Merge PR #0 from /${c.job.branch}"), PATCH the real title, stage pr`)
@@ -346,11 +351,13 @@ async function usage(root, id) {
 function parseArgs(argv) {
   const [cmd, id, ...rest] = argv
   const o = { cmd, id, dryRun: false, from: null, slim: process.env.FACTORY_SLIM === '1',
+    reviewers: (process.env.FACTORY_REVIEWERS || Object.keys(REVIEWERS).join(',')).split(',').map((s) => s.trim()).filter(Boolean),
     permissionMode: process.env.FACTORY_PERMISSION_MODE || 'acceptEdits',
     allowedTools: process.env.FACTORY_ALLOWED_TOOLS || DEFAULT_TOOLS }
   for (let i = 0; i < rest.length; i++) {
     if (rest[i] === '--dry-run') o.dryRun = true
     else if (rest[i] === '--slim') o.slim = true
+    else if (rest[i] === '--reviewers') o.reviewers = rest[++i].split(',').map((s) => s.trim()).filter(Boolean)
     else if (rest[i] === '--from') o.from = rest[++i]
     else if (rest[i] === '--permission-mode') o.permissionMode = rest[++i]
     else if (rest[i] === '--allowed-tools') o.allowedTools = rest[++i]

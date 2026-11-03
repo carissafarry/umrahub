@@ -105,6 +105,14 @@ agents read may get bigger. Run one cheap job with and without `--slim` and comp
 any time with `bash factory/measure-context.sh [agent]` (a failed or timed-out call stops the script;
 it never retries).
 
+## Choosing reviewers (workflow-005)
+
+`--reviewers code,security` (or `FACTORY_REVIEWERS=code,security`) runs only those reviewers; the
+default is all four (`security,ux,ui,code`). Reviewers that are not chosen are written to `job.json`
+as `skipped` (never `PASS`), and the approver's prompt says they were waived by the user's decision.
+Use it when a review cannot add value: a schema-only job needs no UX or UI review, and a headless
+agent cannot sign in to look at pages that need a login.
+
 ## Known gaps / TODO
 
 - Not run against real agents (it costs money): only the fake-shim tests and one

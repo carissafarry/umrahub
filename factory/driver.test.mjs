@@ -153,6 +153,24 @@ test('permission mode: env var, CLI flag wins, bypassPermissions refused', async
   assert.equal((await calls(t)).length, 0)
 })
 
+test('reviewers option: only the chosen reviewers run, the rest are skipped (not PASS) and the approver is told', async () => {
+  let t = await setup('be-910', { spec: true })
+  const r = await drive(t, ['run', 'be-910', '--reviewers', 'code,security'])
+  assert.equal(r.code, 0, r.stdout + r.stderr)
+  const a = await agents(t)
+  assert.deepEqual(a.filter((x) => x.startsWith('reviewer')).sort(), ['reviewer-code', 'reviewer-security'])
+  assert.deepEqual((await jobOf(t)).reviews, { security: 'PASS', ux: 'skipped', ui: 'skipped', code: 'PASS' })
+  const approver = (await calls(t)).find((c) => c.agent === 'approver')
+  assert.match(approver.prompt, /ux, ui review\(s\) were skipped by the user's decision/)
+  t = await setup('be-911', { spec: true })
+  await drive(t, ['run', 'be-911'], { FACTORY_REVIEWERS: 'code' })
+  assert.deepEqual((await agents(t)).filter((x) => x.startsWith('reviewer')), ['reviewer-code'])
+  t = await setup('be-912', { spec: true })
+  await drive(t, ['run', 'be-912'])
+  assert.equal((await agents(t)).filter((x) => x.startsWith('reviewer')).length, 4)
+  assert.doesNotMatch((await calls(t)).find((c) => c.agent === 'approver').prompt, /skipped by the user/)
+})
+
 test('slim mode adds the start-up trimming flags only when asked (flag or FACTORY_SLIM=1)', async () => {
   const flags = ['--setting-sources', 'project,local', '--strict-mcp-config', '--disable-slash-commands']
   let t = await setup('be-907', { spec: true })
