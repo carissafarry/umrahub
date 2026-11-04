@@ -24,6 +24,8 @@ const out = (extra = {}) => console.log(JSON.stringify({ type: 'result', subtype
   total_cost_usd: 0.5, usage: { input_tokens: 10, output_tokens: 20, cache_read_input_tokens: 100, cache_creation_input_tokens: 1000 },
   modelUsage: { 'claude-fake-1': {} }, permission_denials: [], ...extra }))
 if (env.FAKE_FAIL === agent) { out({ subtype: 'error_during_execution', is_error: true }); process.exit(1) }
+if (env.FAKE_HANG === agent) { setTimeout(() => {}, 60000); return }
+if (env.FAKE_DENY === agent) { out({ permission_denials: [{ tool_name: 'Bash', tool_input: { command: 'ls ' + 'x'.repeat(300) } }] }); process.exit(0) }
 if (env.FAKE_EMPTY === agent) { out({ result: '' }); process.exit(0) }
 const dir = (prompt.match(/Job folder: (\\S+?)\\/\\./) || prompt.match(/reviews are in (\\S+?)\\/round-/))[1]
 const round = Number((prompt.match(/(?:Review round|Final round:) (\\d+)/) || [])[1] || 0)
@@ -347,4 +349,27 @@ test('fe job without a usable route stops with needs-human and opens no PR', asy
     assert.ok(!(await agents(t)).includes('reviewer-code'))
     assert.ok(!(await calls(t)).some((c) => c.tool === 'gh'))
   }
+})
+
+test('agent timeout: a hung agent is stopped with needs-human, no retry, flag and env both work', async () => {
+  let t = await setup('be-930', { spec: true })
+  let r = await drive(t, ['run', 'be-930', '--agent-timeout', '0.02'], { FAKE_HANG: 'builder' })
+  assert.notEqual(r.code, 0)
+  assert.match(r.stdout, /builder timed out after 0\.02 min/)
+  assert.equal((await jobOf(t)).stage, 'needs-human')
+  assert.deepEqual(await agents(t), ['builder'])
+  t = await setup('be-931', { spec: true })
+  r = await drive(t, ['run', 'be-931'], { FAKE_HANG: 'builder', FACTORY_AGENT_TIMEOUT_MIN: '0.02' })
+  assert.match(r.stdout, /timed out after 0\.02 min/)
+  r = await drive(t, ['run', 'be-931', '--agent-timeout', '0'])
+  assert.notEqual(r.code, 0)
+})
+
+test('denied command text is logged, one line, truncated to 120 characters', async () => {
+  const t = await setup('be-932', { spec: true })
+  await drive(t, ['run', 'be-932'], { FAKE_DENY: 'builder' })
+  const log = await readFile(join(t.dir, 'driver.log'), 'utf8')
+  const line = log.split('\n').find((l) => l.includes('builder: denied Bash: '))
+  assert.ok(line, log)
+  assert.equal(line.split('denied Bash: ')[1].length, 120)
 })
