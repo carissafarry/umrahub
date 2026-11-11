@@ -98,6 +98,7 @@
     "travelers": "For {count, plural, one {# person} other {# people}}",
     "totalTitle": "Estimated total cost",
     "totalNote": "Individual steps are multiplied by the number of people, shared steps are counted once.",
+    "perPhaseTitle": "By phase",
     "chartLabel": "Estimated cost per phase",
     "phaseTotal": "Phase total",
     "perPersonTimes": "{amount} per person × {count, plural, one {# person} other {# people}}",

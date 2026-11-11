@@ -1,8 +1,10 @@
 import type { ButtonHTMLAttributes } from "react";
 
 export function chipClassName(selected: boolean) {
-  return `tap-target rounded-full px-5 text-base font-medium shadow-card focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-primary ${
-    selected ? "bg-primary text-primary-foreground" : "bg-surface text-foreground"
+  return `tap-target rounded-full border px-4 text-sm font-semibold focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-primary ${
+    selected
+      ? "border-primary bg-primary text-primary-foreground"
+      : "border-border bg-surface-raised text-foreground"
   }`;
 }
 
