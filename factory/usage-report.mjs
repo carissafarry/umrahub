@@ -12,8 +12,10 @@ const rows = []
 for (const id of readdirSync(jobsDir)) {
   const f = join(jobsDir, id, 'usage.jsonl')
   if (!existsSync(f)) continue
+  let feature = ''
+  try { feature = JSON.parse(readFileSync(join(jobsDir, id, 'job.json'), 'utf8')).feature || '' } catch { /* no job.json */ }
   for (const l of readFileSync(f, 'utf8').split('\n').filter(Boolean)) {
-    try { rows.push({ job: id, ...JSON.parse(l) }) } catch { /* skip a broken line */ }
+    try { const r = JSON.parse(l); rows.push({ job: id, task: id, feature: feature.replace(/\s+/g, ' ').slice(0, 400), ...r }) } catch { /* skip a broken line */ }
   }
 }
 
@@ -30,8 +32,15 @@ const group = (key) => {
 }
 const total = zero()
 rows.forEach((r) => add(total, r))
+const tasks = {}
+for (const r of rows) {
+  const t = (tasks[r.task] ??= { feature: r.feature, firstRun: r.ts, lastRun: r.ts, ...zero(), byAgent: {} })
+  add(t, r); add((t.byAgent[r.agent] ??= zero()), r)
+  if (r.ts < t.firstRun) t.firstRun = r.ts
+  if (r.ts > t.lastRun) t.lastRun = r.ts
+}
 const out = { generated: new Date().toISOString(), total, byJob: group((r) => r.job), byAgent: group((r) => r.agent),
-  byDay: group((r) => String(r.ts).slice(0, 10)), byModel: group((r) => r.model || 'unknown') }
+  byDay: group((r) => String(r.ts).slice(0, 10)), byModel: group((r) => r.model || 'unknown'), byTask: tasks, runs: rows }
 writeFileSync(join(jobsDir, 'usage-summary.json'), JSON.stringify(out, null, 2) + '\n')
 
 if (process.argv.includes('--json')) { console.log(JSON.stringify(out, null, 2)); process.exit(0) }
@@ -46,8 +55,10 @@ const show = (title, m) => {
       seen ? Math.round((v.cacheRead / seen) * 100) + '%' : '-'].join('\t'))
   }
 }
-show('Per job', out.byJob)
-show('Per agent', out.byAgent)
+show('Per task (job)', out.byJob)
+console.log('\nTask text and dates')
+for (const [k, t] of Object.entries(tasks)) console.log(`${k}  ${t.firstRun.slice(0, 10)}..${t.lastRun.slice(0, 10)}  ${t.feature.slice(0, 110)}`)
+show('Per agent (builder, reviewer-code, -security, -ux, -ui, approver, spec-writer)', out.byAgent)
 show('Per day', out.byDay)
 show('Per model', out.byModel)
 console.log(`\nTOTAL ${total.runs} runs, ${total.cost.toFixed(2)} USD, ${(total.seconds / 60).toFixed(1)} min (driver runs only)`)
