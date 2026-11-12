@@ -53,6 +53,7 @@ the orchestrator moves items whose dependencies are all merged from **Menunggu**
 - [x] [workflow-008] Usage rows carry task, feature text and prompt size: each usage.jsonl line gets job, task, feature (400 characters), stage and promptChars next to the agent lens → workflow-008
 - [x] [infra-102] Backlog bookkeeping: fe-080 and fe-099 claimed and run through the driver; PR #38 to #43 merged and synced → infra-102
 - [x] [infra-103] Full-width hero in fe-101: added the edge-to-edge sky hero requirement to the fe-101 line → infra-103
+- [x] [workflow-009] Reviewer screenshots in job folder: reviewer-ui and reviewer-ux save screenshots to round-N/shots so Read can open them → workflow-009
 - [x] [infra-101] Backlog bookkeeping: fe-101 (responsive web pass over every restyled screen) added; fe-082 waits for it → infra-101
 - [x] [infra-100] Usage report by task: `factory/usage-report.mjs` also groups per task with its text and dates and keeps every run (job, task, agent lens, stage) in `usage-summary.json`; PR #39 (be-061) conflict in AGENTS.md resolved → infra-100
 - [x] [infra-099] Token spend report: `factory/usage-report.mjs` sums every job's usage.jsonl per job, agent, day and model (tokens, cache, cost, time) and saves `factory/jobs/usage-summary.json` for a later dashboard → infra-099
