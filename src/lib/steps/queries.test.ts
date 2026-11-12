@@ -57,16 +57,8 @@ const ahmad = "aaaaaaaa-0000-4000-8000-000000000001";
 
 const ok = (data: unknown) => ({ data, error: null });
 
-// Newest first, as the query orders them; user-1 is the signed-in user.
+// Most helpful first, as the query orders them; user-1 is the signed-in user.
 const commentRows = [
-  {
-    id: "cccccccc-0000-4000-8000-000000000002",
-    user_id: "user-1",
-    author_name: "Aisyah Rahman",
-    author_avatar_url: "https://lh3.googleusercontent.com/a/aisyah",
-    content: "Bawa fotokopi paspor.",
-    created_at: "2026-10-22T08:00:00+00:00",
-  },
   {
     id: "cccccccc-0000-4000-8000-000000000001",
     user_id: "user-2",
@@ -74,17 +66,36 @@ const commentRows = [
     author_avatar_url: null,
     content: "Datang pagi.",
     created_at: "2026-10-21T08:00:00+00:00",
+    helpful_count: 4,
+    unhelpful_count: 1,
   },
-];
-const comments = [
   {
     id: "cccccccc-0000-4000-8000-000000000002",
-    authorName: "Aisyah Rahman",
-    authorAvatarUrl: "https://lh3.googleusercontent.com/a/aisyah",
+    user_id: "user-1",
+    author_name: "Aisyah Rahman",
+    author_avatar_url: "https://lh3.googleusercontent.com/a/aisyah",
     content: "Bawa fotokopi paspor.",
-    createdAt: "2026-10-22T08:00:00+00:00",
-    isOwn: true,
+    created_at: "2026-10-22T08:00:00+00:00",
+    helpful_count: 0,
+    unhelpful_count: 0,
   },
+  {
+    id: "cccccccc-0000-4000-8000-000000000003",
+    user_id: "user-3",
+    author_name: "Budi",
+    author_avatar_url: null,
+    content: "Tidak perlu fotokopi.",
+    created_at: "2026-10-23T08:00:00+00:00",
+    helpful_count: 1,
+    unhelpful_count: 7,
+  },
+];
+// The signed-in user's own votes, as RLS returns them.
+const voteRows = [
+  { comment_id: "cccccccc-0000-4000-8000-000000000001", value: 1 },
+  { comment_id: "cccccccc-0000-4000-8000-000000000003", value: -1 },
+];
+const comments = [
   {
     id: "cccccccc-0000-4000-8000-000000000001",
     authorName: "",
@@ -92,6 +103,31 @@ const comments = [
     content: "Datang pagi.",
     createdAt: "2026-10-21T08:00:00+00:00",
     isOwn: false,
+    helpfulCount: 4,
+    unhelpfulCount: 1,
+    viewerVote: 1,
+  },
+  {
+    id: "cccccccc-0000-4000-8000-000000000002",
+    authorName: "Aisyah Rahman",
+    authorAvatarUrl: "https://lh3.googleusercontent.com/a/aisyah",
+    content: "Bawa fotokopi paspor.",
+    createdAt: "2026-10-22T08:00:00+00:00",
+    isOwn: true,
+    helpfulCount: 0,
+    unhelpfulCount: 0,
+    viewerVote: null,
+  },
+  {
+    id: "cccccccc-0000-4000-8000-000000000003",
+    authorName: "Budi",
+    authorAvatarUrl: null,
+    content: "Tidak perlu fotokopi.",
+    createdAt: "2026-10-23T08:00:00+00:00",
+    isOwn: false,
+    helpfulCount: 1,
+    unhelpfulCount: 7,
+    viewerVote: -1,
   },
 ];
 
@@ -109,6 +145,7 @@ function tables(withTrip: boolean) {
       { step_id: stepId(1), traveler_id: null, status: "completed" },
     ]),
     step_comments: ok(commentRows),
+    step_comment_votes: ok(voteRows),
   };
 }
 
@@ -209,6 +246,7 @@ describe("loadStepDetail", () => {
       "preparation_steps",
       "preparation_steps",
       "step_comments",
+      "step_comment_votes",
     ]);
   });
 
@@ -219,6 +257,7 @@ describe("loadStepDetail", () => {
       "preparation_steps",
       "preparation_steps",
       "step_comments",
+      "step_comment_votes",
     ]);
   });
 
@@ -327,10 +366,11 @@ describe("loadStepDetail", () => {
       "trips",
       "city_cost_overrides",
       "step_comments",
+      "step_comment_votes",
     ]);
   });
 
-  it("loads the step's 50 newest comments and marks the user's own", async () => {
+  it("loads the step's 50 most helpful comments with counts, own marks and the viewer's votes", async () => {
     fake = fakeSupabase({ tables: tables(false) });
     const result = await loadStepDetail(stepId(9), undefined);
     expect(result.comments).toEqual(comments);
@@ -338,20 +378,42 @@ describe("loadStepDetail", () => {
 
     const builder = query("step_comments");
     expect(builder.select).toHaveBeenCalledWith(
-      "id, user_id, author_name, author_avatar_url, content, created_at",
+      "id, user_id, author_name, author_avatar_url, content, created_at, helpful_count, unhelpful_count",
     );
     expect(builder.eq).toHaveBeenCalledWith("step_id", stepId(9));
     expect(builder.order.mock.calls).toEqual([
+      ["helpful_score", { ascending: false }],
       ["created_at", { ascending: false }],
       ["id", { ascending: false }],
     ]);
     expect(builder.limit).toHaveBeenCalledWith(50);
+
+    const votes = query("step_comment_votes");
+    expect(votes.select).toHaveBeenCalledWith("comment_id, value");
+    expect(votes.in).toHaveBeenCalledWith(
+      "comment_id",
+      commentRows.map((row) => row.id),
+    );
+    expect(votes.eq).not.toHaveBeenCalled();
   });
 
-  it("returns no comments when the step has none", async () => {
+  it("returns no comments and skips the votes query when the step has none", async () => {
     fake = fakeSupabase({
       tables: { ...tables(false), step_comments: ok([]) },
     });
     expect((await loadStepDetail(stepId(9), undefined)).comments).toEqual([]);
+    expect(queried()).not.toContain("step_comment_votes");
+  });
+
+  it("throws on a votes query error", async () => {
+    fake = fakeSupabase({
+      tables: {
+        ...tables(false),
+        step_comment_votes: { data: null, error: { message: "boom" } },
+      },
+    });
+    await expect(loadStepDetail(stepId(9), undefined)).rejects.toThrow(
+      "Failed to load step details",
+    );
   });
 });
