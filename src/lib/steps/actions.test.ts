@@ -1,9 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { fakeSupabase } from "@/lib/trips/fakeSupabase";
 import {
+  clearStepCommentVote,
   deleteStepComment,
   postStepComment,
   reportStepContent,
+  voteStepComment,
 } from "./actions";
 
 const stepId = "5eed0000-0000-4000-8000-000000000001";
@@ -128,6 +130,129 @@ describe("deleteStepComment", () => {
     expect(revalidatePath).not.toHaveBeenCalled();
     expect(consoleError).toHaveBeenCalledWith(
       "Step comments: comment delete failed",
+      "XX000",
+    );
+  });
+});
+
+describe("voteStepComment", () => {
+  beforeEach(() => {
+    revalidatePath.mockClear();
+    consoleError.mockClear();
+  });
+
+  it.each([
+    ["not-a-uuid", stepId, 1],
+    [commentId, "not-a-uuid", 1],
+    [commentId, stepId, 0],
+    [commentId, stepId, 2],
+  ])("rejects invalid input without touching the DB", async (comment, step, value) => {
+    fake = fakeSupabase();
+    expect(await voteStepComment(comment, step, value as 1 | -1)).toEqual({
+      ok: false,
+      error: "invalid",
+    });
+    expect(fake.from).not.toHaveBeenCalled();
+  });
+
+  it("rejects a signed-out user without writing", async () => {
+    fake = fakeSupabase({ user: null });
+    expect(await voteStepComment(commentId, stepId, 1)).toEqual({
+      ok: false,
+      error: "failed",
+    });
+    expect(fake.from).not.toHaveBeenCalled();
+    expect(revalidatePath).not.toHaveBeenCalled();
+  });
+
+  it.each([1, -1] as const)(
+    "upserts only the comment and the value %i, then revalidates",
+    async (value) => {
+      fake = fakeSupabase();
+      expect(await voteStepComment(commentId, stepId, value)).toEqual({
+        ok: true,
+      });
+      const [{ table, builder }] = fake.builders;
+      expect(table).toBe("step_comment_votes");
+      expect(builder.upsert).toHaveBeenCalledTimes(1);
+      expect(builder.upsert.mock.calls[0]).toEqual([
+        { comment_id: commentId, value },
+        { onConflict: "comment_id,user_id" },
+      ]);
+      expect(revalidatePath).toHaveBeenCalledWith(`/steps/${stepId}`);
+    },
+  );
+
+  it("returns a fixed error and logs only the code when the upsert fails", async () => {
+    fake = fakeSupabase({
+      tables: {
+        step_comment_votes: { data: null, error: { code: "42501", message: "rls" } },
+      },
+    });
+    expect(await voteStepComment(commentId, stepId, 1)).toEqual({
+      ok: false,
+      error: "failed",
+    });
+    expect(revalidatePath).not.toHaveBeenCalled();
+    expect(consoleError).toHaveBeenCalledWith(
+      "Step comments: comment vote failed",
+      "42501",
+    );
+  });
+});
+
+describe("clearStepCommentVote", () => {
+  beforeEach(() => {
+    revalidatePath.mockClear();
+    consoleError.mockClear();
+  });
+
+  it.each([
+    ["not-a-uuid", stepId],
+    [commentId, "not-a-uuid"],
+  ])("rejects invalid ids without touching the DB", async (comment, step) => {
+    fake = fakeSupabase();
+    expect(await clearStepCommentVote(comment, step)).toEqual({
+      ok: false,
+      error: "invalid",
+    });
+    expect(fake.from).not.toHaveBeenCalled();
+  });
+
+  it("rejects a signed-out user without writing", async () => {
+    fake = fakeSupabase({ user: null });
+    expect(await clearStepCommentVote(commentId, stepId)).toEqual({
+      ok: false,
+      error: "failed",
+    });
+    expect(fake.from).not.toHaveBeenCalled();
+    expect(revalidatePath).not.toHaveBeenCalled();
+  });
+
+  it("deletes filtered by comment_id and user_id, then revalidates", async () => {
+    fake = fakeSupabase();
+    expect(await clearStepCommentVote(commentId, stepId)).toEqual({ ok: true });
+    const [{ table, builder }] = fake.builders;
+    expect(table).toBe("step_comment_votes");
+    expect(builder.delete).toHaveBeenCalledTimes(1);
+    expect(builder.eq.mock.calls).toEqual([
+      ["comment_id", commentId],
+      ["user_id", "user-1"],
+    ]);
+    expect(revalidatePath).toHaveBeenCalledWith(`/steps/${stepId}`);
+  });
+
+  it("returns a fixed error and logs only the code when the delete fails", async () => {
+    fake = fakeSupabase({
+      tables: { step_comment_votes: { data: null, error: { code: "XX000" } } },
+    });
+    expect(await clearStepCommentVote(commentId, stepId)).toEqual({
+      ok: false,
+      error: "failed",
+    });
+    expect(revalidatePath).not.toHaveBeenCalled();
+    expect(consoleError).toHaveBeenCalledWith(
+      "Step comments: comment vote clear failed",
       "XX000",
     );
   });

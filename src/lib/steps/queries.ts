@@ -48,9 +48,14 @@ type CommentRow = {
   author_avatar_url: string | null;
   content: string;
   created_at: string;
+  helpful_count: number;
+  unhelpful_count: number;
 };
 
-// The page shows the newest comments only; there is no pagination.
+type VoteRow = { comment_id: string; value: 1 | -1 };
+
+// The page shows the most helpful comments only, newest first among equal
+// scores; there is no pagination.
 const commentLimit = 50;
 
 const noRows = { data: [], error: null };
@@ -140,9 +145,10 @@ export async function loadStepDetail(
       supabase
         .from("step_comments")
         .select(
-          "id, user_id, author_name, author_avatar_url, content, created_at",
+          "id, user_id, author_name, author_avatar_url, content, created_at, helpful_count, unhelpful_count",
         )
         .eq("step_id", step.id)
+        .order("helpful_score", { ascending: false })
         .order("created_at", { ascending: false })
         .order("id", { ascending: false })
         .limit(commentLimit)
@@ -156,6 +162,24 @@ export async function loadStepDetail(
     prerequisites.error ??
     comments.error;
   if (error) throw new Error("Failed to load step details", { cause: error });
+
+  // RLS returns only the viewer's own votes.
+  const commentIds = (comments.data ?? []).map((row) => row.id);
+  const votes =
+    commentIds.length > 0
+      ? await supabase
+          .from("step_comment_votes")
+          .select("comment_id, value")
+          .in("comment_id", commentIds)
+          .overrideTypes<VoteRow[], { merge: false }>()
+      : noRows;
+  if (votes.error) {
+    throw new Error("Failed to load step details", { cause: votes.error });
+  }
+  const viewerVotes = new Map(
+    (votes.data ?? []).map((vote) => [vote.comment_id, vote.value]),
+  );
+
   const tracking = {
     configs: configs.data ?? [],
     travelerIds: (travelers.data ?? []).map((traveler) => traveler.id),
@@ -184,6 +208,9 @@ export async function loadStepDetail(
         content: row.content,
         createdAt: row.created_at,
         isOwn: row.user_id === user.id,
+        helpfulCount: row.helpful_count,
+        unhelpfulCount: row.unhelpful_count,
+        viewerVote: viewerVotes.get(row.id) ?? null,
       }),
     ),
   };
