@@ -128,7 +128,8 @@ async function runAgent(c, agent, prompt, o, { round = 0, file, resume } = {}) {
   try { res = JSON.parse(out) } catch { throw new Stop(`${agent} printed no JSON result`) }
   const u = res.usage || {}
   await appendFile(join(c.dir, 'usage.jsonl'), JSON.stringify({
-    ts: new Date().toISOString(), agent, round, sessionId: res.session_id ?? null, resumed: Boolean(resume),
+    ts: new Date().toISOString(), job: c.job.id, task: c.job.id, feature: String(c.job.feature || '').replace(/\s+/g, ' ').slice(0, 400),
+    stage: c.job.stage, agent, round, sessionId: res.session_id ?? null, resumed: Boolean(resume), promptChars: prompt.length,
     model: Object.keys(res.modelUsage || {}).join(',') || null,
     inputTokens: u.input_tokens ?? null, outputTokens: u.output_tokens ?? null,
     cacheReadTokens: u.cache_read_input_tokens ?? null, cacheCreationTokens: u.cache_creation_input_tokens ?? null,
