@@ -3,7 +3,6 @@
 import { useEffect, useRef, useState, useTransition } from "react";
 import { useFormatter, useTranslations } from "next-intl";
 import { Button } from "@/components/ui/Button";
-import { Card } from "@/components/ui/Card";
 import { Chip } from "@/components/ui/Chip";
 import { IconButton } from "@/components/ui/IconButton";
 import { SegmentedControl } from "@/components/ui/SegmentedControl";
@@ -48,8 +47,8 @@ const newRow = (key: number): TravelerRow => ({
 
 const focusRing =
   "focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-primary";
-const fieldClassName = `tap-target w-full rounded-2xl border border-border bg-surface px-4 text-base text-foreground ${focusRing}`;
-const secondaryClassName = `tap-target inline-flex items-center justify-center gap-2 rounded-full bg-surface px-6 font-semibold text-foreground shadow-card disabled:opacity-60 ${focusRing}`;
+const fieldClassName = `tap-target w-full rounded-2xl border border-border bg-surface-raised px-4 text-base text-foreground ${focusRing}`;
+const secondaryClassName = `tap-target inline-flex items-center justify-center gap-2 rounded-full border border-border bg-surface-raised px-6 font-semibold text-foreground disabled:opacity-60 ${focusRing}`;
 
 // `onboarding` is a first-time user's first trip; `newTrip` (/trips/new) adds
 // another one and leaves room for the BottomNav below `lg`.
@@ -175,17 +174,20 @@ export function OnboardingWizard({
   const stepKey = steps[step];
 
   return (
-    <div className="mx-auto flex w-full max-w-md flex-1 flex-col px-5 md:max-w-3xl md:px-8 lg:max-w-6xl lg:px-10">
+    <div className="mx-auto flex w-full max-w-md flex-1 flex-col px-4 md:max-w-3xl md:px-8 lg:max-w-6xl lg:px-10">
       <main
         className={`grid flex-1 content-start gap-6 pt-2 lg:grid-cols-2 lg:gap-16 lg:pt-8 lg:pb-16 ${
           isNewTrip ? "pb-[calc(7rem+env(safe-area-inset-bottom))]" : "pb-10"
         }`}
       >
-        <div className="flex flex-col gap-3">
-          <h1 className="text-3xl leading-tight font-bold md:text-4xl lg:text-5xl">
+        {/* Below lg the step's own title is the visual heading (preview
+            screen 11): the page title is read by screen readers only and the
+            intro moves below the form. */}
+        <div className="contents lg:flex lg:flex-col lg:gap-3">
+          <h1 className="sr-only lg:not-sr-only lg:text-5xl lg:leading-tight lg:font-bold lg:tracking-tight">
             {isNewTrip ? tNewTrip("title") : t("title")}
           </h1>
-          <p className="text-lg text-muted lg:text-xl">
+          <p className="order-last text-sm text-muted lg:order-none lg:text-xl">
             {isNewTrip ? tNewTrip("intro") : t("intro")}
           </p>
           <ol
@@ -198,17 +200,17 @@ export function OnboardingWizard({
                 <li
                   key={id}
                   aria-current={current ? "step" : undefined}
-                  className={`flex items-center gap-3 rounded-2xl px-4 py-3 text-lg ${
+                  className={`flex items-center gap-3 rounded-[1.375rem] border px-4 py-3 text-lg ${
                     current
-                      ? "bg-surface font-semibold text-foreground shadow-card"
-                      : "text-muted"
+                      ? "border-surface-line bg-surface font-semibold text-foreground"
+                      : "border-transparent text-muted"
                   }`}
                 >
                   <span
                     aria-hidden="true"
                     className={`flex size-9 shrink-0 items-center justify-center rounded-full text-base font-semibold ${
                       current
-                        ? "bg-tile-violet text-tile-violet-foreground"
+                        ? "bg-accent-soft text-accent"
                         : "border border-border"
                     }`}
                   >
@@ -223,22 +225,32 @@ export function OnboardingWizard({
 
         <form
           noValidate
-          className="flex flex-col gap-4"
+          className="flex flex-col gap-5 lg:rounded-[2rem] lg:border lg:border-surface-line lg:p-8"
           onSubmit={(event) => {
             event.preventDefault();
             handleNext();
           }}
         >
-          <p aria-live="polite" className="font-semibold text-muted">
-            {t("progress", { current: step + 1, total: steps.length })}
-          </p>
+          <div aria-hidden="true" className="flex gap-1.5">
+            {steps.map((id, index) => (
+              <span
+                key={id}
+                className={`h-1 flex-1 rounded-full ${
+                  index <= step ? "bg-primary" : "bg-surface-line"
+                }`}
+              />
+            ))}
+          </div>
 
-          <Card className="flex flex-col gap-5 lg:p-8">
+          <div className="flex flex-col gap-5">
             <div>
+              <p aria-live="polite" className="text-xs font-medium text-muted">
+                {t("progress", { current: step + 1, total: steps.length })}
+              </p>
               <h2
                 ref={headingRef}
                 tabIndex={-1}
-                className="text-xl font-semibold outline-none lg:text-2xl"
+                className="mt-0.5 text-[1.875rem] leading-tight font-bold tracking-[-0.03em] break-words outline-none lg:text-[2.125rem]"
               >
                 {t(`steps.${stepKey}.title`)}
               </h2>
@@ -448,12 +460,12 @@ export function OnboardingWizard({
                 {t(`errors.${error}`)}
               </p>
             )}
-          </Card>
+          </div>
 
           {submitError && (
             <p
               role="alert"
-              className="rounded-2xl border border-border bg-surface px-4 py-3 font-medium text-foreground shadow-card"
+              className="rounded-[1.375rem] border border-surface-line bg-surface px-4 py-3 font-medium text-foreground"
             >
               {t(`errors.${submitError}`)}
             </p>
