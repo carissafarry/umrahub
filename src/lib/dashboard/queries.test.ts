@@ -42,6 +42,7 @@ describe("loadDashboard", () => {
   it("returns no trips without loading steps or progress", async () => {
     fake = fakeSupabase({ tables: { trips: { data: [], error: null } } });
     expect(await loadDashboard()).toEqual({
+      profile: { name: "", avatarUrl: null },
       trips: [],
       steps: [],
       configs: [],
@@ -74,6 +75,7 @@ describe("loadDashboard", () => {
       },
     });
     expect(await loadDashboard()).toEqual({
+      profile: { name: "", avatarUrl: null },
       trips,
       steps: [],
       configs,

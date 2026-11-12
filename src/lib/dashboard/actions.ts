@@ -62,6 +62,7 @@ export async function renameTrip(
   }
 
   revalidatePath("/dashboard");
+  revalidatePath("/trips");
   revalidatePath(`/trips/${tripId}`);
   return { ok: true };
 }
@@ -85,5 +86,6 @@ export async function deleteTrip(tripId: string): Promise<DeleteTripResult> {
   }
 
   revalidatePath("/dashboard");
+  revalidatePath("/trips");
   return { ok: true };
 }

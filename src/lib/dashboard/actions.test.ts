@@ -86,6 +86,7 @@ describe("renameTrip", () => {
     expect(update.eq).toHaveBeenCalledWith("id", tripId);
     expect(update.eq).toHaveBeenCalledWith("user_id", "user-1");
     expect(revalidatePath).toHaveBeenCalledWith("/dashboard");
+    expect(revalidatePath).toHaveBeenCalledWith("/trips");
     expect(revalidatePath).toHaveBeenCalledWith(`/trips/${tripId}`);
   });
 
@@ -141,5 +142,6 @@ describe("deleteTrip", () => {
     expect(remove.eq).toHaveBeenCalledWith("user_id", "user-1");
     expect(fake.builders.map(({ table }) => table)).toEqual(["trips", "trips"]);
     expect(revalidatePath).toHaveBeenCalledWith("/dashboard");
+    expect(revalidatePath).toHaveBeenCalledWith("/trips");
   });
 });

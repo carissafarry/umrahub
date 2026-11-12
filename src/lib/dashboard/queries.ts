@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { getUserProfile } from "@/lib/auth/profile";
 import { createClient } from "@/lib/supabase/server";
 import type { ChecklistStep, TrackedStep } from "@/lib/trips/checklist";
 import type {
@@ -8,16 +9,18 @@ import type {
   TripTraveler,
 } from "./summary";
 
-// Loads what /dashboard needs under the user's RLS: the user's trips (newest
-// first, display columns only), the published steps once, and the configs,
-// travelers (ids only, never the minor or disability fields) and all
-// progress rows of those trips, one query each. Signed out → redirect to `/`.
+// Loads what /dashboard and /trips need under the user's RLS: the user's
+// profile (name, avatar), the user's trips (newest first, display columns
+// only), the published steps once, and the configs, travelers (ids only,
+// never the minor or disability fields) and all progress rows of those trips,
+// one query each. Signed out → redirect to `/`.
 export async function loadDashboard() {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) redirect("/");
+  const profile = getUserProfile(user);
 
   const { data: trips, error: tripsError } = await supabase
     .from("trips")
@@ -27,7 +30,14 @@ export async function loadDashboard() {
     .overrideTypes<DashboardTrip[], { merge: false }>();
   if (tripsError) throw new Error("Failed to load trips");
   if (!trips || trips.length === 0) {
-    return { trips: [], steps: [], configs: [], travelers: [], progress: [] };
+    return {
+      profile,
+      trips: [],
+      steps: [],
+      configs: [],
+      travelers: [],
+      progress: [],
+    };
   }
 
   const tripIds = trips.map((trip) => trip.id);
@@ -61,6 +71,7 @@ export async function loadDashboard() {
   }
 
   return {
+    profile,
     trips,
     steps: steps.data ?? [],
     configs: configs.data ?? [],

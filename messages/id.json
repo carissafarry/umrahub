@@ -6,7 +6,9 @@
   "Header": {
     "languageLabel": "Ganti bahasa",
     "signOut": "Keluar",
-    "accountLabel": "Akun"
+    "accountLabel": "Akun",
+    "accountSheetTitle": "Akun kamu",
+    "close": "Tutup"
   },
   "Home": {
     "title": "Persiapan Umrah mandiri, lebih tenang dan terarah",
@@ -268,10 +270,20 @@
       "intro": "Jawab 5 pertanyaan singkat untuk membuat trip baru dengan checklist yang sesuai dengan rombongan Anda. Tidak ada yang disimpan sebelum langkah terakhir."
     }
   },
+  "Beranda": {
+    "metaTitle": "Beranda · Umra Hub",
+    "greeting": "Halo, {name}",
+    "activeTrip": "Trip aktif",
+    "travelers": "{count} jamaah",
+    "tasksTitle": "Perlu kamu lakukan",
+    "tasksDone": "Semua langkah persiapan trip ini sudah selesai.",
+    "search": "Cari jadwal untuk tanggalmu",
+    "searchSoon": "Segera hadir: cari jadwal Umrah yang cocok dengan tanggalmu."
+  },
   "Navigation": {
     "label": "Navigasi utama",
     "home": "Beranda",
-    "newTrip": "Trip baru"
+    "trips": "Trip"
   },
   "Notifications": {
     "metaTitle": "Notifikasi · Umra Hub",
