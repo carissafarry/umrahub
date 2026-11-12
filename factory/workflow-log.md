@@ -74,6 +74,13 @@ Dua sumber boros: bekal awal agen sekitar 40 ribu token (agen kecil seperti revi
 - Skrip pengendali loop (langkah mekanis di luar model, agen dipanggil lewat `claude -p` dalam konteks kecil).
 - Model lebih murah untuk reviewer-security di tiket yang tidak menyentuh data atau autentikasi.
 
+## workflow-010 Preview selalu sampai ke dashboard
+
+- **Perubahan:** `previewRoute` di `factory/driver.mjs` tidak lagi menghentikan job. Urutan route: baris "Preview route:" di `build.md`, lalu path konkret pertama di `spec.md`, lalu `/`. Tes diganti: job fe tanpa route tetap mendapat link preview dan bisa lanjut.
+- **Alasan:** fe-080 tidak punya preview di dashboard karena `build.md` berisi `/` dan driver menolaknya.
+- **Efek yang diharapkan:** tombol "Lihat preview" selalu ada untuk job fe di `pr` atau `needs-human`. Tanpa biaya token.
+- **Catatan:** selama reviewer UX/UI berjalan, preview tetap dimatikan sementara (dua dev server di satu worktree saling merusak `.next`), lalu dinyalakan lagi.
+- **Efek terukur:** belum ada.
 ## workflow-009 Screenshots reviewer UI dan UX disimpan di folder job
 
 - **Perubahan:** `reviewer-ui` dan `reviewer-ux` menyimpan screenshot ke `factory/jobs/<job>/round-N/shots/` (maks 3 per halaman utama: 390, 768, 1280px), lalu membukanya dengan `Read`.

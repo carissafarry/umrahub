@@ -338,17 +338,19 @@ test('fe job: preview starts after build with the full route, stage pr keeps it'
   }
 })
 
-test('fe job without a usable route stops with needs-human and opens no PR', async () => {
-  for (const [n, route] of [['fe-919', undefined], ['fe-920', '/'], ['fe-921', '/trips/<id>/budget']]) {
+test('fe job without a usable route still gets a preview link (route from spec, else "/")', async () => {
+  for (const [n, route] of [['fe-919', undefined], ['fe-921', '/trips/<id>/budget']]) {
     const t = await setup(n, { spec: true })
-    const r = await drive(t, ['run', n], route ? { FAKE_ROUTE: route } : {})
-    assert.notEqual(r.code, 0, n)
-    assert.match(r.stdout, /Preview route/)
-    const job = await jobOf(t)
-    assert.equal(job.stage, 'needs-human')
-    assert.equal(job.preview, undefined)
-    assert.ok(!(await agents(t)).includes('reviewer-code'))
-    assert.ok(!(await calls(t)).some((c) => c.tool === 'gh'))
+    try {
+      const r = await drive(t, ['run', n], route ? { FAKE_ROUTE: route } : {})
+      assert.equal(r.code, 0, r.stdout + r.stderr)
+      const job = await jobOf(t)
+      assert.equal(job.stage, 'pr')
+      assert.equal(job.preview, `http://localhost:${5103 + 10 * Number(n.slice(3))}/`)
+    } finally {
+      const { execFileSync } = await import('node:child_process')
+      try { for (const p of execFileSync('lsof', ['-tiTCP:' + (5103 + 10 * Number(n.slice(3))), '-sTCP:LISTEN']).toString().trim().split('\n')) process.kill(Number(p)) } catch {}
+    }
   }
 })
 
