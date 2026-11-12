@@ -385,3 +385,19 @@ test('a crashed agent keeps its real error: exit code, stderr text, full text in
   assert.match(await readFile(join(t.dir, 'agent-error-builder.txt'), 'utf8'), /credit balance is too low/)
   assert.equal((await jobOf(t)).stage, 'needs-human')
 })
+
+test('usage.jsonl rows carry the job, task, feature text, stage, prompt size and the agent lens', async () => {
+  const t = await setup('be-934', { spec: true })
+  await drive(t, ['run', 'be-934'])
+  const rows = (await readFile(join(t.dir, 'usage.jsonl'), 'utf8')).split('\n').filter(Boolean).map((l) => JSON.parse(l))
+  assert.ok(rows.length >= 6)
+  for (const r of rows) {
+    assert.equal(r.job, 'be-934')
+    assert.equal(r.task, 'be-934')
+    assert.equal(typeof r.feature, 'string')
+    assert.ok(r.promptChars > 0)
+    assert.ok(r.stage)
+  }
+  assert.deepEqual([...new Set(rows.map((r) => r.agent))].filter((a) => a.startsWith('reviewer-')).sort(),
+    ['reviewer-code', 'reviewer-security', 'reviewer-ui', 'reviewer-ux'])
+})
