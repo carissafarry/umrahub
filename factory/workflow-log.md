@@ -72,3 +72,10 @@ Dua sumber boros: bekal awal agen sekitar 40 ribu token (agen kecil seperti revi
 - Sesi orkestrator baru dengan konteks kecil untuk setiap gelombang, bukan satu sesi panjang.
 - Skrip pengendali loop (langkah mekanis di luar model, agen dipanggil lewat `claude -p` dalam konteks kecil).
 - Model lebih murah untuk reviewer-security di tiket yang tidak menyentuh data atau autentikasi.
+
+## workflow-009 Screenshots reviewer UI dan UX disimpan di folder job
+
+- **Perubahan:** `reviewer-ui` dan `reviewer-ux` menyimpan screenshot ke `factory/jobs/<job>/round-N/shots/` (maks 3 per halaman utama: 390, 768, 1280px), lalu membukanya dengan `Read`.
+- **Alasan:** review UI fe-080 tidak bisa membuka screenshot (kemungkinan disimpan di folder sementara di luar `--add-dir`), jadi hanya mengukur DOM dan membaca kode.
+- **Efek yang diharapkan:** reviewer benar-benar membandingkan tampilan. Biaya tambahan kecil: kira-kira 3 gambar per reviewer.
+- **Efek terukur:** belum ada (isi setelah fe-080 round berikutnya).
