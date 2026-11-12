@@ -43,7 +43,7 @@ else
 fi
 
 # The dashboard silently drops backlog lines that are not "- [ ] [<type>-NNN] <Title>: <description>".
-bad=$(grep -E '^- (\[[ x]\] )?\[(infra|be|fe|\?)-[0-9]{3}\]' factory/backlog.md | grep -vE '^- (\[[ x]\] )?\[(infra|be|fe|\?)-[0-9]{3}\] .+: ' | LC_ALL=C sed -E 's/^- (\[[ x]\] )?\[([a-z?]+-[0-9]{3})\].*/\2/' | tr '\n' ' ')
+bad=$(grep -E '^- (\[[ x]\] )?\[(infra|be|fe|spec|workflow|\?)-[0-9]{3}\]' factory/backlog.md | grep -vE '^- (\[[ x]\] )?\[(infra|be|fe|spec|workflow|\?)-[0-9]{3}\] .+: ' | LC_ALL=C sed -E 's/^- (\[[ x]\] )?\[([a-z?]+-[0-9]{3})\].*/\2/' | tr '\n' ' ')
 echo "backlog:"
 if [ -n "$bad" ]; then need "backlog lines the dashboard cannot parse (no '<Title>: ' after the code): $bad— fix them"; else note "all task lines parse"; fi
 
@@ -111,6 +111,12 @@ done
 echo "worktrees:"
 git worktree list | tail -n +2 | sed 's/^/  - /'
 [ "$(git worktree list | wc -l | tr -d ' ')" = "1" ] && note "none besides the main checkout"
+
+# Restart interrupted jobs only while capacity allows (SKILL.md: Capacity).
+if [ -f factory/capacity.mjs ]; then
+  echo "capacity:"
+  node factory/capacity.mjs status | sed 's/^/  /'
+fi
 
 echo
 if [ $action -eq 1 ]; then

@@ -3,11 +3,10 @@
 import Link from "next/link";
 import { useLocale, useTranslations } from "next-intl";
 import { useOptimistic, useState, useTransition } from "react";
-import { Card } from "@/components/ui/Card";
 import {
   ArrowRightIcon,
   ChevronDownIcon,
-  ClockIcon,
+  LockIcon,
 } from "@/components/ui/icons";
 import { SegmentedControl } from "@/components/ui/SegmentedControl";
 import { updateStepStatus, updateStepTrackingMode } from "@/lib/trips/actions";
@@ -20,6 +19,10 @@ import {
   type TrackingMode,
 } from "@/lib/trips/checklist";
 import { StatusBadge } from "./StatusBadge";
+import { StatusCircle } from "./StatusCircle";
+
+const warningBoxClassName =
+  "rounded-2xl bg-warning-soft px-4 py-3 text-sm font-medium text-warning";
 
 export type TravelerStepStatus = {
   id: string;
@@ -42,10 +45,10 @@ type StepAccordionProps = {
   prerequisites: string[];
 };
 
-// One checklist step: a collapsed header with its status badge, expanding to
-// the summary, per-person cost, the tracking-mode switch and one status
-// control (shared) or one per traveler (individual). An individual step on a
-// trip without travelers keeps the single control. Prerequisites are
+// One checklist step: a list row with its status circle, cost and status pill,
+// expanding to the summary, per-person cost, one status control (shared) or
+// one per traveler (individual) and the tracking-mode switch. An individual
+// step on a trip without travelers keeps the single control. Prerequisites are
 // advisory: a blocked step is marked and warned about, never locked.
 export function StepAccordion({
   tripId,
@@ -134,28 +137,33 @@ export function StepAccordion({
   }));
 
   return (
-    <Card as="li">
+    <li>
       <h4>
         <button
           type="button"
           aria-expanded={open}
           aria-controls={panelId}
           onClick={() => setOpen(!open)}
-          className="tap-target flex w-full items-center gap-3 rounded-2xl text-left focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-primary"
+          className="tap-target flex w-full items-center gap-3 rounded-2xl py-3 text-left focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-primary"
         >
-          <span className="flex min-w-0 flex-1 flex-col gap-2 md:flex-row md:items-center md:justify-between">
-            <span className="font-semibold">{title}</span>
-            <span className="flex flex-wrap items-center gap-2 md:justify-end">
-              {blocked && (
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-tile-blue px-3 py-1 text-sm font-medium text-tile-blue-foreground">
-                  <ClockIcon className="size-4 shrink-0" />
-                  {t("blocked")}
-                </span>
-              )}
+          <StatusCircle status={headerStatus} />
+          <span className="flex min-w-0 flex-1 flex-col gap-1">
+            <span className="text-sm font-bold break-words">{title}</span>
+            <span className="text-xs text-muted">
+              {t(`cost.${cost.key}`, cost.values)}
+              {cost.key !== "none" && ` ${t("perPerson")}`}
+            </span>
+            <span className="flex flex-wrap items-center gap-1.5">
               <StatusBadge
                 status={headerStatus}
                 label={t(`status.${headerStatus}`)}
               />
+              {blocked && (
+                <span className="inline-flex items-center gap-1 rounded-full bg-dusk-tile px-2.5 py-0.5 text-xs font-bold text-dusk-ink">
+                  <LockIcon className="size-3 shrink-0" />
+                  {t("blocked")}
+                </span>
+              )}
             </span>
           </span>
           <ChevronDownIcon
@@ -166,16 +174,11 @@ export function StepAccordion({
       <div
         id={panelId}
         hidden={!open}
-        className="mt-4 flex flex-col gap-4 border-t border-border pt-4"
+        className="flex flex-col gap-4 border-t border-surface-line py-4"
       >
-        {blocked && (
-          <p className="font-medium text-foreground">
-            {t("blockedBy", { steps: prerequisiteList })}
-          </p>
-        )}
-        {summary && <p className="text-muted">{summary}</p>}
-        <p>
-          <span className="block text-sm text-muted">{t("costLabel")}</span>
+        {summary && <p className="text-sm text-muted">{summary}</p>}
+        <p className="text-sm">
+          <span className="block text-muted">{t("costLabel")}</span>
           <span className="font-semibold">
             {t(`cost.${cost.key}`, cost.values)}
           </span>
@@ -183,26 +186,6 @@ export function StepAccordion({
             <span className="text-muted"> {t("perPerson")}</span>
           )}
         </p>
-        <Link
-          href={`/steps/${stepId}?trip=${tripId}`}
-          aria-label={t("learnMoreLabel", { title })}
-          className="tap-target inline-flex items-center gap-2 self-start rounded-full font-medium text-primary focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-primary"
-        >
-          {t("learnMore")}
-          <ArrowRightIcon className="size-4" />
-        </Link>
-        <div className="flex flex-col gap-2">
-          <p className="text-sm text-muted">{t("trackingModeHeading")}</p>
-          <SegmentedControl
-            label={t("trackingModeLabel", { title })}
-            options={trackingModes.map((value) => ({
-              value,
-              label: t(`trackingMode.${value}`),
-            }))}
-            value={shownMode}
-            onChange={changeMode}
-          />
-        </div>
         {perTraveler ? (
           <ul className="grid gap-4 md:grid-cols-2">
             {shownTravelers.map((traveler) => (
@@ -230,23 +213,45 @@ export function StepAccordion({
             onChange={(next) => changeStatus(shownStatus, next, null)}
           />
         )}
+        <div className="flex flex-col gap-2">
+          <p className="text-sm text-muted">{t("trackingModeHeading")}</p>
+          <SegmentedControl
+            label={t("trackingModeLabel", { title })}
+            options={trackingModes.map((value) => ({
+              value,
+              label: t(`trackingMode.${value}`),
+            }))}
+            value={shownMode}
+            onChange={changeMode}
+          />
+        </div>
+        {blocked && (
+          <p className={warningBoxClassName}>
+            {t("blockedBy", { steps: prerequisiteList })}
+          </p>
+        )}
         {warnPrerequisites && (
-          <p
-            role="status"
-            className="rounded-2xl bg-tile-blue px-4 py-3 font-medium text-foreground"
-          >
+          <p role="status" className={warningBoxClassName}>
             {t("prerequisiteWarning", { steps: prerequisiteList })}
           </p>
         )}
         {saveFailed && (
           <p
             role="alert"
-            className="rounded-2xl border border-border px-4 py-3 font-medium text-foreground"
+            className="rounded-2xl border border-border px-4 py-3 text-sm font-medium text-foreground"
           >
             {t("saveFailed")}
           </p>
         )}
+        <Link
+          href={`/steps/${stepId}?trip=${tripId}`}
+          aria-label={t("learnMoreLabel", { title })}
+          className="tap-target inline-flex items-center gap-2 self-start rounded-full text-sm font-bold text-primary focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-primary"
+        >
+          {t("learnMore")}
+          <ArrowRightIcon className="size-4" />
+        </Link>
       </div>
-    </Card>
+    </li>
   );
 }

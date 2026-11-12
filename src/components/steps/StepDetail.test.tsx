@@ -104,7 +104,7 @@ describe("StepDetail", () => {
     expect(html).toMatch(/<h2[^>]*>Langkah sebelumnya<\/h2>/);
     expect(html).toContain(`href="/steps/${passportId}?trip=${tripId}"`);
     expect(html).toContain(">Buat atau perpanjang paspor</a>");
-    expect(html).toMatch(/bg-tile-green[^"]*">Selesai<\/span>/);
+    expect(html).toMatch(/bg-success-soft[^"]*">Selesai<\/span>/);
     // Guide starts with its own h2, so no extra hidden heading.
     expect(html).toMatch(/<h2[^>]*>Langkah-langkah<\/h2>/);
     expect(html).not.toContain('class="sr-only">Panduan lengkap');
@@ -165,7 +165,7 @@ describe("StepDetail", () => {
     expect(html).toContain("per person");
     expect(html).toContain("Do these first");
     expect(html).toContain(">Apply for or renew your passport</a>");
-    expect(html).toMatch(/bg-tile-amber[^"]*">In progress<\/span>/);
+    expect(html).toMatch(/bg-warning-soft[^"]*">In progress<\/span>/);
     expect(html).toMatch(/<h2[^>]*>Steps<\/h2>/);
     expect(html).toContain("(opens in a new tab)");
     expect(html).toContain(">Report outdated info</button>");
