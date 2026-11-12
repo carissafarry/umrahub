@@ -176,12 +176,16 @@ async function stopPreview(c) {
   await save(c)
 }
 
+// workflow-010: the preview link must always reach the dashboard. Order: the builder's "Preview route:"
+// line, else the first concrete path in spec.md (no placeholders), else "/". Never stops the job.
+const usableRoute = (r) => r.startsWith('/') && r !== '/' && !/[<>[\]{}]/.test(r)
 async function previewRoute(c) {
   const m = (await readText(join(c.dir, 'build.md'))).match(/^Preview route:\s*(\S.*)$/m)
   const route = m?.[1].trim().split(/[\s,]/)[0] ?? ''
-  if (!route.startsWith('/') || route === '/' || /[<>[\]{}]/.test(route))
-    throw new Stop(`build.md has no usable "Preview route:" (got "${route || 'nothing'}"); it must be a specific page, never "/" or a placeholder`)
-  return route
+  if (usableRoute(route)) return route
+  const spec = (await readText(join(c.dir, 'spec.md'))).match(/`(\/[a-z0-9/_-]+)`/g) ?? []
+  const fromSpec = spec.map((s) => s.slice(1, -1)).find(usableRoute)
+  return fromSpec ?? '/'
 }
 
 async function ensurePreview(c) {
