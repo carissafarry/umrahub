@@ -4,6 +4,7 @@ import { AppBottomNav } from "@/components/AppNav";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { ChecklistIcon, ChevronRightIcon } from "@/components/ui/icons";
+import { SkyHero } from "@/components/ui/SkyHero";
 import type { TripSummary } from "@/lib/dashboard/summary";
 import type { ChecklistStep } from "@/lib/trips/checklist";
 import { TripProgress } from "./TripProgress";
@@ -16,32 +17,6 @@ const taskTiles = [
   "bg-tile-amber text-tile-amber-foreground",
   "bg-tile-green text-tile-green-foreground",
 ];
-
-// Clouds and a mosque silhouette over the sky hero; decorative only.
-function HeroArt() {
-  return (
-    <svg
-      viewBox="0 0 390 120"
-      preserveAspectRatio="xMaxYMax meet"
-      aria-hidden="true"
-      focusable="false"
-      className="pointer-events-none absolute inset-x-0 bottom-0 h-30 w-full text-primary-foreground lg:h-44"
-    >
-      <g fill="currentColor" opacity=".55">
-        <ellipse cx="70" cy="86" rx="46" ry="13" />
-        <ellipse cx="104" cy="80" rx="32" ry="12" />
-        <ellipse cx="300" cy="62" rx="40" ry="11" />
-      </g>
-      <g fill="currentColor" opacity=".7">
-        <path d="M268 120V84c0-14 10-24 24-24s24 10 24 24v36z" />
-        <rect x="324" y="68" width="8" height="52" />
-        <path d="m322 68 6-12 6 12z" />
-        <rect x="252" y="76" width="8" height="44" />
-        <path d="m250 76 6-10 6 10z" />
-      </g>
-    </svg>
-  );
-}
 
 type BerandaProps = {
   firstName: string;
@@ -72,12 +47,12 @@ export async function Beranda({
   return (
     <div className="mx-auto w-full max-w-md flex-1 md:max-w-3xl md:px-8 lg:max-w-6xl lg:px-10">
       <main className="flex flex-col pb-[calc(7rem+env(safe-area-inset-bottom))] lg:pb-16">
-        <div className="relative h-50 overflow-hidden bg-linear-to-b from-sky-day-from to-sky-day-to px-5 pt-5 md:rounded-t-[2rem] md:px-8 lg:h-64 lg:px-10 lg:pt-10">
+        {/* The top padding leaves room for the SiteHeader overlaid on the sky. */}
+        <SkyHero className="h-56 px-5 pt-19 md:rounded-t-[2rem] md:px-8 lg:h-72 lg:px-10 lg:pt-24">
           <h1 className="relative z-10 text-[2rem] leading-[1.05] font-semibold tracking-tight break-words text-primary-foreground lg:text-5xl">
             {t("greeting", { name: firstName })}
           </h1>
-          <HeroArt />
-        </div>
+        </SkyHero>
 
         <div className="relative -mt-7 flex flex-col gap-4 rounded-t-[2rem] bg-background px-4 pt-5 md:px-6 lg:grid lg:grid-cols-2 lg:items-start lg:gap-6 lg:px-8 lg:pt-8">
           <Card className="flex flex-col gap-4 lg:p-7">
