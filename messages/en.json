@@ -293,6 +293,7 @@
     "bellLabel": "Notifications",
     "bellLabelUnread": "Notifications, {count} unread",
     "unread": "Unread",
+    "unreadCount": "{count} unread",
     "created": "Received {date}",
     "markRead": "Mark as read",
     "markAllRead": "Mark all as read",
