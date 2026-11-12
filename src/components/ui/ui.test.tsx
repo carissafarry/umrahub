@@ -1,7 +1,8 @@
+// @vitest-environment jsdom
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { BottomNav, type BottomNavItem } from "./BottomNav";
-import { Button, ButtonLink } from "./Button";
+import { Button, ButtonLink, GoogleButton } from "./Button";
 import { Card } from "./Card";
 import { Chip } from "./Chip";
 import { IconButton } from "./IconButton";
@@ -25,6 +26,30 @@ describe("ui primitives", () => {
     expect(link.replace(/^<a[^>]*>/, "")).toBe(
       button.replace(/^<button[^>]*>/, "").replace(/<\/button>$/, "</a>"),
     );
+  });
+
+  it("GoogleButton is a submit button with a centred label and the G badge on the left, no arrow", () => {
+    const container = document.createElement("div");
+    container.innerHTML = renderToStaticMarkup(
+      <GoogleButton type="submit">Masuk dengan Google</GoogleButton>,
+    );
+    const button = container.querySelector("button")!;
+    expect(button.getAttribute("type")).toBe("submit");
+    expect(button.textContent).toBe("Masuk dengan Google");
+    expect(button.className).toContain("justify-center");
+
+    const badges = button.querySelectorAll('span[aria-hidden="true"]');
+    expect(badges).toHaveLength(1);
+    expect(badges[0].className).toContain("left-1.5");
+    expect(badges[0].className).toContain("bg-primary-foreground");
+    expect(badges[0].querySelectorAll("svg path")).toHaveLength(4);
+
+    // The arrow badge sits on the right; Button keeps it, GoogleButton has none.
+    const arrow = document.createElement("div");
+    arrow.innerHTML = renderToStaticMarkup(<Button>Lanjut</Button>);
+    const arrowBadge = arrow.querySelector('span[aria-hidden="true"]')!;
+    expect(arrowBadge.className).toContain("right-2");
+    expect(button.querySelector(".right-2")).toBeNull();
   });
 
   it("IconButton uses label as aria-label", () => {

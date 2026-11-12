@@ -19,7 +19,7 @@ export function IconButton({
     <button
       type={type}
       aria-label={label}
-      className={`tap-target inline-flex size-12 items-center justify-center rounded-full bg-surface text-foreground shadow-card focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-primary ${className}`}
+      className={`tap-target inline-flex size-12 items-center justify-center rounded-full border border-border bg-surface-raised text-foreground focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-primary ${className}`}
       {...props}
     >
       {children}
