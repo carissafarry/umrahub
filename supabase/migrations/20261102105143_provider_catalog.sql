@@ -14,7 +14,8 @@
 --   providers are published; ended rows stay as history.
 -- - provider_verifications: one current result per provider (status,
 --   criteria met, dates, reviewer). Results only, never documents.
---   reviewed_by is not readable by authenticated.
+--   Only verified rows are readable (pending, rejected and revoked stay
+--   private); reviewed_by is not readable by authenticated.
 -- - provider_catalog_items: information and offers written by the provider.
 -- - provider_reviews: stars 1 to 5, text and a display name like "Siti R.".
 
@@ -205,10 +206,11 @@ create policy "Signed-in users read confirmed active affiliations"
     )
   );
 
-create policy "Signed-in users read verifications of published providers"
+create policy "Signed-in users read verified results of published providers"
   on public.provider_verifications for select to authenticated
   using (
-    exists (
+    status = 'verified'
+    and exists (
       select 1 from public.providers p
       where p.id = provider_id and p.is_published = true
     )

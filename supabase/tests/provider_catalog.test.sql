@@ -3,10 +3,10 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 
-select plan(61);
+select plan(64);
 
 -- Fixtures (as postgres, the table owner, so RLS does not apply)
--- Providers: 01 travel and 02 muthawif and 04 travel are published,
+-- Providers: 01 travel, 02 muthawif, 04 travel and 05 travel are published,
 -- 03 muthawif is not
 
 insert into public.service_types (id, key, name_id, name_en, sort_order) values
@@ -17,7 +17,8 @@ insert into public.providers (id, provider_type, name, whatsapp_number, bank_acc
   ('bbbbbbbb-0000-4000-8000-000000000001', 'travel', 'Travel Amanah', '6281234567890', 'BSI 123 a.n. PT Amanah', true),
   ('bbbbbbbb-0000-4000-8000-000000000002', 'muthawif', 'Ustadz Ahmad', '6281111111111', null, true),
   ('bbbbbbbb-0000-4000-8000-000000000003', 'muthawif', 'Ustadz Draf', null, null, false),
-  ('bbbbbbbb-0000-4000-8000-000000000004', 'travel', 'Travel Barakah', null, null, true);
+  ('bbbbbbbb-0000-4000-8000-000000000004', 'travel', 'Travel Barakah', null, null, true),
+  ('bbbbbbbb-0000-4000-8000-000000000005', 'travel', 'Travel Berkah', null, null, true);
 
 insert into public.provider_affiliations (id, member_provider_id, organization_provider_id, relationship_type, status, started_on, ended_on, confirmed_by_member, confirmed_by_organization) values
   ('cccccccc-0000-4000-8000-000000000001', 'bbbbbbbb-0000-4000-8000-000000000002', 'bbbbbbbb-0000-4000-8000-000000000001', 'works_at', 'active', '2025-01-01', null, true, true),
@@ -28,7 +29,10 @@ insert into public.provider_affiliations (id, member_provider_id, organization_p
 
 insert into public.provider_verifications (id, provider_id, status, verified_on, expires_on, criteria_met, reviewed_by) values
   ('dddddddd-0000-4000-8000-000000000001', 'bbbbbbbb-0000-4000-8000-000000000001', 'verified', '2026-01-01', '2027-01-01', array['business_license', 'active_phone'], 'Admin A'),
-  ('dddddddd-0000-4000-8000-000000000003', 'bbbbbbbb-0000-4000-8000-000000000003', 'pending', null, null, '{}', null);
+  ('dddddddd-0000-4000-8000-000000000002', 'bbbbbbbb-0000-4000-8000-000000000002', 'pending', null, null, '{}', null),
+  ('dddddddd-0000-4000-8000-000000000003', 'bbbbbbbb-0000-4000-8000-000000000003', 'verified', '2026-01-01', '2027-01-01', array['identity'], null),
+  ('dddddddd-0000-4000-8000-000000000004', 'bbbbbbbb-0000-4000-8000-000000000004', 'rejected', null, null, array['active_phone'], 'Admin A'),
+  ('dddddddd-0000-4000-8000-000000000005', 'bbbbbbbb-0000-4000-8000-000000000005', 'revoked', null, null, array['business_license'], 'Admin A');
 
 insert into public.provider_catalog_items (id, provider_id, service_type_id, title_id, sort_order, is_published) values
   ('eeeeeeee-0000-4000-8000-000000000001', 'bbbbbbbb-0000-4000-8000-000000000001', 'aaaaaaaa-0000-4000-8000-000000000002', 'Paket Ramadan', 10, true),
@@ -145,12 +149,27 @@ select lives_ok(
 select is(
   (select status from public.provider_verifications where provider_id = 'bbbbbbbb-0000-4000-8000-000000000001'),
   'verified',
-  'the verification of a published provider is visible'
+  'a verified verification of a published provider is visible'
+);
+select is(
+  (select count(*)::int from public.provider_verifications where provider_id = 'bbbbbbbb-0000-4000-8000-000000000002'),
+  0,
+  'a pending verification is not visible'
+);
+select is(
+  (select count(*)::int from public.provider_verifications where provider_id = 'bbbbbbbb-0000-4000-8000-000000000004'),
+  0,
+  'a rejected verification is not visible'
+);
+select is(
+  (select count(*)::int from public.provider_verifications where provider_id = 'bbbbbbbb-0000-4000-8000-000000000005'),
+  0,
+  'a revoked verification is not visible'
 );
 select is(
   (select count(*)::int from public.provider_verifications where provider_id = 'bbbbbbbb-0000-4000-8000-000000000003'),
   0,
-  'the verification of an unpublished provider is not visible'
+  'a verified verification of an unpublished provider is not visible'
 );
 
 select is(
