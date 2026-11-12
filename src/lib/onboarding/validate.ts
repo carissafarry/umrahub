@@ -18,6 +18,11 @@ export const maxNameLength = 80;
 export const maxNotesLength = 500;
 export const monthsAhead = 24;
 
+// Cities a trip can be split into, in the order the design lists them.
+export const tripLegCities = ["Makkah", "Madinah"] as const;
+export type TripLegCity = (typeof tripLegCities)[number];
+export const maxTripLegs = 2;
+
 export type YearMonth = { year: number; month: number };
 
 export type OnboardingTraveler = {
@@ -26,10 +31,22 @@ export type OnboardingTraveler = {
   hasDisability: boolean;
 };
 
+// A stay in one city; dates are `YYYY-MM-DD`, the order is the array order.
+export type TripLeg = {
+  city: TripLegCity;
+  startDate: string;
+  endDate: string;
+};
+
+// Undated input (month only) has `departureDate: null`, `returnDate: null`
+// and no legs; dated input derives `year`/`month` from `departureDate`.
 export type OnboardingInput = {
   city: OnboardingCity;
   year: number;
   month: number;
+  departureDate: string | null;
+  returnDate: string | null;
+  legs: TripLeg[];
   passport: PassportStatus;
   travelers: OnboardingTraveler[];
   disabilityNotes: string | null;
@@ -40,6 +57,8 @@ export type OnboardingErrorCode =
   | "invalid_input"
   | "invalid_city"
   | "invalid_date"
+  | "invalid_return_date"
+  | "invalid_legs"
   | "invalid_passport"
   | "invalid_travelers"
   | "invalid_name"
@@ -67,6 +86,20 @@ export function isValidTravelerName(name: string) {
   return length >= 1 && length <= maxNameLength;
 }
 
+// A real calendar date written as `YYYY-MM-DD`. Such strings sort like dates.
+function isIsoDate(value: unknown): value is string {
+  if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    return false;
+  }
+  const [year, month, day] = value.split("-").map(Number);
+  const date = new Date(Date.UTC(year, month - 1, day));
+  return (
+    date.getUTCFullYear() === year &&
+    date.getUTCMonth() === month - 1 &&
+    date.getUTCDate() === day
+  );
+}
+
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value);
 
@@ -75,16 +108,79 @@ const isOneOf = <T extends string>(
   value: unknown,
 ): value is T => options.includes(value as T);
 
+const isAbsent = (value: unknown) =>
+  value === undefined ||
+  value === null ||
+  (Array.isArray(value) && value.length === 0);
+
+// Legs must lie within the trip, in order, one per city; touching days are
+// allowed (the Makkah to Madinah transfer happens within one day).
+function parseLegs(
+  legs: unknown,
+  departureDate: string,
+  returnDate: string,
+): TripLeg[] | null {
+  if (!Array.isArray(legs) || legs.length < 1 || legs.length > maxTripLegs) {
+    return null;
+  }
+  const parsed: TripLeg[] = [];
+  let earliestStart = departureDate;
+  for (const leg of legs) {
+    if (!isRecord(leg)) return null;
+    const { city, startDate, endDate } = leg;
+    if (
+      !isOneOf(tripLegCities, city) ||
+      parsed.some((p) => p.city === city) ||
+      !isIsoDate(startDate) ||
+      !isIsoDate(endDate) ||
+      startDate < earliestStart ||
+      startDate > endDate ||
+      endDate > returnDate
+    ) {
+      return null;
+    }
+    parsed.push({ city, startDate, endDate });
+    earliestStart = endDate;
+  }
+  return parsed;
+}
+
 export function parseOnboardingInput(
   raw: unknown,
   now: Date = new Date(),
 ): ParseResult {
   if (!isRecord(raw)) return { ok: false, error: "invalid_input" };
 
-  const { city, year, month, passport, travelers, disabilityNotes } = raw;
+  const {
+    city,
+    passport,
+    travelers,
+    disabilityNotes,
+    departureDate,
+    returnDate,
+    legs,
+  } = raw;
+  let { year, month } = raw;
 
   if (!isOneOf(onboardingCities, city)) {
     return { ok: false, error: "invalid_city" };
+  }
+
+  let dates: Pick<OnboardingInput, "departureDate" | "returnDate" | "legs"> = {
+    departureDate: null,
+    returnDate: null,
+    legs: [],
+  };
+  if (departureDate === undefined || departureDate === null) {
+    if (!isAbsent(returnDate) || !isAbsent(legs)) {
+      return { ok: false, error: "invalid_date" };
+    }
+  } else {
+    if (!isIsoDate(departureDate)) {
+      return { ok: false, error: "invalid_date" };
+    }
+    // Dated input: the travel month comes from the date, raw year/month are ignored.
+    [year, month] = departureDate.split("-").map(Number);
   }
 
   if (
@@ -98,6 +194,15 @@ export function parseOnboardingInput(
     )
   ) {
     return { ok: false, error: "invalid_date" };
+  }
+
+  if (typeof departureDate === "string") {
+    if (!isIsoDate(returnDate) || returnDate < departureDate) {
+      return { ok: false, error: "invalid_return_date" };
+    }
+    const parsedLegs = parseLegs(legs, departureDate, returnDate);
+    if (!parsedLegs) return { ok: false, error: "invalid_legs" };
+    dates = { departureDate, returnDate, legs: parsedLegs };
   }
 
   if (!isOneOf(passportStatuses, passport)) {
@@ -143,6 +248,7 @@ export function parseOnboardingInput(
       city,
       year: year as number,
       month: month as number,
+      ...dates,
       passport,
       travelers: parsedTravelers,
       disabilityNotes: parsedTravelers.some((t) => t.hasDisability)

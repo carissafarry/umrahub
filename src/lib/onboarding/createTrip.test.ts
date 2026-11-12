@@ -74,6 +74,9 @@ const input = (overrides: Partial<OnboardingInput> = {}): OnboardingInput => ({
   city: "Surabaya",
   year: 2027,
   month: 3,
+  departureDate: null,
+  returnDate: null,
+  legs: [],
   passport: "valid",
   travelers: [
     { name: secretName, isMinor: false, hasDisability: true },
@@ -249,6 +252,84 @@ describe("createOnboardingTrip", () => {
     expect(find(calls, "trips", "delete")[0].filters).toEqual([
       ["id", "trip-1"],
     ]);
+  });
+
+  it("inserts no trip_legs and no return date for undated input", async () => {
+    const { client, calls } = fakeSupabase();
+    await createOnboardingTrip(client, input(), "Umrah Maret 2027", now);
+    expect(calls.some((call) => call.table === "trip_legs")).toBe(false);
+    expect(find(calls, "trips", "insert")[0].payload).not.toHaveProperty(
+      "planned_return_date",
+    );
+  });
+});
+
+describe("createOnboardingTrip with dates", () => {
+  const dated = input({
+    departureDate: "2027-03-04",
+    returnDate: "2027-03-15",
+    legs: [
+      { city: "Makkah", startDate: "2027-03-05", endDate: "2027-03-10" },
+      { city: "Madinah", startDate: "2027-03-10", endDate: "2027-03-14" },
+    ],
+  });
+
+  it("stores the exact departure and return dates on the trip", async () => {
+    const { client, calls } = fakeSupabase();
+    await createOnboardingTrip(client, dated, "Umrah Maret 2027", now);
+    expect(find(calls, "trips", "insert")[0].payload).toMatchObject({
+      planned_departure_date: "2027-03-04",
+      planned_return_date: "2027-03-15",
+    });
+  });
+
+  it("inserts all legs in one call with sort_order in array order", async () => {
+    const { client, calls } = fakeSupabase();
+    const result = await createOnboardingTrip(
+      client,
+      dated,
+      "Umrah Maret 2027",
+      now,
+    );
+
+    expect(result).toEqual({ ok: true, tripId: "trip-1" });
+    const inserts = find(calls, "trip_legs", "insert");
+    expect(inserts).toHaveLength(1);
+    expect(inserts[0].payload).toEqual([
+      {
+        trip_id: "trip-1",
+        city: "Makkah",
+        start_date: "2027-03-05",
+        end_date: "2027-03-10",
+        sort_order: 1,
+      },
+      {
+        trip_id: "trip-1",
+        city: "Madinah",
+        start_date: "2027-03-10",
+        end_date: "2027-03-14",
+        sort_order: 2,
+      },
+    ]);
+    expect(find(calls, "trip_step_progress", "insert")).toHaveLength(1);
+  });
+
+  it("deletes the trip and returns the generic error when the legs insert fails", async () => {
+    const log = vi.spyOn(console, "error").mockImplementation(() => {});
+    const { client, calls } = fakeSupabase({
+      "trip_legs.insert": {
+        data: null,
+        error: { code: "23514", message: `row ${secretName}` },
+      },
+    });
+    const result = await createOnboardingTrip(client, dated, "n", now);
+
+    expect(result).toEqual({ ok: false, error: "create_failed" });
+    const deletes = find(calls, "trips", "delete");
+    expect(deletes).toHaveLength(1);
+    expect(deletes[0].filters).toEqual([["id", "trip-1"]]);
+    expect(find(calls, "trip_step_progress", "insert")).toHaveLength(0);
+    expect(log.mock.calls).toEqual([["Onboarding: legs insert failed", "23514"]]);
   });
 });
 
