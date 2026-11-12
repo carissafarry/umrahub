@@ -14,18 +14,40 @@ vi.mock("next-intl/server", () => ({
 const hrefs = (html: string) =>
   [...html.matchAll(/href="([^"]*)"/g)].map((match) => match[1]);
 
+const current = (html: string) => {
+  expect(html.match(/aria-current="page"/g)).toHaveLength(1);
+  return html.match(/<a [^>]*aria-current="page"[^>]*>.*?<\/a>/)![0];
+};
+
 describe("AppTopNav", () => {
-  it("links only to existing routes and marks the current one without indigo", async () => {
-    pathname.current = "/trips/new";
+  it("links only to Beranda and Trip and marks the current one without ink", async () => {
+    pathname.current = "/trips";
     const html = renderToStaticMarkup(await AppTopNav({}));
 
     expect(html).toMatch(/^<nav aria-label="Navigation.label" class="hidden lg:flex/);
-    expect(hrefs(html)).toEqual(["/dashboard", "/trips/new"]);
-    expect(html.match(/aria-current="page"/g)).toHaveLength(1);
-    const current = html.match(/<a [^>]*aria-current="page"[^>]*>/)![0];
-    expect(current).toContain('href="/trips/new"');
+    expect(hrefs(html)).toEqual(["/dashboard", "/trips"]);
+    expect(current(html)).toContain('href="/trips"');
     expect(html).not.toContain("bg-primary");
     expect(html.match(/tap-target/g)).toHaveLength(2);
+  });
+
+  it.each(["/trips/new", "/trips/abc", "/trips/abc/budget"])(
+    "keeps Trip current under %s",
+    async (path) => {
+      pathname.current = path;
+      const html = renderToStaticMarkup(await AppTopNav({}));
+      expect(current(html)).toMatch(/href="\/trips".*>Navigation\.trips<\/a>$/);
+    },
+  );
+
+  it("marks Beranda current only on /dashboard", async () => {
+    pathname.current = "/dashboard";
+    expect(current(renderToStaticMarkup(await AppTopNav({})))).toContain(
+      'href="/dashboard"',
+    );
+    pathname.current = "/tripsx";
+    const html = renderToStaticMarkup(await AppTopNav({}));
+    expect(html).not.toContain('aria-current="page"');
   });
 });
 
@@ -35,10 +57,20 @@ describe("AppBottomNav", () => {
       await AppBottomNav({ activeHref: "/dashboard" }),
     );
     expect(html).toContain('aria-label="Navigation.label"');
-    expect(hrefs(html)).toEqual(["/dashboard", "/trips/new"]);
-    const current = html.match(/<a [^>]*aria-current="page"[^>]*>.*?<\/a>/)![0];
-    expect(current).toContain('href="/dashboard"');
-    expect(current).toMatch(/>Navigation\.home<\/a>$/);
+    expect(hrefs(html)).toEqual(["/dashboard", "/trips"]);
+    const tab = current(html);
+    expect(tab).toContain('href="/dashboard"');
+    expect(tab).toMatch(/>Navigation\.home<\/a>$/);
     expect(html).toContain("lg:hidden");
+  });
+
+  it("marks Trip as the ink tab on /trips", async () => {
+    const html = renderToStaticMarkup(
+      await AppBottomNav({ activeHref: "/trips" }),
+    );
+    const tab = current(html);
+    expect(tab).toContain('href="/trips"');
+    expect(tab).toContain("bg-primary");
+    expect(tab).toMatch(/>Navigation\.trips<\/a>$/);
   });
 });

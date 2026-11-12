@@ -6,7 +6,9 @@
   "Header": {
     "languageLabel": "Change language",
     "signOut": "Sign out",
-    "accountLabel": "Account"
+    "accountLabel": "Account",
+    "accountSheetTitle": "Your account",
+    "close": "Close"
   },
   "Home": {
     "title": "Prepare for your independent Umrah, calmly and step by step",
@@ -268,10 +270,20 @@
       "intro": "Answer 5 short questions to create a new trip with a checklist that fits your group. Nothing is saved until the last step."
     }
   },
+  "Beranda": {
+    "metaTitle": "Home · Umra Hub",
+    "greeting": "Hello, {name}",
+    "activeTrip": "Active trip",
+    "travelers": "{count, plural, one {# pilgrim} other {# pilgrims}}",
+    "tasksTitle": "To do next",
+    "tasksDone": "Every preparation step of this trip is done.",
+    "search": "Find schedules for your dates",
+    "searchSoon": "Coming soon: find Umrah schedules that match your dates."
+  },
   "Navigation": {
     "label": "Main navigation",
     "home": "Home",
-    "newTrip": "New trip"
+    "trips": "Trips"
   },
   "Notifications": {
     "metaTitle": "Notifications · Umra Hub",

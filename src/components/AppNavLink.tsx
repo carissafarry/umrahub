@@ -4,8 +4,9 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
 
-// A top-nav link that marks itself current. The highlight is a surface pill,
-// not indigo, so it never reads as a second primary CTA.
+// A top-nav link that marks itself current on its route and the routes below
+// it (Trip stays current on /trips/<id>). The highlight is a surface pill,
+// not ink, so it never reads as a second primary CTA.
 export function AppNavLink({
   href,
   children,
@@ -13,7 +14,8 @@ export function AppNavLink({
   href: string;
   children: ReactNode;
 }) {
-  const active = usePathname() === href;
+  const pathname = usePathname();
+  const active = pathname === href || pathname.startsWith(`${href}/`);
 
   return (
     <Link

@@ -25,7 +25,7 @@ export default async function NewTripPage() {
         variant="newTrip"
         firstMonth={currentYearMonth(new Date())}
       />
-      <AppBottomNav activeHref="/trips/new" />
+      <AppBottomNav activeHref="/trips" />
     </>
   );
 }

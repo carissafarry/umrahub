@@ -78,7 +78,7 @@ export function TripActions({ tripId, name }: { tripId: string; name: string }) 
   function handleDelete() {
     setDeleteFailed(false);
     startDelete(async () => {
-      // Success revalidates /dashboard, which drops this card.
+      // Success revalidates /trips, which drops this card.
       const result = await deleteTrip(tripId);
       if (result.ok) deleteRef.current?.close();
       else setDeleteFailed(true);
