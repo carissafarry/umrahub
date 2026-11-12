@@ -50,6 +50,7 @@ the orchestrator moves items whose dependencies are all merged from **Menunggu**
 - [x] [infra-051] Complete command list: the dashboard footer and the factory skill description now list every command (/factory <feature>, next [n], run <code>, resume, watch, approve, rework); resume and watch were missing, and the footer commands have a one-line hint each → infra-051
 - [x] [infra-052] Footer hover effect: each command in the dashboard footer highlights on hover, shows a help cursor and an instant hint bubble above it (also on keyboard focus), replacing the slow native title tooltip → infra-052
 - [x] [infra-053] Sync infra branch after PR #20: bring origin/main (be-012 notifications merged by the user) into factory/infra so the open infra PR stays mergeable → infra-053
+- [x] [infra-098] Backlog bookkeeping: tasks fe-099 (notifications) and fe-100 (add-trip page and error states) added for the screens still in the old layout → infra-098
 - [x] [infra-097] Backlog bookkeeping: fe-068 claimed and run through the driver; be-061 PR #39 and workflow-007 PR #38 open, waiting for merge → infra-097
 - [x] [infra-096] Backlog bookkeeping: workflow-007 (real agent error text, local Supabase timing) → infra-096
 - [x] [workflow-007] Real agent error text and local Supabase timing: the driver keeps the exit code, stderr and stdout of a crashed agent (`agent-error-<agent>.txt`); AGENTS.md documents the local stack timings and a 4-minute `db reset` limit → workflow-007
@@ -154,6 +155,8 @@ Gelombang 12
 
 Gelombang 13
 - [fe-080] New style for landing, onboarding steps and the trip list: apply the new layout patterns to /, the other onboarding steps and /trips including rename and delete dialogs, with no behaviour change (ticket fe-080, story US-13) (butuh: fe-066, fe-068)
-- [fe-082] Final QA: check every new and restyled screen at 390, 768 and 1280, keyboard and screen reader basics, token contrast, Lighthouse mobile above 90 on key pages, id and en key parity, and empty and error states (ticket fe-082) (butuh: fe-062, fe-068, fe-069, fe-071, fe-073, fe-074, fe-076, fe-077, fe-079, fe-080, fe-081)
+- [fe-099] New style for notifications: apply the sky layout patterns (surface cards, pills, spacing, empty state) to /notifications with no behaviour change; read the visual reference `.plans/design-preview/cari-jadwal-preview-v3.html` and the UI direction spec (butuh: fe-066, fe-068)
+- [fe-100] New style for add-trip page and error states: apply the new layout to /trips/new (page shell around the shared OnboardingWizard `newTrip` variant) and to the calm error cards (`error.tsx` of dashboard, notifications, steps, trips and budget) plus a styled not-found page, with no behaviour change (butuh: fe-066, fe-068, fe-080)
+- [fe-082] Final QA: check every new and restyled screen at 390, 768 and 1280, keyboard and screen reader basics, token contrast, Lighthouse mobile above 90 on key pages, id and en key parity, and empty and error states (ticket fe-082) (butuh: fe-062, fe-068, fe-069, fe-071, fe-073, fe-074, fe-076, fe-077, fe-079, fe-080, fe-081, fe-099, fe-100)
 - [infra-060] Studio runbook for jadwal: admin notes for marking participants fix, confirmed or lapsed and for opening seat offers through Supabase Studio, with example SQL (ticket infra-060, story US-15) (butuh: be-070)
 
