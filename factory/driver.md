@@ -84,6 +84,12 @@ Every agent run is limited to 45 minutes (`FACTORY_AGENT_TIMEOUT_MIN`, or `--age
 must be above 0). When it passes, the driver stops only the `claude` process it started (SIGTERM via `execFile`, never by
 name), sets needs-human with "<agent> timed out after N min" and does not retry. Rerunning continues from `job.json`.
 
+## Failed agent: real error text (workflow-007)
+
+When `claude -p` exits without a JSON result, the stop reason now carries the exit code or signal, the end of stderr and
+the start of stdout (one line each), and the full text is saved in the job folder as `agent-error-<agent>.txt`. When the
+agent ends with an error result, its `result` text and `errors` are appended to the reason (300 characters).
+
 ## Usage
 
 `usage.jsonl` (job folder) gets one line per agent run: `ts, job, task, feature (first 400 characters of the task text), stage, agent (builder, reviewer-code, reviewer-security, reviewer-ux, reviewer-ui, ...), round, sessionId, promptChars,

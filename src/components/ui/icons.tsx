@@ -46,6 +46,24 @@ export function HomeIcon({ className }: IconProps) {
   );
 }
 
+export function ChevronRightIcon({ className }: IconProps) {
+  return (
+    <Svg className={className}>
+      <path d="m9 6 6 6-6 6" />
+    </Svg>
+  );
+}
+
+// Graduation cap, the Trip tab.
+export function TripIcon({ className }: IconProps) {
+  return (
+    <Svg className={className}>
+      <path d="m3 8 9-4 9 4-9 4z" />
+      <path d="M7 11v5c3 2 7 2 10 0v-5" />
+    </Svg>
+  );
+}
+
 export function ChecklistIcon({ className }: IconProps) {
   return (
     <Svg className={className}>

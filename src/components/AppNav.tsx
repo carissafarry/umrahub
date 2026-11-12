@@ -1,13 +1,13 @@
 import type { ComponentType } from "react";
 import { getTranslations } from "next-intl/server";
 import { BottomNav } from "@/components/ui/BottomNav";
-import { HomeIcon, PlusIcon } from "@/components/ui/icons";
+import { HomeIcon, TripIcon } from "@/components/ui/icons";
 import { AppNavLink } from "./AppNavLink";
 
 type AppTab = {
   href: string;
   // Message key under Navigation.
-  label: "home" | "newTrip";
+  label: "home" | "trips";
   icon: ComponentType<{ className?: string }>;
 };
 
@@ -15,14 +15,14 @@ type AppTab = {
 // Only routes that exist belong here.
 const appTabs = [
   { href: "/dashboard", label: "home", icon: HomeIcon },
-  { href: "/trips/new", label: "newTrip", icon: PlusIcon },
+  { href: "/trips", label: "trips", icon: TripIcon },
 ] as const satisfies readonly AppTab[];
 
 // Mobile only (hidden from `lg` up). Pages that render it pad their content
 // by at least `calc(7rem + env(safe-area-inset-bottom))` below `lg`.
 export async function AppBottomNav({ activeHref }: { activeHref: string }) {
   const t = await getTranslations("Navigation");
-  const [home, newTrip] = appTabs.map(({ href, label, icon: Icon }) => ({
+  const [home, trips] = appTabs.map(({ href, label, icon: Icon }) => ({
     href,
     label: t(label),
     icon: <Icon className="size-6" />,
@@ -30,7 +30,7 @@ export async function AppBottomNav({ activeHref }: { activeHref: string }) {
 
   return (
     <BottomNav
-      items={[home, newTrip]}
+      items={[home, trips]}
       activeHref={activeHref}
       label={t("label")}
     />

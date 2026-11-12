@@ -17,6 +17,7 @@ const REVIEWERS = { security: 'reviewer-security', ux: 'reviewer-ux', ui: 'revie
 const DEFAULT_TOOLS = 'Bash(git:*) Bash(npm:*) Bash(npx:*) Bash(node:*) Bash(supabase:*) Bash(gh:*) Bash(agent-browser:*) Bash(lsof:*) Bash(curl:*) Bash(ls:*) Bash(cat:*) Bash(grep:*) Bash(head:*) Bash(tail:*) Bash(wc:*)'
 
 class Stop extends Error {} // a reason to set needs-human
+const oneLine = (t) => String(t).replace(/\s+/g, ' ').trim()
 
 const run = (cmd, args, opts = {}) =>
   new Promise((ok, fail) => {
@@ -114,7 +115,14 @@ async function runAgent(c, agent, prompt, o, { round = 0, file, resume } = {}) {
   } catch (e) {
     if (e.killed) throw new Stop(`${agent} timed out after ${o.agentTimeoutMin} min and was stopped (no retry); see factory/driver.md "Agent timeout"`)
     out = e.stdout || ''
-    if (!out.trim().startsWith('{')) throw new Stop(`${agent} failed to run: ${(e.stderr || e.message).slice(0, 300)}`)
+    if (!out.trim().startsWith('{')) {
+      // Keep the real error: exit code or signal, the end of stderr (where claude prints it), the start of stdout.
+      const why = [e.code != null ? `exit ${e.code}` : '', e.signal ? `signal ${e.signal}` : '',
+        e.stderr ? `stderr: ${oneLine(String(e.stderr).slice(-300))}` : '', out.trim() ? `stdout: ${oneLine(out.slice(0, 200))}` : '']
+        .filter(Boolean).join('; ') || oneLine(e.message)
+      await writeFile(join(c.dir, `agent-error-${agent}.txt`), `${e.message}\n\n--- stderr ---\n${e.stderr || ''}\n--- stdout ---\n${out}\n`).catch(() => {})
+      throw new Stop(`${agent} failed to run: ${why} (full text: agent-error-${agent}.txt)`)
+    }
   }
   let res
   try { res = JSON.parse(out) } catch { throw new Stop(`${agent} printed no JSON result`) }
@@ -135,7 +143,10 @@ async function runAgent(c, agent, prompt, o, { round = 0, file, resume } = {}) {
     if (typeof cmd === 'string') await log(c, `${agent}: denied ${d.tool_name || 'tool'}: ${cmd.replace(/\s+/g, ' ').slice(0, 120)}`)
   }
   const hint = denied ? ` (denied: ${denied}; see factory/driver.md)` : ''
-  if (res.is_error || res.subtype !== 'success') throw new Stop(`${agent} ended with ${res.subtype || 'error'}${hint}`)
+  if (res.is_error || res.subtype !== 'success') {
+    const detail = [res.result, ...(Array.isArray(res.errors) ? res.errors : [])].filter((x) => typeof x === 'string' && x.trim()).join(' | ')
+    throw new Stop(`${agent} ended with ${res.subtype || 'error'}${detail ? `: ${oneLine(detail).slice(0, 300)}` : ''}${hint}`)
+  }
   // An empty run or a missing/stale file means the agent did not do its job (for example a denied tool).
   if (!String(res.result || '').trim() && !file) throw new Stop(`${agent} returned an empty result${hint}`)
   if (file) {

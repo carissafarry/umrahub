@@ -79,7 +79,7 @@ export function isTrackingMode(value: unknown): value is TrackingMode {
   return trackingModes.includes(value as TrackingMode);
 }
 
-function compareSteps(
+export function compareSteps(
   a: Pick<ChecklistStep, "id" | "sort_order">,
   b: Pick<ChecklistStep, "id" | "sort_order">,
 ) {

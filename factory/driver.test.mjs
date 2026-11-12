@@ -24,6 +24,7 @@ const out = (extra = {}) => console.log(JSON.stringify({ type: 'result', subtype
   total_cost_usd: 0.5, usage: { input_tokens: 10, output_tokens: 20, cache_read_input_tokens: 100, cache_creation_input_tokens: 1000 },
   modelUsage: { 'claude-fake-1': {} }, permission_denials: [], ...extra }))
 if (env.FAKE_FAIL === agent) { out({ subtype: 'error_during_execution', is_error: true }); process.exit(1) }
+if (env.FAKE_CRASH === agent) { console.error('Error: credit balance is too low\\nsecond line'); process.exit(2) }
 if (env.FAKE_HANG === agent) { setTimeout(() => {}, 60000); return }
 if (env.FAKE_DENY === agent) { out({ permission_denials: [{ tool_name: 'Bash', tool_input: { command: 'ls ' + 'x'.repeat(300) } }] }); process.exit(0) }
 if (env.FAKE_EMPTY === agent) { out({ result: '' }); process.exit(0) }
@@ -372,6 +373,15 @@ test('denied command text is logged, one line, truncated to 120 characters', asy
   const line = log.split('\n').find((l) => l.includes('builder: denied Bash: '))
   assert.ok(line, log)
   assert.equal(line.split('denied Bash: ')[1].length, 120)
+})
+
+test('a crashed agent keeps its real error: exit code, stderr text, full text in agent-error-<agent>.txt', async () => {
+  const t = await setup('be-933', { spec: true })
+  const r = await drive(t, ['run', 'be-933'], { FAKE_CRASH: 'builder' })
+  assert.notEqual(r.code, 0)
+  assert.match(r.stdout, /builder failed to run: exit 2; stderr: Error: credit balance is too low second line/)
+  assert.match(await readFile(join(t.dir, 'agent-error-builder.txt'), 'utf8'), /credit balance is too low/)
+  assert.equal((await jobOf(t)).stage, 'needs-human')
 })
 
 test('usage.jsonl rows carry the job, task, feature text, stage, prompt size and the agent lens', async () => {
