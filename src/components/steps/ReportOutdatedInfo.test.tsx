@@ -25,7 +25,7 @@ describe("ReportOutdatedInfo markup", () => {
   it("renders a neutral trigger, a labelled dialog and live regions", () => {
     const html = renderToStaticMarkup(tree());
     expect(html).toMatch(
-      /<button type="button" class="tap-target[^"]*border border-border bg-surface[^"]*">Laporkan info usang<\/button>/,
+      /<button type="button" class="tap-target[^"]*border border-border bg-surface-raised[^"]*"><svg[^>]*aria-hidden="true"[^>]*>.*?<\/svg>Laporkan info usang<\/button>/,
     );
     expect(html).not.toMatch(/bg-primary(?![\w-])/);
     const title = html.match(/<dialog aria-labelledby="([^"]+)"/)?.[1];

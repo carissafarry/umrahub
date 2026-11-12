@@ -12,6 +12,10 @@ export type PostCommentResult =
 
 export type DeleteCommentResult = { ok: true } | { ok: false };
 
+export type VoteCommentResult =
+  | { ok: true }
+  | { ok: false; error: "invalid" | "failed" };
+
 export type ReportContentResult =
   | { ok: true }
   | { ok: false; error: "invalid" | "empty" | "tooLong" | "failed" };
@@ -70,6 +74,68 @@ export async function deleteStepComment(
   if (error) {
     logFailure("comment delete", error);
     return { ok: false };
+  }
+
+  revalidatePath(`/steps/${stepId}`);
+  return { ok: true };
+}
+
+// Rates another user's tip as helpful (1) or not (-1); voting again replaces
+// the earlier vote. Only the tip and the value are sent: the database fills
+// the user and keeps the counters, and RLS rejects votes on one's own or a
+// hidden tip.
+export async function voteStepComment(
+  commentId: string,
+  stepId: string,
+  value: 1 | -1,
+): Promise<VoteCommentResult> {
+  if (!isUuid(commentId) || !isUuid(stepId) || (value !== 1 && value !== -1)) {
+    return { ok: false, error: "invalid" };
+  }
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { ok: false, error: "failed" };
+
+  const { error } = await supabase
+    .from("step_comment_votes")
+    .upsert(
+      { comment_id: commentId, value },
+      { onConflict: "comment_id,user_id" },
+    );
+  if (error) {
+    logFailure("comment vote", error);
+    return { ok: false, error: "failed" };
+  }
+
+  revalidatePath(`/steps/${stepId}`);
+  return { ok: true };
+}
+
+export async function clearStepCommentVote(
+  commentId: string,
+  stepId: string,
+): Promise<VoteCommentResult> {
+  if (!isUuid(commentId) || !isUuid(stepId)) {
+    return { ok: false, error: "invalid" };
+  }
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { ok: false, error: "failed" };
+
+  const { error } = await supabase
+    .from("step_comment_votes")
+    .delete()
+    .eq("comment_id", commentId)
+    .eq("user_id", user.id);
+  if (error) {
+    logFailure("comment vote clear", error);
+    return { ok: false, error: "failed" };
   }
 
   revalidatePath(`/steps/${stepId}`);

@@ -27,8 +27,8 @@ Scope now: user-facing app only. Admin CMS is out of scope; content is edited vi
 - `src/lib/onboarding/` — onboarding wizard validation and trip creation (see Onboarding)
 - `src/middleware.ts` — auth session refresh and route protection (see Auth)
 - `src/lib/trips/` — trip checklist logic (grouping, progress, costs), budget logic (`budget.ts`), page data loaders and the `updateStepStatus` / `updateStepTrackingMode` Server Actions (see Trip checklist, Budget)
-- `src/components/trips/` — trip checklist UI (step accordion, progress card) and the budget page body
-- `src/lib/steps/` — step detail data loader, the safe guide-markdown parser, comment validation (`comments.ts`), content-flag validation (`flags.ts`) and the comment and flag Server Actions (`actions.ts`) (see Step detail, Step comments, Content flags)
+- `src/components/trips/` — trip checklist UI (expandable step rows, status pill and circle, progress card) and the budget page body
+- `src/lib/steps/` — step detail data loader, the safe guide-markdown parser, comment validation (`comments.ts`), content-flag validation (`flags.ts`) and the comment, tip-vote (`voteStepComment`, `clearStepCommentVote`) and flag Server Actions (`actions.ts`) (see Step detail, Step comments, Tip ratings, Content flags)
 - `src/components/steps/` — step detail page body, the `GuideMarkdown` renderer, the `ReportOutdatedInfo` report dialog and the `StepComments` tips section
 - `src/lib/dashboard/` — trip dashboard loader, per-trip progress summary, trip-name rules and the `renameTrip` / `deleteTrip` Server Actions (see Dashboard)
 - `src/components/dashboard/` — dashboard trip card and its rename/delete dialogs (see Dashboard)
@@ -76,7 +76,7 @@ All four must pass before a change is ready. Use `build:check`, not `build`, for
 - To check a migration runs, use the local stack if Docker is available: `supabase start` then `supabase db reset --local`. Stop it with `supabase stop` when done.
 - All worktrees share **one** local stack. Before `supabase start`, run `supabase status`: if it is already running, another job owns it. Wait (check every 30s, up to 15 minutes) instead of resetting or stopping it. If it is still busy, skip the local check and say so in your report.
 - Generated types: `supabase gen types typescript --local > src/lib/supabase/database.types.ts` (local stack only).
-- MVP tables: `trips`, `travelers`, `trip_step_config`, `trip_step_progress` are trip-owned (signed-in users read/write only rows of their own trips); `preparation_steps` (published only) and `city_cost_overrides` are read-only for any signed-in user; `notifications` is user-owned (users read and insert only their own rows, for their own trips; update is limited to the read state `is_read`/`read_at`; no delete); `step_comments` is readable by any signed-in user unless hidden, users insert and delete only their own, there is no update, and the author fields are set by a trigger; `content_flags` is user-owned (users insert only `step_id`, `reason`, on published steps, and read only their own rows; no update or delete; `status` is changed in Supabase Studio); `service_types` and `providers` (published only), `provider_affiliations` (only active ones confirmed by both sides between published providers), `provider_verifications` (only `verified` rows), `provider_catalog_items` (published only) and `provider_reviews` (not hidden) are read-only for signed-in users, only for published providers; `providers.bank_account_text` and `provider_verifications.reviewed_by` are not readable by `authenticated`, and nothing of the provider catalog is writable from a client. `anon` gets nothing.
+- MVP tables: `trips`, `travelers`, `trip_step_config`, `trip_step_progress` are trip-owned (signed-in users read/write only rows of their own trips); `preparation_steps` (published only) and `city_cost_overrides` are read-only for any signed-in user; `notifications` is user-owned (users read and insert only their own rows, for their own trips; update is limited to the read state `is_read`/`read_at`; no delete); `step_comments` is readable by any signed-in user unless hidden, users insert and delete only their own, there is no update, and the author fields are set by a trigger; `step_comment_votes` is user-owned (users read, change and delete only their own votes, and insert only `comment_id`, `value` on another user's visible tip; the counters on `step_comments` are kept by a trigger); `content_flags` is user-owned (users insert only `step_id`, `reason`, on published steps, and read only their own rows; no update or delete; `status` is changed in Supabase Studio); `service_types` and `providers` (published only), `provider_affiliations` (only active ones confirmed by both sides between published providers), `provider_verifications` (only `verified` rows), `provider_catalog_items` (published only) and `provider_reviews` (not hidden) are read-only for signed-in users, only for published providers; `providers.bank_account_text` and `provider_verifications.reviewed_by` are not readable by `authenticated`, and nothing of the provider catalog is writable from a client. `anon` gets nothing.
 - Database tests are pgTAP files in `supabase/tests/`; run them with `supabase test db` (local stack only).
 - Preparation-step content is seeded by `supabase/migrations/20261018150410_seed_preparation_steps.sql`:
   - Step ids are fixed: `5eed0000-0000-4000-8000-0000000000NN` (`NN` = step 01–22); `sort_order` is `NN * 10`.
@@ -102,7 +102,7 @@ All four must pass before a change is ready. Use `build:check`, not `build`, for
 
 ## Budget
 
-- `/trips/[id]/budget` (`src/app/trips/[id]/budget/`) loads through `loadTripBudget` in `src/lib/trips/queries.ts`, with the same guards as `loadTripChecklist` (shared `loadOwnedTrip`). `/trips/[id]` links to it below the progress card.
+- `/trips/[id]/budget` (`src/app/trips/[id]/budget/`) loads through `loadTripBudget` in `src/lib/trips/queries.ts`, with the same guards as `loadTripChecklist` (shared `loadOwnedTrip`). `/trips/[id]` links to it inside the progress card.
 - Totals come from `computeBudget` in `src/lib/trips/budget.ts` (pure, reuses `resolveCost`/`groupSteps`); reuse it, never duplicate the budget logic.
 - A step is individual when its `trip_step_config.tracking_mode` is `'individual'`; with no config row for the step, when `is_shared_step = false`. That rule is `isIndividual` in `src/lib/trips/checklist.ts` (with the `StepConfig` type); `budget.ts` imports it. Individual steps are multiplied by the trip's `travelers` count (at least 1), shared steps by 1.
 - Summing: a null min counts as 0, a null max counts as the min (or 0). Such steps still show `Checklist.cost.none`. All published steps count, whatever their status.
@@ -120,15 +120,23 @@ All four must pass before a change is ready. Use `build:check`, not `build`, for
 - RLS `to authenticated`: select visible (`is_hidden = false`) comments on published steps, insert own on a published step, delete own; no update policy. Column grant: `authenticated` may insert only `(step_id, content)` and update nothing. Hiding a comment is setting `is_hidden` in Supabase Studio; there is no moderation UI.
 - Content is 1–1000 characters after trimming: `parseCommentContent` / `maxCommentLength` in `src/lib/steps/comments.ts`, plus a DB check constraint.
 - `postStepComment` and `deleteStepComment` (`src/lib/steps/actions.ts`) validate (`isUuid`, `parseCommentContent`), call `getUser()`, insert only `{ step_id, content }` / delete filtered by both `id` and `user_id`, and `revalidatePath("/steps/<id>")`. Errors are fixed codes; logs are a fixed string plus `error.code` only.
-- `loadStepDetail` loads the 50 newest comments (`created_at desc`, then `id desc`) and maps them to `{ id, authorName, authorAvatarUrl, content, createdAt, isOwn }`; `user_id` never reaches components.
-- `StepComments` (`src/components/steps/StepComments.tsx`, client) sits below the guide: form with the page's only indigo CTA, then the list. Comment text is plain React text (`whitespace-pre-line break-words`): never markdown, HTML, auto-links or `GuideMarkdown`. Only the user's own comments get the delete control, confirmed in a `role="alertdialog"` like `TripActions`.
+- `loadStepDetail` loads the 50 most helpful comments, helpful-first (`helpful_score desc`, then `created_at desc`, then `id desc`) and maps them to `{ id, authorName, authorAvatarUrl, content, createdAt, isOwn, helpfulCount, unhelpfulCount, viewerVote }` (see Tip ratings); `user_id` never reaches components.
+- `StepComments` (`src/components/steps/StepComments.tsx`, client) sits below the guide: form with the page's only primary (ink pill) CTA, then the list. Comment text is plain React text (`whitespace-pre-line break-words`): never markdown, HTML, auto-links or `GuideMarkdown`. Only the user's own comments get the delete control, confirmed in a `role="alertdialog"` like `TripActions`.
+
+## Tip ratings
+
+- `step_comment_votes` (migration `*_step_comment_votes.sql`): primary key `(comment_id, user_id)` (one vote per user per tip), `user_id` defaults to `auth.uid()`, `value` is `1` (helpful) or `-1` (not helpful, check constraint); deleting a tip or a user cascades to the votes.
+- `step_comments` carries the totals: `helpful_count`, `unhelpful_count` (both `>= 0`) and the generated `helpful_score` (`helpful_count - unhelpful_count`), indexed with `(step_id, helpful_score desc, created_at desc)`. An `after insert or update or delete` trigger on the votes runs the `security definer` `count_step_comment_vote` (`set search_path = ''`), which takes the old vote off and adds the new one, so the counters always equal the vote rows. Votes stay private: readers see only the totals, never who voted.
+- RLS `to authenticated`: select, update and delete own rows only; insert own on a tip that is visible (not hidden, on a published step) and not written by the voter, and the update `with check` repeats that rule. Column grants: `authenticated` may insert only `(comment_id, value)` and update only `(value)` and `(comment_id)` (a PostgREST upsert sets every payload column on conflict). The `step_comments` grants are unchanged, so nobody can write the counters directly.
+- `voteStepComment(commentId, stepId, value)` and `clearStepCommentVote(commentId, stepId)` (`src/lib/steps/actions.ts`) return `{ ok: true } | { ok: false; error: "invalid" | "failed" }`: they validate (`isUuid`, `value` is `1`/`-1`), call `getUser()`, then upsert only `{ comment_id, value }` with `onConflict: "comment_id,user_id"` (voting again replaces the vote) / delete filtered by both `comment_id` and `user_id`, and `revalidatePath("/steps/<stepId>")`. Votes on one's own or a hidden tip are refused by RLS and come back as `failed`.
+- `loadStepDetail` orders tips helpful-first (see Step comments), then loads the viewer's own votes in one `step_comment_votes` query `.in("comment_id", …)` (none when there are no tips) and maps `helpfulCount`, `unhelpfulCount` and `viewerVote` (`1 | -1 | null`). The vote buttons and the "Paling membantu" UI come with fe-079.
 
 ## Content flags
 
 - `content_flags` (migration `*_content_flags.sql`): `step_id`, `user_id` (defaults to `auth.uid()`), `reason` (1–500 characters after trimming, check constraint), `status` (`pending` default, `reviewed`, `resolved`; check constraint, not an enum).
 - RLS `to authenticated`: select own, insert own on a published step; no update or delete policy. Column grant: `authenticated` may insert only `(step_id, reason)` and update nothing. Reviewing a flag is setting `status` in Supabase Studio; there is no admin UI, and no page reads flags.
 - `parseFlagReason` / `maxFlagReasonLength` in `src/lib/steps/flags.ts` (shared by client and server). `reportStepContent` (`src/lib/steps/actions.ts`) validates (`isUuid`, `parseFlagReason`), calls `getUser()`, inserts only `{ step_id, reason }` and returns fixed codes; no `revalidatePath`. Logs are a fixed string plus `error.code` only, never the reason.
-- `ReportOutdatedInfo` (`src/components/steps/ReportOutdatedInfo.tsx`, client) sits directly below the guide card: a neutral "Laporkan info usang" pill opens a modal `<dialog>` with the reason textarea, Cancel and an ink-filled (never indigo) submit. Success closes it and shows a polite thank-you next to the button; closing returns focus to the button. Copy is in the `ContentFlags` namespace.
+- `ReportOutdatedInfo` (`src/components/steps/ReportOutdatedInfo.tsx`, client) sits directly below the guide: a white outline "Laporkan info usang" pill opens a modal `<dialog>` with the reason textarea, Cancel and an ink-filled submit (a plain button, never the primary `Button`). Success closes it and shows a polite thank-you next to the button; closing returns focus to the button. Copy is in the `ContentFlags` namespace.
 
 ## Provider catalog
 
@@ -149,13 +157,15 @@ All four must pass before a change is ready. Use `build:check`, not `build`, for
 
 - **Most important rule: no AI attribution in git.** Never add `Co-Authored-By: Claude …`, "Generated with Claude Code" or any AI co-author/trailer to a commit, merge commit, amend or PR description.
 
-- Every commit message is `<type>-<NNN> <message>`: the backlog task code, a space, then the message, no brackets (e.g. `fe-002 Add Card primitive`). Type is `infra`, `be` or `fe`. Every commit belongs to a backlog task — tooling and factory work gets an `infra-NNN` task first; there are no untagged commits.
+- Every commit message is `<type>-<NNN> <message>`: the backlog task code, a space, then the message, no brackets (e.g. `fe-002 Add Card primitive`). Type is `infra`, `be`, `fe` or `spec`. Every commit belongs to a backlog task — tooling and factory work gets an `infra-NNN` task first; there are no untagged commits.
+- **Spec changes get their own code.** Any change to a product spec or design document (`.plans/*.md`, including the UI direction spec and the HTML design preview) is a `spec-NNN` task: add `- [x] [spec-NNN] <Title>: <what changed> → spec-NNN` under **Selesai** in `factory/backlog.md` first, commit with `spec-NNN <message>` on `factory/infra`, and it reaches `main` through the infra PR like any infra task. The number comes from the same global counter as every other task (highest `NNN` in the backlog plus one). Never fold a spec edit into an `infra-NNN`, `be-NNN` or `fe-NNN` commit.
+- **AI workflow changes get a `workflow-NNN` code, their own branch and their own PR.** Any change meant to make the AI workflow more accurate or cheaper in tokens (agent files and their models, prompts, the factory skill's loop, a driver script, context-saving rules) is a `workflow-NNN` task with its **own counter starting at 001** (not the global one). Branch `factory/workflow-NNN` from `main`, commits `workflow-NNN <message>`, PR title `Merge PR #<N> from /factory/workflow-NNN`. Each one adds a row to `factory/workflow-log.md` (what changed, why, expected effect, measured effect once known) so the history of experiments can be tracked. Its backlog line is added on `factory/infra` under **Selesai** as `- [x] [workflow-NNN] <Title>: <what changed> → workflow-NNN`. Agent files only take effect for the session after the PR is merged and the session restarts; a task may also set a model per call in the meantime.
 - Job branches are `factory/<type>-<NNN>` (e.g. `factory/fe-004`).
 - Pull request titles: job PRs are `Merge PR #<N> from /factory/<job-id>` (e.g. `Merge PR #12 from /factory/fe-009`); the infra PR appends its task codes: `Merge PR #<N> from /factory/infra: infra-030, infra-029`. No owner prefix. The repo uses the PR title as the merge commit title, so PR merges read like GitHub's own merge commits (with `#N` auto-linked on the web) and ordinary commits stay `<task code> <message>`.
 - **Never commit on `main`** (not even the local ref): it only mirrors `origin/main`. Infra, tooling and factory changes all go on the single long-lived branch `factory/infra` — commit messages still carry the task code (`infra-NNN <message>`) — and reach `main` through one PR from `factory/infra` that the user merges.
 - **The software factory resumes by itself whenever a session starts or resumes.** The `SessionStart` hook (`.claude/settings.json`) runs `factory/resume-check.sh`; the orchestrator then re-arms `factory/watch.sh`, processes dashboard requests, handles PRs merged while it was away and restarts interrupted jobs (`/factory resume` in `.claude/skills/factory/SKILL.md`). Job state lives on disk and in git/GitHub, never only in a session.
 
-- Mobile-first; minimum 44px tap targets; high contrast; one primary (indigo) CTA per screen.
+- Mobile-first; minimum 44px tap targets; high contrast; one primary (ink pill) CTA per screen.
 - UI copy in Bahasa Indonesia by default; all user-facing strings go through i18n (see below).
 - Responsive for web and mobile: build mobile-first, then give every screen a real desktop layout at `lg` (≥ 1024px) — wider container (max ~1200px), multi-column grids, hero text beside its illustration, top nav instead of BottomNav. A phone-width column centred on desktop is a bug. Check every UI change at 390px, 768px and 1280px.
 - Server Components by default; add `"use client"` only where interactivity needs it.
@@ -193,44 +203,52 @@ All four must pass before a change is ready. Use `build:check`, not `build`, for
 - `loadDashboard` (`src/lib/dashboard/queries.ts`) selects only `id, name, departure_city, planned_departure_date` of the user's trips (newest first), the published steps once (with `is_shared_step`), and the `trip_step_config` rows, travelers (`id, trip_id` only) and all progress rows of those trips, each in one `.in("trip_id", …)` query. It never loads the disability/minor fields. Errors throw a generic `Error`; `src/app/dashboard/error.tsx` shows a calm retry card.
 - Per-trip progress is `summarizeTrips` (`src/lib/dashboard/summary.ts`), which groups configs, travelers and progress rows by `trip_id` and calls `computeProgress`; never re-implement the counting, so the dashboard matches `/trips/[id]`.
 - `renameTrip` and `deleteTrip` (`src/lib/dashboard/actions.ts`) validate (`isUuid`, `parseTripName`: trimmed, 1–80 chars, duplicates allowed), call `getUser()`, re-check ownership with `.eq("id").eq("user_id", user.id).maybeSingle()`, then write filtered by both `id` and `user_id` and `revalidatePath("/dashboard")`. Delete relies on the `on delete cascade` of travelers, config and progress. Logs are a fixed string plus `error.code` only.
-- Both are confirmed in modal `<dialog>`s in `src/components/dashboard/TripActions.tsx` (the only client component on the page); delete is a `role="alertdialog"` with Cancel focused first and an ink-filled (`bg-foreground text-background`) destructive button, never indigo.
+- Both are confirmed in modal `<dialog>`s in `src/components/dashboard/TripActions.tsx` (the only client component on the page); delete is a `role="alertdialog"` with Cancel focused first and an ink-filled (`bg-foreground text-background`) destructive button, never the primary `Button`.
 - Trip cap: `maxTripsPerUser` = 10 (`src/lib/dashboard/validate.ts`), enforced at app level only, in `createAdditionalTrip` (returns `{ error: "limit" }`); at the cap the dashboard shows `Onboarding.errors.limit` instead of the CTA. There is no DB-level cap.
-- Navigation tabs live in one list in `src/components/AppNav.tsx` (`/dashboard`, `/trips/new`), used by `AppBottomNav` (mobile) and `AppTopNav` (in `SiteHeader` for signed-in users, `hidden lg:flex`, active tab is a non-indigo surface pill via `AppNavLink`). Add a tab only for a route that exists.
+- Navigation tabs live in one list in `src/components/AppNav.tsx` (`/dashboard`, `/trips/new`), used by `AppBottomNav` (mobile) and `AppTopNav` (in `SiteHeader` for signed-in users, `hidden lg:flex`, active tab is a surface pill (not `bg-primary`) via `AppNavLink`). Add a tab only for a route that exists.
 - Pages that render `AppBottomNav` pad their content below `lg` by at least `calc(7rem + env(safe-area-inset-bottom))` so the fixed nav never covers it (`lg:pb-16` from desktop up).
 
 ## Design system
 
-Soft indigo direction (reference: `.plans/design-reference.png`). Tokens are CSS variables in `src/app/globals.css`, mapped to Tailwind in `@theme inline`. Every colour token is a 6-digit hex literal. New UI uses these tokens, never raw hex values or Tailwind palette colours (`bg-indigo-600`, `text-gray-700`, ...).
+Sky direction (references: `.plans/2026-11-02-ui-direction-spec.md`, visual reference `.plans/design-preview/cari-jadwal-preview-v3.html`). Tokens are CSS variables in `src/app/globals.css`, mapped to Tailwind in `@theme inline`. Every colour token is a 6-digit hex literal. New UI uses these tokens, never raw hex values or Tailwind palette colours (`bg-indigo-600`, `text-gray-700`, ...).
 
 | Token | Use | Utilities |
 | --- | --- | --- |
-| `--background` | solid page fallback (lavender / deep navy) | `bg-background` |
-| `--background-from` / `--background-to` | page gradient stops, top to bottom | `from-background-from`, `to-background-to` |
-| `--surface` | cards, chips, icon buttons (white / lighter navy) | `bg-surface` |
+| `--background` | page background (white) | `bg-background` |
+| `--background-from` / `--background-to` | body gradient stops (both white, so the page is plain white) | `from-background-from`, `to-background-to` |
+| `--surface` | card fill (light blue `#EEF4FB`) | `bg-surface` |
+| `--surface-line` | 1px card line and dividers inside cards | `border-surface-line` |
+| `--surface-raised` | white tiles, outline buttons and chips on cards | `bg-surface-raised` |
 | `--foreground` | primary ink text | `text-foreground` |
 | `--muted` | secondary text | `text-muted` |
-| `--border` | borders and dividers | `border-border` |
-| `--primary` / `--primary-strong` | indigo-violet CTA gradient stops, selected chip, active nav tab | `bg-primary`, `from-primary`, `to-primary-strong`, `text-primary` |
-| `--primary-foreground` | text and icons on indigo (white) | `text-primary-foreground` |
-| `--nav` / `--nav-foreground` | floating dark pill bottom nav and its icons | `bg-nav`, `text-nav-foreground` |
+| `--border` | borders of chips, inputs and the bottom nav | `border-border` |
+| `--primary` / `--primary-strong` | ink pill CTA, selected chip, active nav tab (`--primary-strong` is a spare darker-grey stop) | `bg-primary`, `text-primary` |
+| `--primary-foreground` | text and icons on ink (white) | `text-primary-foreground` |
+| `--accent` / `--accent-foreground` / `--accent-soft` | sky accent: links, small tags (`--accent` on `--accent-soft`), accent fills with white text | `text-accent`, `bg-accent`, `text-accent-foreground`, `bg-accent-soft` |
+| `--sky-day-from` / `--sky-day-to` | day sky hero gradient | `from-sky-day-from`, `to-sky-day-to` |
+| `--sky-dusk-from` / `--sky-dusk-mid` / `--sky-dusk-to` | dusk sky hero gradient | `from-sky-dusk-from`, `via-sky-dusk-mid`, `to-sky-dusk-to` |
+| `--dusk-tile` / `--dusk-ink` | warm dusk icon tile and its ink | `bg-dusk-tile`, `text-dusk-ink` |
+| `--success` / `--success-soft`, `--warning` / `--warning-soft`, `--danger` / `--danger-soft` | status text on its soft background | `text-success`, `bg-success-soft`, ... |
+| `--nav` / `--nav-foreground` | white floating bottom nav and its ink | `bg-nav`, `text-nav-foreground` |
 | `--tile-amber`, `--tile-green`, `--tile-blue`, `--tile-violet` | pastel icon tile backgrounds | `bg-tile-amber`, ... |
 | `--tile-*-foreground` | icon colour on the matching tile | `text-tile-amber-foreground`, ... |
-| `--shadow-card` | soft diffuse shadow for cards and floating chips | `shadow-card` |
+| `--shadow-card` | `none` (cards have no shadow; kept so older `shadow-card` uses render flat) | `shadow-card` |
+| `--shadow-float` | soft shadow for floating elements only (bottom nav, sheets) | `shadow-float` |
 
-- `body` paints a `linear-gradient` from `--background-from` to `--background-to` (top to bottom, spanning the full page height, not fixed to the viewport) over the `--background` fallback.
-- Cards use `rounded-3xl` (24px); chips, buttons and the nav are `rounded-full` pills.
-- Dark mode follows `prefers-color-scheme` only (the `:root` overrides in the media query); there is no class-based toggle.
-- One primary (indigo) CTA per screen: only the main action is an indigo-filled `Button`. Selected chips and the active nav tab are the only other `bg-primary` uses.
-- Contrast targets: body text ≥ 7:1, secondary text and text on indigo ≥ 4.5:1, tile icons ≥ 3:1 on their tile, in both themes. `src/app/design-tokens.test.ts` checks them; keep it passing when you change a token.
+- `body` paints a `linear-gradient` from `--background-from` to `--background-to` over the `--background` fallback; all three are white.
+- Single light theme (`color-scheme: light`); dark mode is deferred, so don't add `dark:` classes or a dark block.
+- Cards are `rounded-[1.75rem]` (28px), light-blue `bg-surface` with a 1px `border-surface-line` and no shadow. `shadow-float` is only for floating elements (bottom nav, sheets). White `surface-raised` is for tiles, outline buttons and chips on cards. Chips, buttons and the nav are `rounded-full` pills.
+- One primary CTA per screen, an **ink pill** (`bg-primary`): only the main action is a `Button`. Selected chips and the active nav tab are the only other `bg-primary` uses. Sky accent appears in at most two places per screen outside a hero. Text on a sky hero is only large titles (24px or more, semibold).
+- Contrast targets (light theme only): body text ≥ 7:1 (`--foreground` on `--surface`, `--surface-raised` and the backgrounds), secondary text and text on ink ≥ 4.5:1, tile icons ≥ 3:1 on their tile, and ≥ 4.5:1 for `--muted` on `--surface-raised`, `--accent` on `--background`, `--surface` and `--accent-soft`, `--accent-foreground` on `--accent`, `--dusk-ink` on `--dusk-tile` and each status colour on its `-soft` background. `src/app/design-tokens.test.ts` checks them (and that `globals.css` has no `prefers-color-scheme`); keep it passing when you change a token.
 - Primitives in `src/components/ui/` — reuse these before writing new UI:
-  - `Card` — white rounded-3xl container with `shadow-card`; `as` picks the element (`div`, `li`, `section`).
-  - `Chip` — pill toggle button with `selected` (`aria-pressed`).
+  - `Card` — 28px light-blue container (`rounded-[1.75rem] border border-surface-line bg-surface p-5`), no shadow; `as` picks the element (`div`, `li`, `section`).
+  - `Chip` — pill toggle button with `selected` (`aria-pressed`): white with a thin `border-border` when unselected, ink (`bg-primary text-primary-foreground`) when selected, no shadow.
   - `SegmentedControl` — row of chips picking one of N options (`radiogroup`); client component.
   - `IconButton` — round white button; required `label` becomes `aria-label`.
-  - `Button` — indigo pill CTA with a white circular arrow badge; full width on phones, content width (min 20rem) from `md` up; defaults to `type="button"`.
-  - `BottomNav` — floating dark pill nav of `next/link` tabs with `activeHref`; its type allows **at most 4 tabs**. Mobile only: hidden from `lg` up, where screens use a top nav.
+  - `Button` — solid ink pill CTA (`ButtonLink` for navigation) with a start-aligned bold label and a white circular arrow badge on the right; full width on phones, content width (min 20rem) from `md` up; defaults to `type="button"`.
+  - `BottomNav` — white floating pill nav (`shadow-float`) of `next/link` tabs with `activeHref`; each tab shows its icon above a visible label, and the active tab is an ink pill. Its type allows **at most 4 tabs**. Mobile only: hidden from `lg` up, where screens use a top nav.
   - `icons.tsx` — inline SVG icons.
 - Icons are inline SVG using `currentColor` (in `icons.tsx`); no icon library. Mark them `aria-hidden="true"` when text names the control.
-- Hero and decorative art is CSS and inline SVG only: no raster images, `<img>` or `next/image` (the only `<img>`s are remote Google avatars, which are user content: the signed-in user's in `UserMenu` and comment authors' in `StepComments`). Wrap it in `aria-hidden="true"` with no focusable elements.
+- Photos: content photos (provider portraits, catalog and schedule images) may use `<img>` / `next/image`. Every photo has alt text, fixed dimensions so layout doesn't shift, and `loading="lazy"`. MVP uses free-licensed dummy photos that don't show a known real muthawif; real portraits need the person's written consent. Remote Google avatars (`UserMenu`, `StepComments`) are user content. Hero and decorative art stays CSS gradients and inline SVG, wrapped in `aria-hidden="true"` with no focusable elements.
 - `tap-target` utility gives `min-height`/`min-width` of 2.75rem (44px); put it on every interactive element.
-- `font-sans` is Inter (default body font). `font-arabic` is Noto Naskh Arabic; use it with `lang="ar" dir="rtl"` on Arabic text.
+- `font-sans` is Plus Jakarta Sans (default body font; semibold for headings). `font-arabic` is Noto Naskh Arabic; use it with `lang="ar" dir="rtl"` on Arabic text.

@@ -54,6 +54,27 @@ started or was handed.
 - Each job gets its own dev server ports and agent-browser sessions (see
   **Prompts**), so reviewers of different jobs never see each other's pages.
 
+## Capacity (workflow-003)
+
+Running many jobs at once overloads the machine (the shared local Supabase stack and several
+`next build` and test runs at the same time) and burns tokens on waiting. So at most **2 jobs run
+agents at once, and at most 1 of them uses the local Supabase stack** (every `be-*` job, or any job
+whose `job.json` has `"db": true`). A job holds a slot only in stage `spec`, `build`, `review` or
+`approve`; `pr`, `needs-human` and `merged` hold none.
+
+Before you start a job, resume one (`/factory resume`, a builder resume, `/factory rework`) or spawn
+any agent for a job that is not running yet, run:
+
+```bash
+node factory/capacity.mjs check <job-id>   # exit 0 = go, exit 2 = wait
+node factory/capacity.mjs status           # who holds the slots
+```
+
+On exit 2 do not start it: tell the user which jobs hold the slots and start it when one leaves the
+four stages. `/factory next <n>` claims only as many items as `status` leaves room for. Limits can be
+changed with `FACTORY_MAX_JOBS` and `FACTORY_MAX_DB_JOBS`. Pick the next job so that the free slot is
+not wasted: a front-end job can run next to a database job, but not two database jobs.
+
 ## Files
 
 `<repo>` is the main checkout (`git rev-parse --show-toplevel` from your
@@ -123,6 +144,10 @@ A summary that lists only some of the PR's tasks is a bug. Track it in
 link. Never rename or delete `factory/infra` on GitHub: that closes its PR.
 Infra changes reach job worktrees (AGENTS.md rules, agent files) only after the
 PR is merged.
+
+Spec changes use their own code type, `spec-NNN` (see AGENTS.md): when you or a builder must change a spec or design document under `.plans/`, add a `[spec-NNN]` line under **Selesai** first (next number from the global counter) and commit it on `factory/infra` as `spec-NNN <message>`; it rides the infra PR. Never fold a spec edit into an infra, be or fe commit.
+
+Changes to the AI workflow itself (agent files and models, prompts, this skill's loop, a driver script, context-saving rules) use their own code type, `workflow-NNN` (own counter from 001), on their own branch `factory/workflow-NNN` with their own PR, and add a row to `factory/workflow-log.md` (see AGENTS.md). Their backlog line goes on `factory/infra` under **Selesai**.
 
 Your own commits (on `factory/infra`) follow the same task-code rule. Factory or tooling changes
 that no backlog task covers get one first: add `- [x] [infra-<next NNN>] <Title>:
@@ -527,3 +552,12 @@ checkbox, decides what counts as done, and any report you write says "waiting
 for merge" until the `PR … MERGED` event arrives. Never build a dashboard
 status or a report that treats a checked-off task as done without looking at
 its PR.
+
+## Driver
+
+`node factory/driver.mjs run <job-id>` is an alternative way to run **one job**
+through this loop without an orchestrator conversation: a Node script that starts
+each agent as a fresh `claude -p` process, resumes the builder session on
+CHANGES, writes `job.json` and `usage.jsonl`, and opens the PR. It never merges.
+It does not replace this skill: the loop above remains the reference, and the
+driver must match it. See `factory/driver.md`.

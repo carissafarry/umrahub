@@ -96,10 +96,10 @@ function Hero() {
         className="absolute inset-0 size-full"
       >
         <ellipse cx="100" cy="150" rx="62" ry="12" className="fill-surface" />
-        <path d="M60 78 100 66l40 12v66l-40 10-40-10Z" className="fill-nav" />
+        <path d="M60 78 100 66l40 12v66l-40 10-40-10Z" className="fill-foreground" />
         <path
           d="M100 66l40 12v66l-40 10Z"
-          className="fill-nav-foreground"
+          className="fill-background"
           opacity="0.12"
         />
         <path

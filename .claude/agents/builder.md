@@ -36,6 +36,9 @@ other jobs.
   branch from your prompt. If it doesn't, stop and write a BLOCKED build.md.
 - Match the surrounding code: its idioms, formatting, naming and imports. Keep
   comment density like the neighbouring code.
+- Keep turns low: read only the part of a file you need (Read with offset and
+  limit, Grep for the spot), batch independent commands into one Bash call, and
+  don't poll. Wait once on a background process, then read its log.
 - Make the simplest change that fully meets the spec. No fallbacks, hidden
   defaults or extras the spec doesn't ask for.
 - Use the toolchain versions and commands AGENTS.md gives.
@@ -45,12 +48,18 @@ other jobs.
 Verify every acceptance criterion and record the evidence in build.md: the
 command you ran and its result, or what the page showed.
 
-- Run the validation commands AGENTS.md lists (tests, build, lint, type-check)
-  for the areas you changed. They must pass.
+- While building, run only the narrow tests for the code you touch. Run the full
+  validation AGENTS.md lists (eslint on changed files, typecheck, test,
+  build:check) once, at the end. They must pass.
 - Lint only the files you changed. Never run a command that rewrites files
   across the repo, such as a lint `--fix` over everything.
-- For criteria you can see on a page, start the dev server from AGENTS.md in the
-  worktree on your port, then look at the page with the `agent-browser` CLI (run
+- Never run a dev server in the foreground: a blocking Bash call hangs the whole
+  job. Start it detached, `cd <worktree> && nohup npm run dev -- --port <port> >
+  <job folder>/dev.log 2>&1 &`, then check the log or the page once. Stop it
+  only by port, `kill $(lsof -tiTCP:<port> -sTCP:LISTEN)`, never `pkill` or
+  `killall`.
+- For criteria you can see on a page, start the dev server as above on your
+  port, then look at the page with the `agent-browser` CLI (run
   `agent-browser skills get core` first to learn it). Pass
   `--session <job-id>-builder` on every `agent-browser` call, so other jobs
   never drive your browser. Close it with
@@ -68,6 +77,14 @@ command you ran and its result, or what the page showed.
   commit or merge message. This is the repo's most important rule.
 - Stage explicit paths, never `git add -A`. Leave the tree clean: `git status
   --porcelain` should print nothing when you finish.
+
+## Preview route (fe jobs)
+
+`Preview route: <path>` in build.md must be a real, specific path with no
+placeholder (`[id]`, `<id>`, `{id}`): the driver stops the job on one. If the job
+prompt gives a real id, use it. If not, do not write a `Preview route:` line;
+write `Preview route needs id: /trips/<id>/budget` instead and add one sentence
+that the orchestrator must fill in the id.
 
 ## Write build.md
 

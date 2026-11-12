@@ -98,6 +98,7 @@
     "travelers": "Untuk {count} orang",
     "totalTitle": "Total perkiraan biaya",
     "totalNote": "Langkah individual dikalikan jumlah orang, langkah bersama dihitung sekali.",
+    "perPhaseTitle": "Per tahap",
     "chartLabel": "Perkiraan biaya per fase",
     "phaseTotal": "Total fase",
     "perPersonTimes": "{amount} per orang × {count} orang",

@@ -3,8 +3,9 @@
 
 export const maxCommentLength = 1000;
 
-// What the step detail page shows per comment; the author's user id stays
-// on the server.
+// What the step detail page shows per comment; the author's user id and
+// other users' votes stay on the server. `viewerVote` is null when the
+// viewer hasn't rated the tip.
 export type StepComment = {
   id: string;
   authorName: string;
@@ -12,6 +13,9 @@ export type StepComment = {
   content: string;
   createdAt: string;
   isOwn: boolean;
+  helpfulCount: number;
+  unhelpfulCount: number;
+  viewerVote: 1 | -1 | null;
 };
 
 // A fixed code only: errors never carry the submitted text.
