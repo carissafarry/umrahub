@@ -34,6 +34,9 @@ describe("parseOnboardingInput", () => {
         city: "Jakarta",
         year: 2027,
         month: 3,
+        departureDate: null,
+        returnDate: null,
+        legs: [],
         passport: "valid",
         travelers: [
           { name: "Siti Aminah", isMinor: false, hasDisability: false },
@@ -230,5 +233,128 @@ describe("parseOnboardingInput", () => {
       expect(text).not.toContain(secretName);
       expect(text).not.toContain(secretNotes);
     }
+  });
+});
+
+describe("parseOnboardingInput with dates", () => {
+  const makkah = { city: "Makkah", startDate: "2027-03-02", endDate: "2027-03-06" };
+  const madinah = { city: "Madinah", startDate: "2027-03-06", endDate: "2027-03-10" };
+  const dated = {
+    departureDate: "2027-03-01",
+    returnDate: "2027-03-11",
+    legs: [makkah, madinah],
+  };
+  const parseDated = (overrides: object) => parse({ ...dated, ...overrides });
+
+  it("accepts two legs and derives year and month from departureDate", () => {
+    const result = parseDated({ year: 2030, month: 12 });
+    expect(result).toEqual({
+      ok: true,
+      value: {
+        city: "Jakarta",
+        year: 2027,
+        month: 3,
+        departureDate: "2027-03-01",
+        returnDate: "2027-03-11",
+        legs: [makkah, madinah],
+        passport: "valid",
+        travelers: [{ name: "Siti Aminah", isMinor: false, hasDisability: false }],
+        disabilityNotes: null,
+      },
+    });
+  });
+
+  it("accepts one leg without raw year and month", () => {
+    const result = parseDated({
+      year: undefined,
+      month: undefined,
+      legs: [{ city: "Madinah", startDate: "2027-03-01", endDate: "2027-03-11" }],
+    });
+    expect(result).toMatchObject({
+      ok: true,
+      value: {
+        year: 2027,
+        month: 3,
+        legs: [{ city: "Madinah", startDate: "2027-03-01", endDate: "2027-03-11" }],
+      },
+    });
+  });
+
+  it("drops unknown leg fields", () => {
+    const result = parseDated({ legs: [{ ...makkah, sort_order: 9 }] });
+    expect(result.ok && result.value.legs).toEqual([makkah]);
+  });
+
+  it("accepts a return on the departure day", () => {
+    const sameDay = { city: "Makkah", startDate: "2027-03-01", endDate: "2027-03-01" };
+    expect(
+      parseDated({ returnDate: "2027-03-01", legs: [sameDay] }).ok,
+    ).toBe(true);
+  });
+
+  it.each([
+    "2027-02-30",
+    "2027-13-01",
+    "2027-3-1",
+    "01-03-2027",
+    "",
+    20270301,
+    "2026-09-30",
+    "2028-11-01",
+  ])("rejects departureDate %j", (departureDate) => {
+    expect(parseDated({ departureDate })).toEqual({
+      ok: false,
+      error: "invalid_date",
+    });
+  });
+
+  it.each([
+    { returnDate: "2027-02-28" },
+    { returnDate: "2027-02-31" },
+    { returnDate: null },
+    { returnDate: undefined },
+  ])("rejects return date %j", (overrides) => {
+    expect(parseDated(overrides)).toEqual({
+      ok: false,
+      error: "invalid_return_date",
+    });
+  });
+
+  it.each([
+    ["no legs", []],
+    ["three legs", [makkah, madinah, { ...makkah, startDate: "2027-03-10" }]],
+    ["a missing legs value", undefined],
+    ["a non-array legs value", makkah],
+    ["a non-object leg", ["Makkah"]],
+    ["an unknown city", [{ ...makkah, city: "Thaif" }]],
+    ["a lowercase city", [{ ...makkah, city: "makkah" }]],
+    ["the same city twice", [makkah, { ...madinah, city: "Makkah" }]],
+    ["a leg before departure", [{ ...makkah, startDate: "2027-02-28" }]],
+    ["a leg after return", [{ ...madinah, endDate: "2027-03-12" }]],
+    ["a leg ending before it starts", [{ ...makkah, endDate: "2027-03-01" }]],
+    ["overlapping legs", [makkah, { ...madinah, startDate: "2027-03-05" }]],
+    ["legs out of order", [madinah, makkah]],
+    ["an invalid leg date", [{ ...makkah, endDate: "2027-02-30" }]],
+  ])("rejects %s", (_, legs) => {
+    expect(parseDated({ legs })).toEqual({ ok: false, error: "invalid_legs" });
+  });
+
+  it("rejects return date or legs on undated input", () => {
+    expect(parse({ legs: [makkah] })).toEqual({
+      ok: false,
+      error: "invalid_date",
+    });
+    expect(parse({ returnDate: "2027-03-11" })).toEqual({
+      ok: false,
+      error: "invalid_date",
+    });
+  });
+
+  it("accepts undated input with null or empty date fields", () => {
+    const result = parse({ departureDate: null, returnDate: null, legs: [] });
+    expect(result).toMatchObject({
+      ok: true,
+      value: { year: 2027, month: 3, departureDate: null, returnDate: null, legs: [] },
+    });
   });
 });
