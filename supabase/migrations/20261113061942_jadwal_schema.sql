@@ -217,6 +217,14 @@ revoke all on public.payment_proofs from anon;
 revoke insert, update, delete, truncate on public.schedules from authenticated;
 revoke insert, update, delete, truncate on public.schedule_options from authenticated;
 
+-- final_group_url is only for confirmed members; a later ticket serves it to them
+revoke select on public.schedules from authenticated;
+grant select (
+  id, provider_id, service_type_id, city, schedule_date,
+  attendance_deadline, option_deadline, payment_deadline,
+  discussion_group_url, is_dummy, is_published, created_at, updated_at
+) on public.schedules to authenticated;
+
 revoke insert, update, delete, truncate on public.participations from authenticated;
 grant insert (trip_id, schedule_id, seats) on public.participations to authenticated;
 grant update (seats, status) on public.participations to authenticated;

@@ -4,7 +4,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 
-select plan(58);
+select plan(60);
 
 -- Fixtures (as postgres, the table owner, so RLS does not apply)
 
@@ -130,6 +130,17 @@ select is(
   (select array_agg(id order by id) from public.schedule_options),
   array['eeeeeeee-0000-4000-8000-000000000001']::uuid[],
   'A reads only options of that schedule'
+);
+select throws_ok(
+  $$select final_group_url from public.schedules$$,
+  '42501', null,
+  'authenticated cannot read schedules.final_group_url'
+);
+select lives_ok(
+  $$select id, provider_id, service_type_id, city, schedule_date, attendance_deadline, option_deadline,
+      payment_deadline, discussion_group_url, is_dummy, is_published, created_at, updated_at
+    from public.schedules$$,
+  'authenticated can still read the other schedule columns'
 );
 
 -- No client writes on schedules and options
