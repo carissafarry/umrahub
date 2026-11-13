@@ -57,6 +57,7 @@ the orchestrator moves items whose dependencies are all merged from **Menunggu**
 - [x] [infra-103] Full-width hero in fe-101: added the edge-to-edge sky hero requirement to the fe-101 line → infra-103
 - [x] [workflow-009] Reviewer screenshots in job folder: reviewer-ui and reviewer-ux save screenshots to round-N/shots so Read can open them → workflow-009
 - [x] [workflow-010] Preview always on the dashboard: previewRoute falls back to a spec route or "/" instead of stopping the job → workflow-010
+- [x] [workflow-011] Standing driver workflow: AGENTS.md, SKILL.md and resume-check make driver-based job running the rule for every new session → workflow-011
 - [x] [infra-101] Backlog bookkeeping: fe-101 (responsive web pass over every restyled screen) added; fe-082 waits for it → infra-101
 - [x] [infra-100] Usage report by task: `factory/usage-report.mjs` also groups per task with its text and dates and keeps every run (job, task, agent lens, stage) in `usage-summary.json`; PR #39 (be-061) conflict in AGENTS.md resolved → infra-100
 - [x] [infra-099] Token spend report: `factory/usage-report.mjs` sums every job's usage.jsonl per job, agent, day and model (tokens, cache, cost, time) and saves `factory/jobs/usage-summary.json` for a later dashboard → infra-099
