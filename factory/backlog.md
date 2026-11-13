@@ -51,6 +51,7 @@ the orchestrator moves items whose dependencies are all merged from **Menunggu**
 - [x] [infra-052] Footer hover effect: each command in the dashboard footer highlights on hover, shows a help cursor and an instant hint bubble above it (also on keyboard focus), replacing the slow native title tooltip → infra-052
 - [x] [infra-053] Sync infra branch after PR #20: bring origin/main (be-012 notifications merged by the user) into factory/infra so the open infra PR stays mergeable → infra-053
 - [x] [workflow-008] Usage rows carry task, feature text and prompt size: each usage.jsonl line gets job, task, feature (400 characters), stage and promptChars next to the agent lens → workflow-008
+- [x] [infra-108] Sync main with merged workflow-011 (PR #49) → infra-108
 - [x] [infra-107] Backlog bookkeeping and sync: fe-080 PR #47 and infra PR #48 merged, be-064 and fe-062 claimed and running → infra-107
 - [x] [infra-106] Backlog bookkeeping and sync: fe-080 PR opened, fe-099 recorded as merged, factory/infra synced with origin/main → infra-106
 - [x] [infra-102] Backlog bookkeeping: fe-080 and fe-099 claimed and run through the driver; PR #38 to #43 merged and synced → infra-102
