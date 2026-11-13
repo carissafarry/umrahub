@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { OnboardingWizard } from "@/app/onboarding/OnboardingWizard";
 import { AppBottomNav } from "@/components/AppNav";
-import { currentYearMonth } from "@/lib/onboarding/validate";
+import { localIsoDate } from "@/lib/onboarding/dates";
 import { createClient } from "@/lib/supabase/server";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -23,7 +23,7 @@ export default async function NewTripPage() {
     <>
       <OnboardingWizard
         variant="newTrip"
-        firstMonth={currentYearMonth(new Date())}
+        today={localIsoDate(new Date())}
       />
       <AppBottomNav activeHref="/trips" />
     </>

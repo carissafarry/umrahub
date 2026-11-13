@@ -5,19 +5,31 @@ import { useFormatter, useTranslations } from "next-intl";
 import { Button } from "@/components/ui/Button";
 import { Chip } from "@/components/ui/Chip";
 import { IconButton } from "@/components/ui/IconButton";
+import { RangeCalendar } from "@/components/ui/RangeCalendar";
 import { SegmentedControl } from "@/components/ui/SegmentedControl";
 import { CloseIcon, PlusIcon } from "@/components/ui/icons";
 import {
+  addDays,
+  dateStepError,
+  lastTravelDate,
+  legsPayload,
+  toUtcDate,
+  tripLength,
+  yearMonthOf,
+  type DateStepError,
+  type LegDates,
+} from "@/lib/onboarding/dates";
+import {
   isValidTravelerName,
-  isWithinTravelRange,
   maxNameLength,
   maxNotesLength,
   maxTravelers,
   onboardingCities,
   passportStatuses,
+  tripLegCities,
   type OnboardingCity,
   type PassportStatus,
-  type YearMonth,
+  type TripLegCity,
 } from "@/lib/onboarding/validate";
 import { createAdditionalTrip } from "@/app/trips/new/actions";
 import {
@@ -29,7 +41,15 @@ import {
 const steps = ["city", "date", "passport", "travelers", "needs"] as const;
 const lastStep = steps.length - 1;
 
-type StepError = "city" | "date" | "passport" | "names" | "notes";
+type StepError = "city" | DateStepError | "passport" | "names" | "notes";
+
+// Trip lengths offered as chips, from the design preview.
+const durations = [9, 11, 14] as const;
+
+const noLegs: Record<TripLegCity, LegDates> = {
+  Makkah: { startDate: "", endDate: "" },
+  Madinah: { startDate: "", endDate: "" },
+};
 
 type TravelerRow = {
   key: number;
@@ -54,10 +74,11 @@ const secondaryClassName = `tap-target inline-flex items-center justify-center g
 // another one and leaves room for the BottomNav below `lg`.
 export function OnboardingWizard({
   variant,
-  firstMonth,
+  today,
 }: {
   variant: "onboarding" | "newTrip";
-  firstMonth: YearMonth;
+  // `YYYY-MM-DD` on the server clock, matching validation.
+  today: string;
 }) {
   const t = useTranslations("Onboarding");
   const tNewTrip = useTranslations("Dashboard.newTrip");
@@ -67,8 +88,9 @@ export function OnboardingWizard({
 
   const [step, setStep] = useState(0);
   const [city, setCity] = useState<OnboardingCity | "">("");
-  const [month, setMonth] = useState("");
-  const [year, setYear] = useState("");
+  const [departureDate, setDepartureDate] = useState("");
+  const [returnDate, setReturnDate] = useState("");
+  const [legs, setLegs] = useState(noLegs);
   const [passport, setPassport] = useState<PassportStatus | "">("");
   const [travelers, setTravelers] = useState<TravelerRow[]>([newRow(0)]);
   const [notes, setNotes] = useState("");
@@ -89,28 +111,19 @@ export function OnboardingWizard({
 
   const anyDisability = travelers.some((row) => row.hasDisability);
 
-  const yearOptions = [0, 1, 2].map((offset) => firstMonth.year + offset);
-  const monthOptions = Array.from({ length: 12 }, (_, index) => ({
-    value: index + 1,
-    label: format.dateTime(new Date(Date.UTC(2000, index, 1)), {
-      month: "long",
-      timeZone: "UTC",
-    }),
-  }));
+  const firstMonth = yearMonthOf(today);
+  const lastDate = lastTravelDate(firstMonth);
+  const selectedLength =
+    departureDate && returnDate ? tripLength(departureDate, returnDate) : null;
+  const formatDate = (iso: string) =>
+    format.dateTime(toUtcDate(iso), { dateStyle: "medium", timeZone: "UTC" });
 
   function stepError(): StepError | null {
     switch (steps[step]) {
       case "city":
         return city ? null : "city";
       case "date":
-        return month &&
-          year &&
-          isWithinTravelRange(
-            { year: Number(year), month: Number(month) },
-            firstMonth,
-          )
-          ? null
-          : "date";
+        return dateStepError(departureDate, returnDate, legs, firstMonth);
       case "passport":
         return passport ? null : "passport";
       case "travelers":
@@ -157,8 +170,9 @@ export function OnboardingWizard({
       // Success redirects to the new trip; only failures return here.
       const result = await submitTrip({
         city,
-        year: Number(year),
-        month: Number(month),
+        departureDate,
+        returnDate,
+        legs: legsPayload(legs),
         passport,
         travelers: travelers.map(({ name, isMinor, hasDisability }) => ({
           name,
@@ -254,7 +268,10 @@ export function OnboardingWizard({
               >
                 {t(`steps.${stepKey}.title`)}
               </h2>
-              <p className="mt-1 text-muted">{t(`steps.${stepKey}.hint`)}</p>
+              {/* The date step shows its hint below the calendar (preview screen 11). */}
+              {stepKey !== "date" && (
+                <p className="mt-1 text-muted">{t(`steps.${stepKey}.hint`)}</p>
+              )}
             </div>
 
             {stepKey === "city" && (
@@ -270,56 +287,97 @@ export function OnboardingWizard({
             )}
 
             {stepKey === "date" && (
-              <div className="grid gap-4 md:grid-cols-2">
-                <div className="flex flex-col gap-1">
-                  <label htmlFor="travel-month" className="font-medium">
-                    {t("monthLabel")}
-                  </label>
-                  <select
-                    id="travel-month"
-                    value={month}
-                    onChange={(event) => setMonth(event.target.value)}
-                    className={fieldClassName}
-                  >
-                    <option value="" disabled>
-                      {t("choose")}
-                    </option>
-                    {monthOptions.map(({ value, label }) => (
-                      <option
-                        key={value}
-                        value={value}
-                        disabled={
-                          year !== "" &&
-                          !isWithinTravelRange(
-                            { year: Number(year), month: value },
-                            firstMonth,
-                          )
-                        }
-                      >
-                        {label}
-                      </option>
-                    ))}
-                  </select>
+              <div className="flex flex-col gap-4">
+                <div
+                  role="group"
+                  aria-label={t("durationLabel")}
+                  className="flex flex-wrap gap-2"
+                >
+                  {durations.map((days) => (
+                    <Chip
+                      key={days}
+                      selected={selectedLength === days}
+                      disabled={!departureDate}
+                      className="disabled:opacity-50"
+                      onClick={() =>
+                        setReturnDate(addDays(departureDate, days - 1))
+                      }
+                    >
+                      {t("durationChip", { days })}
+                    </Chip>
+                  ))}
                 </div>
-                <div className="flex flex-col gap-1">
-                  <label htmlFor="travel-year" className="font-medium">
-                    {t("yearLabel")}
-                  </label>
-                  <select
-                    id="travel-year"
-                    value={year}
-                    onChange={(event) => setYear(event.target.value)}
-                    className={fieldClassName}
-                  >
-                    <option value="" disabled>
-                      {t("choose")}
-                    </option>
-                    {yearOptions.map((value) => (
-                      <option key={value} value={value}>
-                        {value}
-                      </option>
-                    ))}
-                  </select>
+                <RangeCalendar
+                  value={{
+                    start: departureDate || null,
+                    end: returnDate || null,
+                  }}
+                  min={today}
+                  max={lastDate}
+                  today={today}
+                  onChange={({ start, end }) => {
+                    setDepartureDate(start ?? "");
+                    setReturnDate(end ?? "");
+                  }}
+                  label={t("calendarLabel")}
+                  previousMonthLabel={t("previousMonth")}
+                  nextMonthLabel={t("nextMonth")}
+                />
+                <p aria-live="polite" className="font-medium">
+                  {!departureDate
+                    ? t("pickDeparture")
+                    : !returnDate
+                      ? t("pickReturn")
+                      : t("rangeSummary", {
+                          start: formatDate(departureDate),
+                          end: formatDate(returnDate),
+                          days: tripLength(departureDate, returnDate),
+                        })}
+                </p>
+                <p className="text-sm text-muted">{t("steps.date.hint")}</p>
+
+                <div className="flex flex-col gap-4 border-t border-surface-line pt-4">
+                  <div>
+                    <h3 className="font-semibold">{t("legsTitle")}</h3>
+                    <p className="text-sm text-muted">{t("legsHint")}</p>
+                  </div>
+                  {tripLegCities.map((legCity) => (
+                    <fieldset key={legCity} className="flex flex-col gap-2">
+                      <legend className="mb-2 font-semibold">{legCity}</legend>
+                      <div className="grid grid-cols-2 gap-3">
+                        {(["startDate", "endDate"] as const).map((field) => (
+                          <div key={field} className="flex min-w-0 flex-col gap-1">
+                            <label
+                              htmlFor={`leg-${legCity}-${field}`}
+                              className="text-sm font-medium"
+                            >
+                              {t(field === "startDate" ? "legStart" : "legEnd")}
+                            </label>
+                            <input
+                              id={`leg-${legCity}-${field}`}
+                              type="date"
+                              min={departureDate || today}
+                              max={returnDate || lastDate}
+                              value={legs[legCity][field]}
+                              aria-invalid={
+                                error === "legs" || error === "legsMissing"
+                              }
+                              onChange={(event) =>
+                                setLegs({
+                                  ...legs,
+                                  [legCity]: {
+                                    ...legs[legCity],
+                                    [field]: event.target.value,
+                                  },
+                                })
+                              }
+                              className={fieldClassName}
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    </fieldset>
+                  ))}
                 </div>
               </div>
             )}

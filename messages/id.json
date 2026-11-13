@@ -181,8 +181,8 @@
         "hint": "Dari kota mana Anda akan berangkat?"
       },
       "date": {
-        "title": "Perkiraan waktu berangkat",
-        "hint": "Pilih bulan dan tahun, cukup perkiraan saja."
+        "title": "Kapan kamu berangkat?",
+        "hint": "Belum pasti? Pilih perkiraan, bisa diubah nanti."
       },
       "passport": {
         "title": "Status paspor",
@@ -197,9 +197,18 @@
         "hint": "Tandai jemaah yang membutuhkan perhatian khusus agar persiapannya disesuaikan."
       }
     },
-    "monthLabel": "Bulan",
-    "yearLabel": "Tahun",
-    "choose": "Pilih",
+    "durationLabel": "Lama perjalanan",
+    "durationChip": "{days} hari",
+    "calendarLabel": "Tanggal berangkat dan pulang",
+    "previousMonth": "Bulan sebelumnya",
+    "nextMonth": "Bulan berikutnya",
+    "pickDeparture": "Ketuk tanggal berangkat.",
+    "pickReturn": "Sekarang ketuk tanggal pulang.",
+    "rangeSummary": "{start} – {end} · {days} hari",
+    "legsTitle": "Tanggal di Makkah dan Madinah",
+    "legsHint": "Isi minimal satu kota. Madinah mulai paling cepat di hari Makkah selesai.",
+    "legStart": "Mulai",
+    "legEnd": "Selesai",
     "passport": {
       "valid": "Punya, masih berlaku",
       "expired": "Punya, sudah habis",
@@ -214,12 +223,15 @@
     "notesLabel": "Catatan kebutuhan aksesibilitas (opsional)",
     "notesHint": "Maksimal {max} karakter.",
     "back": "Kembali",
-    "next": "Lanjut",
+    "next": "Next",
     "submit": "Buat perjalanan saya",
     "submitting": "Membuat perjalanan…",
     "errors": {
       "city": "Pilih kota keberangkatan.",
-      "date": "Pilih bulan dan tahun dalam 24 bulan ke depan.",
+      "date": "Pilih tanggal berangkat dalam 24 bulan ke depan.",
+      "returnDate": "Pilih tanggal pulang, sama dengan atau setelah tanggal berangkat.",
+      "legsMissing": "Isi tanggal mulai dan selesai untuk Makkah atau Madinah.",
+      "legs": "Tanggal kota harus lengkap, di dalam tanggal trip, dan Madinah mulai paling cepat di hari Makkah selesai.",
       "passport": "Pilih status paspor.",
       "names": "Isi nama setiap jemaah (1–80 karakter).",
       "notes": "Catatan maksimal 500 karakter.",
