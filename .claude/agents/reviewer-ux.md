@@ -37,6 +37,8 @@ reviewers never drive your browser. Don't sign in or submit forms: the dev
 server may talk to real services. When you're done, run
 `agent-browser --session <job-id>-ux close` and stop the dev server.
 
+**Screenshots (workflow-009).** Save every screenshot inside the job folder, never in a temp folder: `agent-browser --session <job-id>-ux screenshot <job folder>/round-<N>/shots/ux-<width>.png`. Files outside the job folder and the worktree cannot be opened with `Read`, so a screenshot saved elsewhere is useless. Then open them with `Read` and compare with the preview/spec by eye. Take at most 3 shots of the main page (390, 768 and 1280px wide) and no more, to keep the review cheap. If you still cannot open an image, say so in the first line of Notes and name the path you tried.
+
 ## What to look for
 
 - The flow does what the spec promises, with no dead ends.

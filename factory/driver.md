@@ -92,7 +92,7 @@ agent ends with an error result, its `result` text and `errors` are appended to 
 
 ## Usage
 
-`usage.jsonl` (job folder) gets one line per agent run: `ts, agent, round, sessionId,
+`usage.jsonl` (job folder) gets one line per agent run: `ts, job, task, feature (first 400 characters of the task text), stage, agent (builder, reviewer-code, reviewer-security, reviewer-ux, reviewer-ui, ...), round, sessionId, promptChars,
 resumed, model, inputTokens, outputTokens, cacheReadTokens, cacheCreationTokens,
 costUsd, durationMs, numTurns`. `node factory/driver.mjs usage <job-id>` prints runs,
 tokens, cost and time per agent and in total, to compare workflow changes.
