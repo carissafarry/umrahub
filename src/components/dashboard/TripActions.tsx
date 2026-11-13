@@ -16,9 +16,12 @@ type RenameError = Extract<RenameTripResult, { ok: false }>["error"];
 const focusRing =
   "focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-primary";
 const dialogClassName =
-  "m-auto w-[calc(100%-2.5rem)] max-w-md rounded-3xl bg-surface p-6 text-foreground shadow-card backdrop:bg-foreground/60";
+  "m-auto w-[calc(100%-2rem)] max-w-md rounded-[2rem] bg-background p-6 text-foreground shadow-float backdrop:bg-foreground/60";
+// The black circle icon above a dialog's title.
+const dialogIconClassName =
+  "flex size-12 items-center justify-center rounded-full bg-primary text-primary-foreground";
 const pillClassName = `tap-target inline-flex items-center justify-center gap-2 rounded-full px-6 font-semibold disabled:opacity-60 ${focusRing}`;
-const neutralClassName = `${pillClassName} border border-border bg-surface text-foreground shadow-card`;
+const neutralClassName = `${pillClassName} border border-border bg-surface-raised text-foreground`;
 // Destructive: ink-filled, never indigo (the design system has no danger colour).
 const destructiveClassName = `${pillClassName} bg-foreground text-background`;
 
@@ -104,9 +107,14 @@ export function TripActions({ tripId, name }: { tripId: string; name: string }) 
         }}
       >
         <form noValidate onSubmit={handleRename} className="flex flex-col gap-5">
-          <h2 id={`${id}-rename-title`} className="text-xl font-semibold">
-            {t("rename.title")}
-          </h2>
+          <div className="flex flex-col items-start gap-3">
+            <span aria-hidden="true" className={dialogIconClassName}>
+              <PencilIcon className="size-5" />
+            </span>
+            <h2 id={`${id}-rename-title`} className="text-xl font-bold">
+              {t("rename.title")}
+            </h2>
+          </div>
           <div className="flex flex-col gap-1">
             <label htmlFor={`${id}-rename-input`} className="font-medium">
               {t("rename.label")}
@@ -123,7 +131,7 @@ export function TripActions({ tripId, name }: { tripId: string; name: string }) 
                 renameError ? `${id}-rename-error` : undefined
               }
               onChange={(event) => setDraft(event.target.value)}
-              className={`tap-target w-full rounded-2xl border border-border bg-surface px-4 text-base text-foreground ${focusRing}`}
+              className={`tap-target w-full rounded-2xl border border-border bg-surface-raised px-4 text-base text-foreground ${focusRing}`}
             />
           </div>
           {renameError && (
@@ -167,9 +175,14 @@ export function TripActions({ tripId, name }: { tripId: string; name: string }) 
         }}
       >
         <div className="flex flex-col gap-5">
-          <h2 id={`${id}-delete-title`} className="text-xl font-semibold">
-            {t("delete.title")}
-          </h2>
+          <div className="flex flex-col items-start gap-3">
+            <span aria-hidden="true" className={dialogIconClassName}>
+              <TrashIcon className="size-5" />
+            </span>
+            <h2 id={`${id}-delete-title`} className="text-xl font-bold">
+              {t("delete.title")}
+            </h2>
+          </div>
           <p id={`${id}-delete-body`} className="break-words text-muted">
             {t("delete.body", { name })}
           </p>

@@ -92,6 +92,16 @@ export function BookIcon({ className }: IconProps) {
   );
 }
 
+// Mosque dome with a finial: the Umra Hub brand mark.
+export function DomeIcon({ className }: IconProps) {
+  return (
+    <Svg className={className}>
+      <path d="M4 20V10a8 8 0 0 1 16 0v10" />
+      <path d="M12 2v3" />
+    </Svg>
+  );
+}
+
 export function BellIcon({ className }: IconProps) {
   return (
     <Svg className={className}>

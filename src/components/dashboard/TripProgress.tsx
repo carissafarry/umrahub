@@ -15,8 +15,8 @@ export async function TripProgress({
   return (
     <div className={`flex flex-col gap-2 ${className}`}>
       <div className="flex items-baseline justify-between gap-4">
-        <p className="text-muted">{t("progressText", { done, total })}</p>
-        <p className="text-lg font-bold">{t("progressPercent", { percent })}</p>
+        <p className="text-sm font-bold">{t("progressText", { done, total })}</p>
+        <p className="font-bold">{t("progressPercent", { percent })}</p>
       </div>
       <div
         role="progressbar"
@@ -24,7 +24,7 @@ export async function TripProgress({
         aria-valuemax={100}
         aria-valuenow={percent}
         aria-label={t("progressLabel", { name: trip.name })}
-        className="h-3 overflow-hidden rounded-full bg-tile-violet"
+        className="h-2.5 overflow-hidden rounded-full bg-surface-line"
       >
         <div
           className="h-full rounded-full bg-primary"

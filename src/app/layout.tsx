@@ -36,7 +36,7 @@ export default async function RootLayout({
       lang={locale}
       className={`${plusJakartaSans.variable} ${notoNaskhArabic.variable}`}
     >
-      <body className="flex min-h-screen flex-col antialiased">
+      <body className="group/body flex min-h-screen flex-col antialiased">
         <NextIntlClientProvider>
           <SiteHeader />
           {children}
