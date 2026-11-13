@@ -8,6 +8,7 @@ action=0
 note() { echo "  - $*"; }
 need() { action=1; echo "  ! $*"; }
 
+echo "RULES (AGENTS.md, How work is run): run be/fe jobs with 'node factory/driver.mjs run <code> --reviewers code,ux,ui --slim', never by hand in this chat; check capacity first; read factory/inbox for decisions; report tokens with 'node factory/driver.mjs usage <code>'."
 echo "== Software factory: state check ($(date '+%Y-%m-%d %H:%M'))"
 git fetch -q origin 2>/dev/null || echo "  (git fetch failed: offline? PR states below may be stale)"
 

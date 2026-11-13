@@ -155,6 +155,18 @@ All four must pass before a change is ready. Use `build:check`, not `build`, for
 - Editing is done in Supabase Studio: publishing providers and catalog items, confirming affiliations, recording verifications and hiding reviews. There is no admin UI.
 - The "Terverifikasi" badge requires `status = 'verified'` and `expires_on` not in the past; loaders must check both (there is no SQL function for it).
 
+## How work is run (mandatory, every session)
+
+A new chat session has no memory of earlier ones; this section is the standing workflow.
+
+- **Backlog jobs (`be-*`, `fe-*`) run through the driver, never by editing code in the chat session:** `node factory/driver.mjs run <code> --reviewers code,ux,ui --slim` (add `security` for database, auth or RLS work; `--from build|review|approve` resumes). Start it detached (`nohup … > factory/jobs/<code>/driver.out 2>&1 &`) and keep the chat session as the **orchestrator**: check `node factory/capacity.mjs check <code>` first (max 2 jobs, 1 database job), watch with `bash factory/watch.sh`, and read `factory/inbox/` for dashboard decisions (approve, rework) so none is missed.
+- Why: each agent runs as its own small `claude -p` process, so context stays small (cache reads cheap) and every run is written to `factory/jobs/<code>/usage.jsonl` (task, prompt text, agent lens, tokens, cache, cost, date). Work done inside the chat session is **not** recorded anywhere. Never do a backlog job in the chat session. If the driver cannot run one, say so and ask, do not fall back silently.
+- Chat-session work is only orchestration and small `infra-*`, `spec-*` and `workflow-*` changes (see Conventions for branches and PRs).
+- After every job report its tokens: `node factory/driver.mjs usage <code>` and `node factory/usage-report.mjs`.
+- fe jobs: give the user the full preview link (the page, never just `/` or the port) before asking for approval; the dashboard shows it from `job.json`.
+- On a driver failure or timeout: report it once, no retry.
+- Details: `.claude/skills/factory/SKILL.md` and `factory/driver.md`.
+
 ## Conventions
 
 - **Most important rule: no AI attribution in git.** Never add `Co-Authored-By: Claude …`, "Generated with Claude Code" or any AI co-author/trailer to a commit, merge commit, amend or PR description.
