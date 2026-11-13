@@ -87,3 +87,10 @@ Dua sumber boros: bekal awal agen sekitar 40 ribu token (agen kecil seperti revi
 - **Alasan:** review UI fe-080 tidak bisa membuka screenshot (kemungkinan disimpan di folder sementara di luar `--add-dir`), jadi hanya mengukur DOM dan membaca kode.
 - **Efek yang diharapkan:** reviewer benar-benar membandingkan tampilan. Biaya tambahan kecil: kira-kira 3 gambar per reviewer.
 - **Efek terukur:** belum ada (isi setelah fe-080 round berikutnya).
+
+## workflow-011 Alur kerja tetap: job selalu lewat driver
+
+- **Perubahan:** bagian "How work is run" di `AGENTS.md` (dibaca setiap sesi baru), bagian Driver di `SKILL.md` diubah dari "alternatif" menjadi cara utama, dan `factory/resume-check.sh` mencetak aturan ini di awal sesi.
+- **Alasan:** sesi baru menjalankan be-064 dan fe-062 langsung di chat, bukan lewat driver, sehingga pemakaian token tidak tercatat dan metode kerja biasa tidak dipakai.
+- **Efek yang diharapkan:** setiap sesi baru langsung memakai driver, cek kapasitas, baca inbox, dan melaporkan token. Tanpa token tambahan kecuali beberapa baris di konteks awal.
+- **Efek terukur:** belum ada (cek apakah job berikutnya di sesi baru punya `usage.jsonl`).
