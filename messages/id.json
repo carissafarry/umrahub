@@ -293,6 +293,7 @@
     "bellLabel": "Notifikasi",
     "bellLabelUnread": "Notifikasi, {count} belum dibaca",
     "unread": "Belum dibaca",
+    "unreadCount": "{count} belum dibaca",
     "created": "Diterima {date}",
     "markRead": "Tandai sudah dibaca",
     "markAllRead": "Tandai semua sudah dibaca",
