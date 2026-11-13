@@ -555,9 +555,9 @@ its PR.
 
 ## Driver
 
-`node factory/driver.mjs run <job-id>` is an alternative way to run **one job**
-through this loop without an orchestrator conversation: a Node script that starts
+**The driver is the default way to run a job** (workflow-011): `node factory/driver.mjs run <job-id> --reviewers code,ux,ui --slim`. It is a Node script that starts
 each agent as a fresh `claude -p` process, resumes the builder session on
 CHANGES, writes `job.json` and `usage.jsonl`, and opens the PR. It never merges.
-It does not replace this skill: the loop above remains the reference, and the
+The chat session stays the orchestrator (capacity check, watcher, inbox, reports) and never
+builds a job by hand: in-session work leaves no usage record. The loop above remains the reference, and the
 driver must match it. See `factory/driver.md`.
