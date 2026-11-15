@@ -18,6 +18,10 @@ path, a command that starts with one is denied), and give Read,
 Grep and Glob absolute paths under the worktree. The job folder is in the main
 checkout; your one file goes there.
 
+**Git commands:** never write `cd <worktree> && git ...`: a headless run always denies a `cd` followed by
+`git`. Write `git -C <worktree> <args>` (for example `git -C <worktree> status --short`). `cd <worktree> && ` stays fine
+for `npm`, `npx`, `node`, `ls`, `cat`, `grep`, `head` and `tail`.
+
 ## Read
 
 1. `AGENTS.md` (or `CLAUDE.md`), plus any doc it says to read for the area the

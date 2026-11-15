@@ -1,11 +1,11 @@
 // Factory driver: runs one job through spec -> build -> review -> approve -> PR without an
 // orchestrator conversation. Every agent is a fresh `claude -p` process. See factory/driver.md.
-//   node factory/driver.mjs run <job-id> [--from <stage>] [--dry-run] [--permission-mode <m>] [--allowed-tools "<rules>"] [--agent-timeout <minutes>]
+//   node factory/driver.mjs run <job-id> [--from <stage>] [--dry-run] [--permission-mode <m>] [--allowed-tools "<rules>"] [--agent-timeout <minutes>] [--model <agent>=<model>]...
 //   node factory/driver.mjs usage <job-id>
 // Never merges a PR and never pushes to main.
 import { execFile, spawn } from 'node:child_process'
-import { existsSync } from 'node:fs'
-import { appendFile, copyFile, mkdir, readFile, stat, writeFile } from 'node:fs/promises'
+import { existsSync, openSync } from 'node:fs'
+import { appendFile, copyFile, mkdir, readdir, readFile, stat, writeFile } from 'node:fs/promises'
 import { request } from 'node:http'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -14,7 +14,7 @@ const HERE = dirname(fileURLToPath(import.meta.url))
 const MAX_RESUMES = 2
 const GH_REPO = process.env.FACTORY_GH_REPO || 'carissafarry/umrahub'
 const REVIEWERS = { security: 'reviewer-security', ux: 'reviewer-ux', ui: 'reviewer-ui', code: 'reviewer-code' }
-const DEFAULT_TOOLS = 'Bash(git:*) Bash(npm:*) Bash(npx:*) Bash(node:*) Bash(supabase:*) Bash(gh:*) Bash(agent-browser:*) Bash(lsof:*) Bash(curl:*) Bash(ls:*) Bash(cat:*) Bash(grep:*) Bash(head:*) Bash(tail:*) Bash(wc:*) Bash(cd:*) Bash(pwd:*) Bash(sort:*) Bash(diff:*)'
+const DEFAULT_TOOLS = 'Bash(git:*) Bash(npm:*) Bash(npx:*) Bash(node:*) Bash(supabase:*) Bash(gh:*) Bash(agent-browser:*) Bash(lsof:*) Bash(curl:*) Bash(ls:*) Bash(cat:*) Bash(grep:*) Bash(head:*) Bash(tail:*) Bash(wc:*) Bash(cd:*) Bash(pwd:*) Bash(sort:*) Bash(diff:*) Bash(nohup:*) Bash(kill:*) Bash(sleep:*)'
 
 class Stop extends Error {} // a reason to set needs-human
 const oneLine = (t) => String(t).replace(/\s+/g, ' ').trim()
@@ -74,7 +74,10 @@ const paths = (c) => `Job folder: ${c.dir}/. Worktree: ${resolve(c.job.worktree)
 const port = (c, offset) => 5100 + 10 * c.n + offset
 const tail = (c) => (c.code ? ` Task code: ${c.code}.` : '')
 const PREVIEW_SENTENCE = ' Preview route: write the exact page(s) to check, as paths, on a line "Preview route: <path>" in build.md.'
-const reviewerPort = (c, key) => (key === 'ux' ? ` Port: ${port(c, 1)}.` : key === 'ui' ? ` Port: ${port(c, 2)}.` : '')
+// workflow-017: a headless agent cannot start a detached dev server (`nohup ... &` and redirects are denied), so for
+// an fe job the driver starts one on the preview port and the agents only use it.
+const DEV_SERVER = (c) => ` A dev server for this worktree is already running at http://localhost:${port(c, 3)} (started by the driver): open pages there, never start or stop a dev server yourself.${c.login ? ` Signed-in pages: open ${c.login} once (it signs in a sample user on the local stack and redirects; change the \`to\` address to open other pages).` : ' No sample user is available, so pages that need a sign-in cannot be opened: say so in your report.'}`
+const reviewerPort = (c, key) => (c.type === 'fe' ? DEV_SERVER(c) : key === 'ux' ? ` Port: ${port(c, 1)}.` : key === 'ui' ? ` Port: ${port(c, 2)}.` : '')
 
 function specPrompt(c) {
   const req = c.code && existsSync(join(c.root, 'factory/requirements', `${c.code}.md`))
@@ -82,7 +85,7 @@ function specPrompt(c) {
   return `${paths(c)} Feature: ${c.job.feature}${req}${tail(c)}`
 }
 const buildPrompt = (c, round) =>
-  `${paths(c)} Build round ${round}. Port: ${port(c, 0)}.${tail(c)}${c.type === 'fe' ? PREVIEW_SENTENCE : ''}`
+  `${paths(c)} Build round ${round}.${c.type === 'fe' ? DEV_SERVER(c) : ` Port: ${port(c, 0)}.`}${tail(c)}${c.type === 'fe' ? PREVIEW_SENTENCE : ''}`
 const changesPrompt = (c, round) =>
   `Round ${round} reviews are in ${c.dir}/round-${round}/. Address every review with VERDICT: CHANGES, commit, and update build.md for round ${round + 1}.`
 const reviewPrompt = (c, key, round) => `${paths(c)} Review round ${round}.${reviewerPort(c, key)}${tail(c)}`
@@ -98,6 +101,7 @@ function claudeArgs(c, agent, o, resume) {
   if (o.permissionMode === 'bypassPermissions') throw new Stop('refusing bypassPermissions: the driver never skips permissions')
   const args = ['-p', '--agent', agent, '--output-format', 'json', '--permission-mode', o.permissionMode,
     '--add-dir', resolve(c.job.worktree), '--allowedTools', ...o.allowedTools.split(/\s+/).filter(Boolean)]
+  if (o.models[agent]) args.push('--model', o.models[agent]) // workflow-015: overrides the model in the agent file
   if (o.slim) args.push(...SLIM_FLAGS)
   if (process.env.FACTORY_MAX_BUDGET_USD) args.push('--max-budget-usd', process.env.FACTORY_MAX_BUDGET_USD)
   if (resume) args.push('--resume', resume)
@@ -127,20 +131,28 @@ async function runAgent(c, agent, prompt, o, { round = 0, file, resume } = {}) {
   let res
   try { res = JSON.parse(out) } catch { throw new Stop(`${agent} printed no JSON result`) }
   const u = res.usage || {}
+  // workflow-015: a resumed session reports its cost since the session began, so record only what this run added.
+  // `costTotalUsd` keeps the raw figure; rows from before this change have no `costTotalUsd` and are left as they are.
+  let costUsd = res.total_cost_usd ?? null
+  if (resume && costUsd != null) {
+    const before = (await readText(join(c.dir, 'usage.jsonl'))).split('\n').filter(Boolean).map((l) => JSON.parse(l))
+      .filter((r) => r.sessionId === res.session_id && r.costTotalUsd != null).pop()
+    if (before && costUsd >= before.costTotalUsd) costUsd -= before.costTotalUsd
+  }
   await appendFile(join(c.dir, 'usage.jsonl'), JSON.stringify({
     ts: new Date().toISOString(), job: c.job.id, task: c.job.id, feature: String(c.job.feature || '').replace(/\s+/g, ' ').slice(0, 400),
     stage: c.job.stage, agent, round, sessionId: res.session_id ?? null, resumed: Boolean(resume), promptChars: prompt.length,
     model: Object.keys(res.modelUsage || {}).join(',') || null,
     inputTokens: u.input_tokens ?? null, outputTokens: u.output_tokens ?? null,
     cacheReadTokens: u.cache_read_input_tokens ?? null, cacheCreationTokens: u.cache_creation_input_tokens ?? null,
-    costUsd: res.total_cost_usd ?? null, durationMs: res.duration_ms ?? Date.now() - started, numTurns: res.num_turns ?? null,
+    costUsd, costTotalUsd: res.total_cost_usd ?? null, modelOverride: o.models[agent] ?? null, durationMs: res.duration_ms ?? Date.now() - started, numTurns: res.num_turns ?? null,
   }) + '\n')
   const denials = res.permission_denials || []
   const denied = denials.map((d) => d.tool_name || 'tool').join(', ')
   if (denied) await log(c, `${agent}: permission denied for ${denied}`)
   for (const d of denials) { // the command text shows which rule to allow; truncated, one line
     const cmd = d.tool_input?.command ?? d.tool_input?.file_path
-    if (typeof cmd === 'string') await log(c, `${agent}: denied ${d.tool_name || 'tool'}: ${cmd.replace(/\s+/g, ' ').slice(0, 120)}`)
+    if (typeof cmd === 'string') await log(c, `${agent}: denied ${d.tool_name || 'tool'}: ${cmd.replace(/\s+/g, ' ').slice(0, 400)}`)
   }
   const hint = denied ? ` (denied: ${denied}; see factory/driver.md)` : ''
   if (res.is_error || res.subtype !== 'success') {
@@ -189,17 +201,46 @@ async function previewRoute(c) {
   return fromSpec ?? '/'
 }
 
-async function ensurePreview(c) {
-  const route = await previewRoute(c)
+// workflow-019: sample data and a one-click sign-in for the reviewers (factory/preview.mjs, local Supabase stack only).
+// Best effort: with no local stack the preview runs as before and signed-in pages cannot be checked.
+async function prepareLogin(c, p) {
+  if (c.login !== undefined) return c.loginEnv ?? {}
+  c.login = null
+  try {
+    const route = await previewRoute(c)
+    const persona = route.startsWith('/onboarding') ? 'baru' : 'berjalan'
+    const script = fileURLToPath(new URL('./preview.mjs', import.meta.url))
+    const env = JSON.parse((await run('node', [script, 'prepare', persona], { cwd: c.root })).trim().split('\n').pop())
+    c.loginEnv = env
+    c.login = (await run('node', [script, 'link', persona, `http://localhost:${p}${route}`], { cwd: c.root })).trim()
+    await log(c, `signed-in preview ready (sample user "${persona}", local Supabase)`)
+    return env
+  } catch (e) {
+    await log(c, `no signed-in preview: ${oneLine(e.stderr || e.message).slice(0, 160)}`)
+    return {}
+  }
+}
+
+// Starts the job's dev server on the preview port when nothing answers there; the output goes to dev.log in the job folder.
+async function ensureDevServer(c) {
   const p = previewPort(c)
   const wt = resolve(c.job.worktree)
+  const login = await prepareLogin(c, p)
   if (!(await answers(p))) {
     const env = join(wt, '.env.local')
     if (!existsSync(env) && existsSync(join(c.root, '.env.local'))) await copyFile(join(c.root, '.env.local'), env)
-    spawn('npm', ['run', 'dev', '--', '--port', String(p)], { cwd: wt, detached: true, stdio: 'ignore' }).unref()
+    const out = openSync(join(c.dir, 'dev.log'), 'a')
+    // the env of the local stack wins over .env.local, so a signed-in preview never touches the hosted project
+    spawn('npm', ['run', 'dev', '--', '--port', String(p)], { cwd: wt, detached: true, stdio: ['ignore', out, out], env: { ...process.env, ...login } }).unref()
     for (let i = 0; i < 60 && !(await answers(p)); i++) await new Promise((r) => setTimeout(r, 1000))
     if (!(await answers(p))) throw new Stop(`preview did not answer on port ${p}`)
   }
+}
+
+async function ensurePreview(c) {
+  const route = await previewRoute(c)
+  const p = previewPort(c)
+  await ensureDevServer(c)
   await save(c, { preview: `http://localhost:${p}${route}` })
 }
 
@@ -214,14 +255,16 @@ async function stageSpec(c, o) {
 }
 
 // Runs the builder (fresh, or resumed after review round `round`) and checks build.md.
-async function stageBuild(c, o, round, changes) {
+// `rework` (workflow-021) is the file name of a user's rework note: a fresh builder reads it (SKILL.md "/factory rework").
+async function stageBuild(c, o, round, changes, rework) {
   await save(c, { stage: 'build' })
-  if (c.type === 'fe') await stopPreview(c)
-  const session = changes ? await builderSession(c) : undefined
+  if (c.type === 'fe') await ensureDevServer(c) // workflow-017: the builder uses it, it does not start its own
+  const session = changes && !rework ? await builderSession(c) : undefined
   let prompt = buildPrompt(c, round)
-  if (changes) prompt = session ? changesPrompt(c, round)
+  if (rework) prompt = buildPrompt(c, round + 1).replace(` Build round ${round + 1}.`, ` Rework: read ${join(c.dir, rework)} and address it, then update build.md for round ${round + 1}.`)
+  else if (changes) prompt = session ? changesPrompt(c, round)
     : `${buildPrompt(c, round + 1)} Continue: check git status and git log --oneline main..HEAD in the worktree first and don't redo finished work; the round ${round} reviews are in ${c.dir}/round-${round}/.`
-  await log(c, `${session ? 'resuming' : 'running'} builder (${changes ? `after round ${round}` : 'round 1'})`)
+  await log(c, `${session ? 'resuming' : 'running'} builder (${rework ? `rework ${rework}` : changes ? `after round ${round}` : 'round 1'})`)
   await runAgent(c, 'builder', prompt, o, { round, file: join(c.dir, 'build.md'), resume: session })
   await checkBuild(c)
 }
@@ -251,7 +294,7 @@ async function stageReview(c, o, round) {
     else todo.push(key)
   }
   await save(c, { stage: 'review', round, reviews })
-  if (c.type === 'fe' && todo.some((k) => k === 'ux' || k === 'ui')) await stopPreview(c)
+  if (c.type === 'fe' && todo.some((k) => k === 'ux' || k === 'ui')) await ensureDevServer(c)
   await log(c, `review round ${round}: running ${todo.join(', ') || 'nothing'}`)
   const settled = await Promise.allSettled(todo.map(async (key) => {
     const f = join(dir, `review-${key}.md`)
@@ -309,9 +352,15 @@ async function runJob(c, o) {
   let stage = o.from || c.job.stage
   if (!resumable.includes(stage)) throw new Stop(`job is in stage "${stage}"; pass --from <${resumable.join('|')}> to restart it`)
   let round = c.job.round
+  let base = 0 // a rework run gets a fresh MAX_RESUMES: rounds before it do not count
   if (stage === 'spec') { await stageSpec(c, o); stage = 'build' }
   if (stage === 'build') {
-    if (round === 0 && (await firstLine(join(c.dir, 'build.md'))) === 'STATUS: READY') await checkBuild(c) // built before a restart
+    if (o.rework) {
+      const note = (await readdir(c.dir)).filter((f) => /^rework-\d+\.md$/.test(f)).sort((a, b) => parseInt(a.slice(7)) - parseInt(b.slice(7))).pop()
+      if (!note) throw new Stop('--rework needs a rework-<k>.md in the job folder')
+      base = round
+      await stageBuild(c, o, round, true, note)
+    } else if (round === 0 && (await firstLine(join(c.dir, 'build.md'))) === 'STATUS: READY') await checkBuild(c) // built before a restart
     else if (round === 0) await stageBuild(c, o, 1)
     else await stageBuild(c, o, round, true) // CHANGES from round `round` are waiting
     round++
@@ -322,7 +371,7 @@ async function runJob(c, o) {
     for (;;) {
       const changes = await stageReview(c, o, round)
       if (!changes.length) break
-      if (round - 1 >= MAX_RESUMES) {
+      if (round - 1 - base >= MAX_RESUMES) {
         await writeFile(join(c.dir, 'decision.md'),
           `ESCALATE\n\nReview rounds exhausted. Outstanding CHANGES in round-${round}/ from: ${changes.join(', ')}.\n`)
         throw new Stop(`review rounds exhausted; CHANGES from ${changes.join(', ')} in round-${round}`)
@@ -377,15 +426,21 @@ function parseArgs(argv) {
     reviewers: (process.env.FACTORY_REVIEWERS || Object.keys(REVIEWERS).join(',')).split(',').map((s) => s.trim()).filter(Boolean),
     permissionMode: process.env.FACTORY_PERMISSION_MODE || 'acceptEdits',
     allowedTools: process.env.FACTORY_ALLOWED_TOOLS || DEFAULT_TOOLS,
-    agentTimeoutMin: Number(process.env.FACTORY_AGENT_TIMEOUT_MIN) || 45 }
+    agentTimeoutMin: Number(process.env.FACTORY_AGENT_TIMEOUT_MIN) || 45, models: {} }
   for (let i = 0; i < rest.length; i++) {
     if (rest[i] === '--dry-run') o.dryRun = true
     else if (rest[i] === '--slim') o.slim = true
     else if (rest[i] === '--reviewers') o.reviewers = rest[++i].split(',').map((s) => s.trim()).filter(Boolean)
     else if (rest[i] === '--from') o.from = rest[++i]
+    else if (rest[i] === '--rework') o.rework = true
     else if (rest[i] === '--permission-mode') o.permissionMode = rest[++i]
     else if (rest[i] === '--allowed-tools') o.allowedTools = rest[++i]
     else if (rest[i] === '--agent-timeout') o.agentTimeoutMin = Number(rest[++i])
+    else if (rest[i] === '--model') {
+      const [agent, model] = String(rest[++i]).split('=')
+      if (!agent || !model) throw new Stop('--model takes <agent>=<model>, for example builder=sonnet')
+      o.models[agent] = model
+    }
     else throw new Stop(`unknown option ${rest[i]}`)
   }
   return o

@@ -64,7 +64,7 @@ the working directory and `--add-dir`); override with `FACTORY_PERMISSION_MODE` 
 A headless run cannot ask, so any tool that is not pre-allowed is denied. The agents
 run Bash for `git`, `npm`, `npx`, `node`, `supabase`, `gh`, `agent-browser`, `lsof`
 and `curl`. The default `--allowedTools` is
-`Bash(git:*) Bash(npm:*) Bash(npx:*) Bash(node:*) Bash(supabase:*) Bash(gh:*) Bash(agent-browser:*) Bash(lsof:*) Bash(curl:*) Bash(ls:*) Bash(cat:*) Bash(grep:*) Bash(head:*) Bash(tail:*) Bash(wc:*) Bash(cd:*) Bash(pwd:*) Bash(sort:*) Bash(diff:*)`.
+`Bash(git:*) Bash(npm:*) Bash(npx:*) Bash(node:*) Bash(supabase:*) Bash(gh:*) Bash(agent-browser:*) Bash(lsof:*) Bash(curl:*) Bash(ls:*) Bash(cat:*) Bash(grep:*) Bash(head:*) Bash(tail:*) Bash(wc:*) Bash(cd:*) Bash(pwd:*) Bash(sort:*) Bash(diff:*) Bash(nohup:*) Bash(kill:*) Bash(sleep:*)`.
 The six after `curl` (workflow-006) are read-only: be-061's reviewers and approver were denied Bash for such reads.
 `cd`, `pwd`, `sort` and `diff` (workflow-014) are read-only too: the agent files tell every command to start with `cd <worktree> && `, and a `&&` chain is allowed only when each part is, so be-064's reviewers, approver and builder were denied almost every Bash call (see `driver.log`).
 `find` and `sed` are left out on purpose (`find -delete/-exec`, `sed -i` write files); agents use Glob, Grep and Read with
@@ -146,3 +146,42 @@ agent cannot sign in to look at pages that need a login.
 - fe preview: id-owning routes are not looked up; the dev server is detached and
   only stopped by port (`lsof`), never by name.
 - Several jobs at once: run one driver per job; ports derive from the job number.
+
+## Bash chains that are always denied (workflow-016)
+
+A headless run always denies `cd <dir> && git ...` (Claude Code's guard against a `cd` into a repo whose git config could run code), even with `Bash(cd:*)` and `Bash(git:*)` allowed. `git -C <dir> ...` is allowed, and so are `cd <dir> && npm|npx|node|ls|cat|grep|head|tail ...` and `;` chains of allowed commands. The agent files say so. `driver.log` now keeps 400 characters of each denied command (was 120), so the reason for a denial is readable.
+
+`nohup`, `kill` and `sleep` (workflow-016) let a builder start its dev server detached and stop it by port, as `builder.md` says; before this, `nohup ... &` and `kill $(lsof ...)` were denied in a headless run. `kill` is not limited to one port by the rule, so the agent files stay the guard: only the job's own port, never 3000 or 8000. `awk` stays out (it can run commands); agents use grep, Grep and Read. Writes outside the worktree and the job folder (`echo > file`, `cp` elsewhere) stay denied on purpose.
+
+Command substitution (`$(...)`, backticks) is denied in a headless run whatever the rules say, so `builder.md` stops a dev server with two commands: `lsof -tiTCP:<port> -sTCP:LISTEN`, then `kill <pid>`. The job folder lives inside the main checkout (the agents' working directory), so `nohup ... > <job folder>/dev.log` is a write inside it.
+
+## Model per agent and cost per run (workflow-015)
+
+`--model <agent>=<model>` (repeatable, for example `--model builder=sonnet`) passes `--model` to that agent's
+`claude -p` run and overrides the `model:` in its agent file; the row in `usage.jsonl` gets `modelOverride`.
+A resumed session reports its cost since the session began, so `costUsd` is now what that run added and
+`costTotalUsd` is the raw figure (old rows have no `costTotalUsd`). If the resumed run gets a new session id the
+delta cannot be found and `costUsd` stays the raw total; compare with `costTotalUsd` before trusting a builder row.
+
+## Dev server for fe jobs (workflow-017)
+
+A headless agent cannot start a detached dev server (`nohup ... > log &`, `&` and redirects to a file are denied). So for an `fe-*` job the
+driver starts `npm run dev -- --port <5103 + 10n>` in the worktree itself before the builder and before the UX/UI reviewers (output in
+`dev.log` of the job folder), and the prompts of builder and reviewers say it is already running at that port: they open pages there and
+never start or stop a server. The same server is the preview link. A signed-in page needs a session: when the local Supabase stack runs, the driver also calls `node factory/preview.mjs prepare <persona>` (sample user and
+data on the local stack: `berjalan` has a trip, `baru` has none and is used for `/onboarding`), starts the dev server with the local stack's URL and key (they
+win over `.env.local`, so the hosted project is never touched) and gives the agents a one-click link on the login helper (port 5090). With no local stack
+the agents are told they cannot open signed-in pages. Preparing a persona recreates the sample user, so two fe jobs running together can sign each other out.
+
+## Metrics to compare builder models (workflow-018)
+
+`node factory/metrics.mjs` prints one row per job (builder model, cost, builder cost, agent minutes, review rounds, whether round 1 was clean, number
+of findings in reviews that asked for changes, denied Bash, your score, bugs after merge) and a summary per builder model. `<job>` shows one job by
+round. `score <job> <1-5> [note]` and `bug <job> <note>` write `factory/jobs/<job>/score.json`. Builder model comes from `usage.jsonl` (`modelOverride`
+or the model of the run); jobs built in a chat session are labelled `in-session`. Compare models only with several jobs of the same kind: one job is an anecdote.
+
+## Rework from the driver (workflow-021)
+
+`node factory/driver.mjs run <job> --from build --rework` starts a fresh builder (not the old session) on the highest `rework-<k>.md` of the job folder
+(written by the orchestrator from the user's note, as in SKILL.md "/factory rework"), with the prompt `Rework: read <file> and address it, then update build.md
+for round N+1.`; the reviews then continue as round N+1, and the rework run gets a fresh `MAX_RESUMES` (the rounds before it do not count).
