@@ -52,6 +52,7 @@ the orchestrator moves items whose dependencies are all merged from **Menunggu**
 - [x] [infra-053] Sync infra branch after PR #20: bring origin/main (be-012 notifications merged by the user) into factory/infra so the open infra PR stays mergeable → infra-053
 - [x] [workflow-008] Usage rows carry task, feature text and prompt size: each usage.jsonl line gets job, task, feature (400 characters), stage and promptChars next to the agent lens → workflow-008
 - [x] [workflow-013] Schema artifact follows every database job: SKILL.md rule and resume check keep the "Skema Database Umra Hub" artifact current and set job.json `schema` → workflow-013
+- [x] [workflow-022] Builder writes files with Write/Edit, screenshots in the job folder, agent-browser without variable prefix: builder.md rule after 19 denials in fe-100's rework → workflow-022
 - [x] [infra-114] Bookkeeping after be-070 approval: be-079 (database rule against cancel after a payment proof) queued before be-072, be-070 PR #60 → infra-114
 - [x] [infra-113] Backlog bookkeeping for the sonnet-builder experiment: fe-100 and be-070 claimed, workflow-015, workflow-016 and workflow-017 recorded → infra-113
 - [x] [workflow-021] Rework from the driver: --from build --rework runs a fresh builder on the latest rework note → workflow-021
