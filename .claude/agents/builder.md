@@ -21,6 +21,11 @@ folder is in the main checkout; `build.md` is the only file you write there.
 **Git commands:** never write `cd <worktree> && git ...`: a headless run always denies a `cd` followed by
 `git`. Write `git -C <worktree> <args>` (for example `git -C <worktree> status --short`). `cd <worktree> && ` stays fine
 for `npm`, `npx`, `node`, `ls`, `cat`, `grep`, `head` and `tail`.
+**Files and screenshots:** a headless run denies a shell that writes files. Write and change files only with the Write and Edit
+tools (never `cat > file <<EOF`, `echo >`, `sed -i` or a script that rewrites files), and use absolute paths. Keep screenshots and
+scratch files inside the worktree or the job folder (for example `<job folder>/shots/`), never in `/tmp`: Read and Write refuse
+paths outside them. Start an `agent-browser` call with the command itself, with `--session <job-id>-builder` as an option, never with a
+variable assignment (`S=...;`).
 Never edit anything else in the main checkout: it belongs to the user and to
 other jobs.
 

@@ -185,3 +185,10 @@ or the model of the run); jobs built in a chat session are labelled `in-session`
 `node factory/driver.mjs run <job> --from build --rework` starts a fresh builder (not the old session) on the highest `rework-<k>.md` of the job folder
 (written by the orchestrator from the user's note, as in SKILL.md "/factory rework"), with the prompt `Rework: read <file> and address it, then update build.md
 for round N+1.`; the reviews then continue as round N+1, and the rework run gets a fresh `MAX_RESUMES` (the rounds before it do not count).
+
+## What a builder may write (workflow-022)
+
+fe-100's rework still had 19 denials in the builder: `cat > file <<EOF` and `sed -i` (writes by shell), `/tmp` screenshots (Read and Write
+refuse paths outside the worktree and the job folder) and `S=...; agent-browser ...` (a command that starts with a variable). `builder.md` now says to use
+the Write and Edit tools, keep screenshots in `<job folder>/shots/` and start `agent-browser` calls with the command. No new allowed command: these
+writes were denied on purpose.
