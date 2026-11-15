@@ -179,3 +179,9 @@ the agents are told they cannot open signed-in pages. Preparing a persona recrea
 of findings in reviews that asked for changes, denied Bash, your score, bugs after merge) and a summary per builder model. `<job>` shows one job by
 round. `score <job> <1-5> [note]` and `bug <job> <note>` write `factory/jobs/<job>/score.json`. Builder model comes from `usage.jsonl` (`modelOverride`
 or the model of the run); jobs built in a chat session are labelled `in-session`. Compare models only with several jobs of the same kind: one job is an anecdote.
+
+## Rework from the driver (workflow-021)
+
+`node factory/driver.mjs run <job> --from build --rework` starts a fresh builder (not the old session) on the highest `rework-<k>.md` of the job folder
+(written by the orchestrator from the user's note, as in SKILL.md "/factory rework"), with the prompt `Rework: read <file> and address it, then update build.md
+for round N+1.`; the reviews then continue as round N+1, and the rework run gets a fresh `MAX_RESUMES` (the rounds before it do not count).

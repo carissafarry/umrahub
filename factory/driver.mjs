@@ -5,7 +5,7 @@
 // Never merges a PR and never pushes to main.
 import { execFile, spawn } from 'node:child_process'
 import { existsSync, openSync } from 'node:fs'
-import { appendFile, copyFile, mkdir, readFile, stat, writeFile } from 'node:fs/promises'
+import { appendFile, copyFile, mkdir, readdir, readFile, stat, writeFile } from 'node:fs/promises'
 import { request } from 'node:http'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -255,14 +255,16 @@ async function stageSpec(c, o) {
 }
 
 // Runs the builder (fresh, or resumed after review round `round`) and checks build.md.
-async function stageBuild(c, o, round, changes) {
+// `rework` (workflow-021) is the file name of a user's rework note: a fresh builder reads it (SKILL.md "/factory rework").
+async function stageBuild(c, o, round, changes, rework) {
   await save(c, { stage: 'build' })
   if (c.type === 'fe') await ensureDevServer(c) // workflow-017: the builder uses it, it does not start its own
-  const session = changes ? await builderSession(c) : undefined
+  const session = changes && !rework ? await builderSession(c) : undefined
   let prompt = buildPrompt(c, round)
-  if (changes) prompt = session ? changesPrompt(c, round)
+  if (rework) prompt = buildPrompt(c, round + 1).replace(` Build round ${round + 1}.`, ` Rework: read ${join(c.dir, rework)} and address it, then update build.md for round ${round + 1}.`)
+  else if (changes) prompt = session ? changesPrompt(c, round)
     : `${buildPrompt(c, round + 1)} Continue: check git status and git log --oneline main..HEAD in the worktree first and don't redo finished work; the round ${round} reviews are in ${c.dir}/round-${round}/.`
-  await log(c, `${session ? 'resuming' : 'running'} builder (${changes ? `after round ${round}` : 'round 1'})`)
+  await log(c, `${session ? 'resuming' : 'running'} builder (${rework ? `rework ${rework}` : changes ? `after round ${round}` : 'round 1'})`)
   await runAgent(c, 'builder', prompt, o, { round, file: join(c.dir, 'build.md'), resume: session })
   await checkBuild(c)
 }
@@ -350,9 +352,15 @@ async function runJob(c, o) {
   let stage = o.from || c.job.stage
   if (!resumable.includes(stage)) throw new Stop(`job is in stage "${stage}"; pass --from <${resumable.join('|')}> to restart it`)
   let round = c.job.round
+  let base = 0 // a rework run gets a fresh MAX_RESUMES: rounds before it do not count
   if (stage === 'spec') { await stageSpec(c, o); stage = 'build' }
   if (stage === 'build') {
-    if (round === 0 && (await firstLine(join(c.dir, 'build.md'))) === 'STATUS: READY') await checkBuild(c) // built before a restart
+    if (o.rework) {
+      const note = (await readdir(c.dir)).filter((f) => /^rework-\d+\.md$/.test(f)).sort((a, b) => parseInt(a.slice(7)) - parseInt(b.slice(7))).pop()
+      if (!note) throw new Stop('--rework needs a rework-<k>.md in the job folder')
+      base = round
+      await stageBuild(c, o, round, true, note)
+    } else if (round === 0 && (await firstLine(join(c.dir, 'build.md'))) === 'STATUS: READY') await checkBuild(c) // built before a restart
     else if (round === 0) await stageBuild(c, o, 1)
     else await stageBuild(c, o, round, true) // CHANGES from round `round` are waiting
     round++
@@ -363,7 +371,7 @@ async function runJob(c, o) {
     for (;;) {
       const changes = await stageReview(c, o, round)
       if (!changes.length) break
-      if (round - 1 >= MAX_RESUMES) {
+      if (round - 1 - base >= MAX_RESUMES) {
         await writeFile(join(c.dir, 'decision.md'),
           `ESCALATE\n\nReview rounds exhausted. Outstanding CHANGES in round-${round}/ from: ${changes.join(', ')}.\n`)
         throw new Stop(`review rounds exhausted; CHANGES from ${changes.join(', ')} in round-${round}`)
@@ -424,6 +432,7 @@ function parseArgs(argv) {
     else if (rest[i] === '--slim') o.slim = true
     else if (rest[i] === '--reviewers') o.reviewers = rest[++i].split(',').map((s) => s.trim()).filter(Boolean)
     else if (rest[i] === '--from') o.from = rest[++i]
+    else if (rest[i] === '--rework') o.rework = true
     else if (rest[i] === '--permission-mode') o.permissionMode = rest[++i]
     else if (rest[i] === '--allowed-tools') o.allowedTools = rest[++i]
     else if (rest[i] === '--agent-timeout') o.agentTimeoutMin = Number(rest[++i])

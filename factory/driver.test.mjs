@@ -402,3 +402,15 @@ test('usage.jsonl rows carry the job, task, feature text, stage, prompt size and
   assert.deepEqual([...new Set(rows.map((r) => r.agent))].filter((a) => a.startsWith('reviewer-')).sort(),
     ['reviewer-code', 'reviewer-security', 'reviewer-ui', 'reviewer-ux'])
 })
+
+test('--rework starts a fresh builder that reads the latest rework note, review round continues after the last one (workflow-021)', async () => {
+  const t = await setup('be-935', { stage: 'needs-human', round: 2, spec: true })
+  await writeFile(join(t.dir, 'rework-1.md'), 'Use the approved design.\n')
+  const r = await drive(t, ['run', 'be-935', '--from', 'build', '--rework'])
+  assert.equal(r.code, 0, r.stdout)
+  const cs = (await calls(t)).filter((c) => c.tool === 'claude')
+  const builder = cs.find((c) => c.agent === 'builder')
+  assert.ok(!builder.resume, 'a rework builder is fresh, not a resumed session')
+  assert.match(builder.prompt, new RegExp(`Rework: read ${t.dir}/rework-1\\.md and address it, then update build\\.md for round 3\\.`))
+  assert.ok(existsSync(join(t.dir, 'round-3')), 'reviews continue as round 3')
+})

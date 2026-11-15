@@ -153,3 +153,9 @@ Dua sumber boros: bekal awal agen sekitar 40 ribu token (agen kecil seperti revi
 - **Diuji:** `--dry-run` menampilkan watcher, server dashboard, preview fe-100 dan Supabase. Pause sungguhan belum dijalankan.
 - **Efek terukur:** belum ada.
 - **Tes workflow-020 (2026-11-16):** `--dry-run`; pause sungguhan dengan driver tiruan beserta anaknya, dev server tiruan di port 15099, watcher, dashboard, pembantu login dan Supabase: semua berhenti, port 3000 dan 8000 tidak disentuh (preview yang menunjuk 8000 dilewati); pause kedua tidak menghapus daftar yang dihentikan pertama; `--keep-supabase` membiarkan Supabase hidup; `resume-check.sh` mencetak PAUSED; Supabase menyala lagi dengan resep di AGENTS.md. Dua cacat ketemu dan diperbaiki: pola `"stage":` tanpa spasi, dan pause kedua menimpa catatan pertama.
+
+## workflow-021 Rework lewat driver
+
+- **Perubahan:** `driver.mjs run <job> --from build --rework` menjalankan builder baru pada `rework-<k>.md` terbaru, ronde review lanjut dari ronde terakhir, jatah resume baru. Satu tes ditambahkan (22 lulus).
+- **Alasan:** driver belum punya rework: `--from build` hanya melanjutkan sesi builder lama dengan temuan review, jadi catatan user (mis. desain not-found untuk fe-100) harus dikerjakan di chat dan tidak tercatat.
+- **Efek terukur:** belum ada (fe-100 adalah pemakaian pertama).
