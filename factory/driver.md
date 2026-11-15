@@ -64,8 +64,9 @@ the working directory and `--add-dir`); override with `FACTORY_PERMISSION_MODE` 
 A headless run cannot ask, so any tool that is not pre-allowed is denied. The agents
 run Bash for `git`, `npm`, `npx`, `node`, `supabase`, `gh`, `agent-browser`, `lsof`
 and `curl`. The default `--allowedTools` is
-`Bash(git:*) Bash(npm:*) Bash(npx:*) Bash(node:*) Bash(supabase:*) Bash(gh:*) Bash(agent-browser:*) Bash(lsof:*) Bash(curl:*) Bash(ls:*) Bash(cat:*) Bash(grep:*) Bash(head:*) Bash(tail:*) Bash(wc:*)`.
-The last six (workflow-006) are read-only: be-061's reviewers and approver were denied Bash for such reads.
+`Bash(git:*) Bash(npm:*) Bash(npx:*) Bash(node:*) Bash(supabase:*) Bash(gh:*) Bash(agent-browser:*) Bash(lsof:*) Bash(curl:*) Bash(ls:*) Bash(cat:*) Bash(grep:*) Bash(head:*) Bash(tail:*) Bash(wc:*) Bash(cd:*) Bash(pwd:*) Bash(sort:*) Bash(diff:*)`.
+The six after `curl` (workflow-006) are read-only: be-061's reviewers and approver were denied Bash for such reads.
+`cd`, `pwd`, `sort` and `diff` (workflow-014) are read-only too: the agent files tell every command to start with `cd <worktree> && `, and a `&&` chain is allowed only when each part is, so be-064's reviewers, approver and builder were denied almost every Bash call (see `driver.log`).
 `find` and `sed` are left out on purpose (`find -delete/-exec`, `sed -i` write files); agents use Glob, Grep and Read with
 offset/limit instead. Nothing that deletes, pushes outside `git`, or writes outside the job folder is added.
 Change it with `FACTORY_ALLOWED_TOOLS` or `--allowed-tools "<rules>"`, or put the

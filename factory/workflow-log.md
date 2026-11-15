@@ -101,3 +101,11 @@ Dua sumber boros: bekal awal agen sekitar 40 ribu token (agen kecil seperti revi
 - **Alasan:** be-064 sampai `needs-human` dengan artifact lama (masih rancangan spec) dan tanpa link di dashboard, padahal sudah diminta sebelumnya.
 - **Efek yang diharapkan:** setiap job database punya artifact skema yang cocok dengan migrasinya dan link yang bisa diklik. Biaya: satu baca dan satu publish artifact per job.
 - **Efek terukur:** belum ada (cek job database berikutnya: `schema` terisi dan isi artifact cocok).
+
+## workflow-014 Reviewer, approver dan builder tidak lagi ditolak Bash
+
+- **Perubahan:** `DEFAULT_TOOLS` di `factory/driver.mjs` (dan `driver.md`) menambah `Bash(cd:*)`, `Bash(pwd:*)`, `Bash(sort:*)`, `Bash(diff:*)`; file agen builder, reviewer-code, reviewer-security dan approver melarang awalan variabel (`W=...;`) di depan perintah.
+- **Alasan:** `driver.log` be-064 mencatat penolakan Bash untuk reviewer-code, reviewer-security, approver dan builder. Penyebabnya: file agen menyuruh setiap perintah diawali `cd <worktree> && `, tetapi `cd` tidak ada di daftar izin, sehingga rantai `&&` ditolak. Reviewer-code jadi tidak bisa menjalankan stack dan approver hanya mengandalkan `build.md`.
+- **Efek yang diharapkan:** tidak ada baris `denied Bash` di `driver.log` job berikutnya; reviewer dan approver bisa memeriksa kode dan tes sendiri. Biaya token naik sedikit karena mereka benar-benar menjalankan pemeriksaan.
+- **Catatan:** baris usage spec-writer be-064 bertanda `source: in-session` (spec dibuat sebelum driver dipakai), jadi hanya punya `totalTokens` dan tanpa biaya. Itu bukan bug pencatatan driver.
+- **Efek terukur:** belum ada (cek `driver.log` job database berikutnya).

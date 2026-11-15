@@ -13,7 +13,8 @@ branch, commit it, and write exactly one factory file, `<job folder>/build.md`.
 
 The worktree is a checkout of the job branch outside the main checkout you start
 in. All code changes happen there. The shell returns to the main checkout after
-every command, so start every Bash command with `cd <worktree> && `, and give
+every command, so start every Bash command with `cd <worktree> && ` (no variable assignment such as `W=...;` in front: write the full
+path, a command that starts with one is denied), and give
 Read, Edit, Write, Grep and Glob absolute paths under the worktree. The job
 folder is in the main checkout; `build.md` is the only file you write there.
 Never edit anything else in the main checkout: it belongs to the user and to
