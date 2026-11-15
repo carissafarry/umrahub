@@ -146,3 +146,11 @@ agent cannot sign in to look at pages that need a login.
 - fe preview: id-owning routes are not looked up; the dev server is detached and
   only stopped by port (`lsof`), never by name.
 - Several jobs at once: run one driver per job; ports derive from the job number.
+
+## Model per agent and cost per run (workflow-015)
+
+`--model <agent>=<model>` (repeatable, for example `--model builder=sonnet`) passes `--model` to that agent's
+`claude -p` run and overrides the `model:` in its agent file; the row in `usage.jsonl` gets `modelOverride`.
+A resumed session reports its cost since the session began, so `costUsd` is now what that run added and
+`costTotalUsd` is the raw figure (old rows have no `costTotalUsd`). If the resumed run gets a new session id the
+delta cannot be found and `costUsd` stays the raw total; compare with `costTotalUsd` before trusting a builder row.

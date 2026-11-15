@@ -109,3 +109,10 @@ Dua sumber boros: bekal awal agen sekitar 40 ribu token (agen kecil seperti revi
 - **Efek yang diharapkan:** tidak ada baris `denied Bash` di `driver.log` job berikutnya; reviewer dan approver bisa memeriksa kode dan tes sendiri. Biaya token naik sedikit karena mereka benar-benar menjalankan pemeriksaan.
 - **Catatan:** baris usage spec-writer be-064 bertanda `source: in-session` (spec dibuat sebelum driver dipakai), jadi hanya punya `totalTokens` dan tanpa biaya. Itu bukan bug pencatatan driver.
 - **Efek terukur:** belum ada (cek `driver.log` job database berikutnya).
+
+## workflow-015 Model per agent dan biaya per run
+
+- **Perubahan:** driver menerima `--model <agen>=<model>` (menimpa `model:` di file agen) dan mencatat `modelOverride`; baris usage run yang dilanjutkan (resume) memakai selisih biaya sesi di `costUsd` dan menyimpan angka mentah di `costTotalUsd`.
+- **Alasan:** biaya builder (opus) ~66% dari seluruh biaya, dan baris builder fe-068 menunjukkan $4,22 untuk 2 turn / 7 detik yang tidak masuk akal (dugaan: biaya kumulatif sesi). Perlu cara menguji builder dengan sonnet tanpa mengubah file agen.
+- **Efek yang diharapkan:** bisa membandingkan builder sonnet dan opus per job; biaya resume tidak terhitung dua kali. Percobaan pertama: fe-100 dengan `--model builder=sonnet`.
+- **Efek terukur:** belum ada (bandingkan fe-100 dengan fe-080 $1,26 dan fe-099 $2,37).
