@@ -181,8 +181,8 @@
         "hint": "Which city will you fly from?"
       },
       "date": {
-        "title": "Approximate travel date",
-        "hint": "Pick a month and year; an estimate is fine."
+        "title": "When are you leaving?",
+        "hint": "Not sure yet? Pick an estimate; you can change it later."
       },
       "passport": {
         "title": "Passport status",
@@ -197,9 +197,18 @@
         "hint": "Mark travelers who need extra care so their preparation is adjusted."
       }
     },
-    "monthLabel": "Month",
-    "yearLabel": "Year",
-    "choose": "Choose",
+    "durationLabel": "Trip length",
+    "durationChip": "{days} days",
+    "calendarLabel": "Departure and return dates",
+    "previousMonth": "Previous month",
+    "nextMonth": "Next month",
+    "pickDeparture": "Tap your departure date.",
+    "pickReturn": "Now tap your return date.",
+    "rangeSummary": "{start} – {end} · {days} days",
+    "legsTitle": "Dates in Makkah and Madinah",
+    "legsHint": "Fill in at least one city. Madinah starts no earlier than the day Makkah ends.",
+    "legStart": "From",
+    "legEnd": "To",
     "passport": {
       "valid": "Have one, still valid",
       "expired": "Have one, expired",
@@ -219,7 +228,10 @@
     "submitting": "Creating your trip…",
     "errors": {
       "city": "Choose a departure city.",
-      "date": "Choose a month and year within the next 24 months.",
+      "date": "Choose a departure date within the next 24 months.",
+      "returnDate": "Choose a return date on or after the departure date.",
+      "legsMissing": "Enter start and end dates for Makkah or Madinah.",
+      "legs": "City dates must be complete and inside the trip dates, and Madinah starts no earlier than the day Makkah ends.",
       "passport": "Choose a passport status.",
       "names": "Enter a name for every traveler (1–80 characters).",
       "notes": "Notes can be up to 500 characters.",

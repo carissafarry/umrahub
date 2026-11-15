@@ -296,6 +296,21 @@ Set `stage: "needs-human"`. The branch and its worktree stay for the human to
 inspect. Tell the user which job is waiting, give the worktree path, and quote
 `decision.md` (or the BLOCKED reason from `build.md`).
 
+**Schema artifact for database jobs (hard rule).** A job that adds or changes a
+migration (every `be-*` job, any job with `"db": true`) must never be in
+`needs-human` or `pr` (and the PR must never be opened) before the existing
+artifact "Skema Database Umra Hub" matches its migration. Update that artifact
+in place (never a new one): `Artifact` `action: "read"` its URL, edit the
+affected tables, diagram and "sudah di main" / "belum merge (task)" pills from
+the migration file itself, and republish to the same URL (strip the injected
+`claude-mermaid-runtime` block and the html/body wrapper from a saved copy
+first). Then put the URL in the job's `job.json` as `"schema"`; the dashboard
+shows it as "Lihat skema database". The URL is in memory
+`reference_schema_artifact`. Redo it when a review round changes the schema and
+when the PR merges (flip the pills to "sudah di main"). Give the user the link
+in the message that reports the decision or the PR. Never report a database job
+as ready for a decision without it.
+
 **Preview for fe jobs (hard rule).** An `fe-*` job must never be in
 `needs-human` or `pr` (and the PR must never be opened) without a running
 preview. As soon as `build.md` says `STATUS: READY`, and again every time a
@@ -511,7 +526,9 @@ hand (run `bash factory/resume-check.sh` first if you have no report).
    - `approve`: `decision.md` exists → read it; otherwise respawn `approver`.
 5. **`needs-human` and `pr` jobs**: every `fe-*` job here must have a running
    preview. Restart a dead one on its port, start one that is missing (see
-   **Preview for fe jobs**), and remind the user which jobs wait for them.
+   **Preview for fe jobs**), and remind the user which jobs wait for them. For every
+database job here, check that its `job.json` has `schema` and that the artifact
+matches its migration (see **Schema artifact for database jobs**); fix it if not.
 6. **Sync**: make sure the main checkout is on `factory/infra`, local `main` is
    `origin/main` (`git fetch origin main:main`), `factory/infra` is up to date
    with `origin/main`, and any infra commits have an open PR (see **Prompts**);
@@ -555,9 +572,9 @@ its PR.
 
 ## Driver
 
-`node factory/driver.mjs run <job-id>` is an alternative way to run **one job**
-through this loop without an orchestrator conversation: a Node script that starts
+**The driver is the default way to run a job** (workflow-011): `node factory/driver.mjs run <job-id> --reviewers code,ux,ui --slim`. It is a Node script that starts
 each agent as a fresh `claude -p` process, resumes the builder session on
 CHANGES, writes `job.json` and `usage.jsonl`, and opens the PR. It never merges.
-It does not replace this skill: the loop above remains the reference, and the
+The chat session stays the orchestrator (capacity check, watcher, inbox, reports) and never
+builds a job by hand: in-session work leaves no usage record. The loop above remains the reference, and the
 driver must match it. See `factory/driver.md`.
