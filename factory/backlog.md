@@ -52,6 +52,8 @@ the orchestrator moves items whose dependencies are all merged from **Menunggu**
 - [x] [infra-053] Sync infra branch after PR #20: bring origin/main (be-012 notifications merged by the user) into factory/infra so the open infra PR stays mergeable → infra-053
 - [x] [workflow-008] Usage rows carry task, feature text and prompt size: each usage.jsonl line gets job, task, feature (400 characters), stage and promptChars next to the agent lens → workflow-008
 - [x] [workflow-013] Schema artifact follows every database job: SKILL.md rule and resume check keep the "Skema Database Umra Hub" artifact current and set job.json `schema` → workflow-013
+- [x] [workflow-014] Driver agents no longer denied Bash: `cd`, `pwd`, `sort`, `diff` allowed in the driver's default tools and agent files forbid variable prefixes, after be-064's driver.log showed reviewers, approver and builder denied → workflow-014
+- [x] [infra-112] Bookkeeping after be-064 merge: promoted be-065, be-070 and be-075 to Siap; be-064 (PR #54) merged → infra-112
 - [x] [infra-111] Schema artifact link on the dashboard: job.json may carry `schema` (a claude.ai artifact URL) and the dashboard shows "Lihat skema database" on the card and in the drawer → infra-111
 - [x] [infra-110] Sync main with merged fe-062: brought origin/main (PR #51 fe-062 and 3 earlier commits) into factory/infra so the open infra PR stays mergeable → infra-110
 - [x] [infra-109] Fix unparseable backlog line: infra-108 line had no `Title: description` separator so the dashboard dropped it; fixed and resume-check now passes → infra-109
@@ -145,6 +147,12 @@ Cari dan Gabung Jadwal, MVP-1. Read first: `.plans/2026-11-02-cari-dan-gabung-ja
 - [x] [fe-068] Beranda and navigation: /dashboard becomes the Beranda (greeting, active trip, tasks that need action, one "Cari jadwal untuk tanggalmu" CTA that is enabled once fe-069 exists), the old trip list moves to /trips (tab "Trip"), new header with bell and account menu, bottom nav and top nav; add tabs only for routes that exist. Open question: where account, language and sign-out live (proposal in the design doc section 10b: profile icon in the header opening a bottom sheet) (ticket fe-068, story US-2) → claimed
 - [x] [fe-081] New style for checklist, step detail and budget: apply the new layout patterns to /trips/[id], /steps/[id] and /trips/[id]/budget with no behaviour change (ticket fe-081, story US-13) → fe-081
 
+## Siap — gelombang 9
+
+- [be-065] Dummy data: idempotent upsert migration with about 10 providers (muthawif and travel, some affiliated, one unverified), jadwal in Makkah, Thaif (day trip from Makkah) and Madinah for January 2027 with vehicle options, dummy reviews and catalog items, all is_dummy = true (ticket be-065, story US-14)
+- [be-075] Status notifications: database trigger inserting a notification for the trip owner when a participation status changes, with new notification types in the notifications table and fixed id and en copy keys (ticket be-075, story US-11)
+- [be-070] Participation actions: expressInterest, setSeats, cancelInterest, confirmAttendance, respondToOption as Server Actions with trip-membership checks, validation and a pure, tested status-transition table; no cancel after payment proof (ticket be-070, stories US-5 to US-7)
+
 ## Menunggu
 
 Gelombang 9
@@ -153,13 +161,10 @@ Gelombang 9
 - [fe-079] Tip ratings UI: "Membantu" and "Kurang" buttons with counts on each tip in the step detail, own vote highlighted, "Paling membantu" tag on the top tip, sort control; reference screen "Detail langkah" in the preview (ticket fe-079, story US-12) (butuh: be-078, fe-066)
 
 Gelombang 10
-- [be-065] Dummy data: idempotent upsert migration with about 10 providers (muthawif and travel, some affiliated, one unverified), jadwal in Makkah, Thaif (day trip from Makkah) and Madinah for January 2027 with vehicle options, dummy reviews and catalog items, all is_dummy = true (ticket be-065, story US-14) (butuh: be-063, be-064)
-- [be-075] Status notifications: database trigger inserting a notification for the trip owner when a participation status changes, with new notification types in the notifications table and fixed id and en copy keys (ticket be-075, story US-11) (butuh: be-064)
 - [fe-077] Provider profiles: muthawif and travel profile pages (verified badge with date, prominent affiliation card, read-only reviews, catalog cards, available jadwal, WhatsApp button, unverified warning text "Belum diverifikasi Umra Hub. Periksa sendiri sebelum membayar.") and a catalog item detail page. Open question: catalog shape (proposal: card list opening a detail page) (ticket fe-077, story US-10) (butuh: be-063, be-065, fe-066)
 
 Gelombang 11
 - [be-067] Jadwal search: loader searchSchedules(trip, kinds) grouping results per city with day trips under their city, and a capacity function returning confirmed, fix and interested counts per option without exposing who the participants are (ticket be-067, stories US-3 and US-4) (butuh: be-061, be-064, be-065)
-- [be-070] Participation actions: expressInterest, setSeats, cancelInterest, confirmAttendance, respondToOption as Server Actions with trip-membership checks, validation and a pure, tested status-transition table; no cancel after payment proof (ticket be-070, stories US-5 to US-7) (butuh: be-064)
 - [be-072] Payment proof storage: private bucket, images only up to 1 MB, RLS so only the trip owner, the provider and admins can read, an upload action that sets paid_claimed, and a function that deletes proofs 30 days after the jadwal ends (scheduling it is a manual step noted in the PR) (ticket be-072, story US-8) (butuh: be-070)
 
 Gelombang 12
