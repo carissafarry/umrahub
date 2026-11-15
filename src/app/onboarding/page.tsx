@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import { findLatestTripId } from "@/lib/onboarding/createTrip";
-import { currentYearMonth } from "@/lib/onboarding/validate";
+import { localIsoDate } from "@/lib/onboarding/dates";
 import { OnboardingWizard } from "./OnboardingWizard";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -22,11 +22,11 @@ export default async function OnboardingPage() {
   const latest = await findLatestTripId(supabase, user.id);
   if (latest.ok && latest.tripId) redirect("/dashboard");
 
-  // The server clock sets the first selectable month, matching validation.
+  // The server clock sets the first selectable day, matching validation.
   return (
     <OnboardingWizard
       variant="onboarding"
-      firstMonth={currentYearMonth(new Date())}
+      today={localIsoDate(new Date())}
     />
   );
 }
