@@ -145,3 +145,10 @@ Dua sumber boros: bekal awal agen sekitar 40 ribu token (agen kecil seperti revi
 - **Alasan:** reviewer fe-100 menulis "I don't sign in", jadi halaman yang butuh sesi hanya dibaca dari diff.
 - **Diuji:** seed, login helper dan dev server dicoba terpisah dengan stack lokal: `/dashboard` menampilkan "Halo, Carissa" dan "Umrah Januari 2027". Tersambung ke driver, belum dijalankan pada job fe sungguhan.
 - **Efek terukur:** belum ada (cek review UX/UI job fe berikutnya: apakah mereka membuka halaman yang butuh login).
+
+## workflow-020 Perintah pause untuk tidur
+
+- **Perubahan:** `factory/pause.sh` (dengan `--dry-run`, `--keep-supabase`, `--quit-orbstack`) menghentikan driver dan agennya, watcher, server dashboard, dev server preview job, pembantu login dan Supabase lokal, tanpa menyentuh port 3000 dan 8000; menulis `factory/PAUSED`. `SKILL.md` mendapat `/factory pause`, `resume-check.sh` mencetak PAUSED.
+- **Alasan:** tidak ada cara resmi untuk menghentikan semua proses factory; hanya `/factory resume` untuk menyalakan.
+- **Diuji:** `--dry-run` menampilkan watcher, server dashboard, preview fe-100 dan Supabase. Pause sungguhan belum dijalankan.
+- **Efek terukur:** belum ada.
