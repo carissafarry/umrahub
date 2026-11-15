@@ -14,7 +14,8 @@ other file.
 
 Your prompt gives the job's worktree: a checkout of the job branch outside the
 main checkout you start in. The shell returns to the main checkout after every
-command, so start every Bash command with `cd <worktree> && `, and give Read,
+command, so start every Bash command with `cd <worktree> && ` (no variable assignment such as `W=...;` in front: write the full
+path, a command that starts with one is denied), and give Read,
 Grep and Glob absolute paths under the worktree. The job folder is in the main
 checkout; your one file goes there.
 

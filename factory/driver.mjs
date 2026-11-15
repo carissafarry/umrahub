@@ -14,7 +14,7 @@ const HERE = dirname(fileURLToPath(import.meta.url))
 const MAX_RESUMES = 2
 const GH_REPO = process.env.FACTORY_GH_REPO || 'carissafarry/umrahub'
 const REVIEWERS = { security: 'reviewer-security', ux: 'reviewer-ux', ui: 'reviewer-ui', code: 'reviewer-code' }
-const DEFAULT_TOOLS = 'Bash(git:*) Bash(npm:*) Bash(npx:*) Bash(node:*) Bash(supabase:*) Bash(gh:*) Bash(agent-browser:*) Bash(lsof:*) Bash(curl:*) Bash(ls:*) Bash(cat:*) Bash(grep:*) Bash(head:*) Bash(tail:*) Bash(wc:*)'
+const DEFAULT_TOOLS = 'Bash(git:*) Bash(npm:*) Bash(npx:*) Bash(node:*) Bash(supabase:*) Bash(gh:*) Bash(agent-browser:*) Bash(lsof:*) Bash(curl:*) Bash(ls:*) Bash(cat:*) Bash(grep:*) Bash(head:*) Bash(tail:*) Bash(wc:*) Bash(cd:*) Bash(pwd:*) Bash(sort:*) Bash(diff:*)'
 
 class Stop extends Error {} // a reason to set needs-human
 const oneLine = (t) => String(t).replace(/\s+/g, ' ').trim()
