@@ -52,6 +52,7 @@ the orchestrator moves items whose dependencies are all merged from **Menunggu**
 - [x] [infra-053] Sync infra branch after PR #20: bring origin/main (be-012 notifications merged by the user) into factory/infra so the open infra PR stays mergeable → infra-053
 - [x] [workflow-008] Usage rows carry task, feature text and prompt size: each usage.jsonl line gets job, task, feature (400 characters), stage and promptChars next to the agent lens → workflow-008
 - [x] [workflow-013] Schema artifact follows every database job: SKILL.md rule and resume check keep the "Skema Database Umra Hub" artifact current and set job.json `schema` → workflow-013
+- [x] [workflow-014] Driver agents no longer denied Bash: `cd`, `pwd`, `sort`, `diff` allowed in the driver's default tools and agent files forbid variable prefixes, after be-064's driver.log showed reviewers, approver and builder denied → workflow-014
 - [x] [infra-112] Bookkeeping after be-064 merge: promoted be-065, be-070 and be-075 to Siap; be-064 (PR #54) merged → infra-112
 - [x] [infra-111] Schema artifact link on the dashboard: job.json may carry `schema` (a claude.ai artifact URL) and the dashboard shows "Lihat skema database" on the card and in the drawer → infra-111
 - [x] [infra-110] Sync main with merged fe-062: brought origin/main (PR #51 fe-062 and 3 earlier commits) into factory/infra so the open infra PR stays mergeable → infra-110
