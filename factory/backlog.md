@@ -51,6 +51,7 @@ the orchestrator moves items whose dependencies are all merged from **Menunggu**
 - [x] [infra-052] Footer hover effect: each command in the dashboard footer highlights on hover, shows a help cursor and an instant hint bubble above it (also on keyboard focus), replacing the slow native title tooltip → infra-052
 - [x] [infra-053] Sync infra branch after PR #20: bring origin/main (be-012 notifications merged by the user) into factory/infra so the open infra PR stays mergeable → infra-053
 - [x] [workflow-008] Usage rows carry task, feature text and prompt size: each usage.jsonl line gets job, task, feature (400 characters), stage and promptChars next to the agent lens → workflow-008
+- [x] [infra-111] Schema artifact link on the dashboard: job.json may carry `schema` (a claude.ai artifact URL) and the dashboard shows "Lihat skema database" on the card and in the drawer → infra-111
 - [x] [infra-110] Sync main with merged fe-062: brought origin/main (PR #51 fe-062 and 3 earlier commits) into factory/infra so the open infra PR stays mergeable → infra-110
 - [x] [infra-109] Fix unparseable backlog line: infra-108 line had no `Title: description` separator so the dashboard dropped it; fixed and resume-check now passes → infra-109
 - [x] [infra-108] Sync main with merged workflow-011: synced factory/infra with origin/main after PR #49 (workflow-011) merged → infra-108
