@@ -17,6 +17,10 @@ every command, so start every Bash command with `cd <worktree> && ` (no variable
 path, a command that starts with one is denied), and give
 Read, Edit, Write, Grep and Glob absolute paths under the worktree. The job
 folder is in the main checkout; `build.md` is the only file you write there.
+
+**Git commands:** never write `cd <worktree> && git ...`: a headless run always denies a `cd` followed by
+`git`. Write `git -C <worktree> <args>` (for example `git -C <worktree> status --short`). `cd <worktree> && ` stays fine
+for `npm`, `npx`, `node`, `ls`, `cat`, `grep`, `head` and `tail`.
 Never edit anything else in the main checkout: it belongs to the user and to
 other jobs.
 
@@ -33,7 +37,7 @@ other jobs.
 
 ## Build
 
-- Run `cd <worktree> && git branch --show-current` first. It must print the
+- Run `git -C <worktree> branch --show-current` first. It must print the
   branch from your prompt. If it doesn't, stop and write a BLOCKED build.md.
 - Match the surrounding code: its idioms, formatting, naming and imports. Keep
   comment density like the neighbouring code.
@@ -57,8 +61,8 @@ command you ran and its result, or what the page showed.
 - Never run a dev server in the foreground: a blocking Bash call hangs the whole
   job. Start it detached, `cd <worktree> && nohup npm run dev -- --port <port> >
   <job folder>/dev.log 2>&1 &`, then check the log or the page once. Stop it
-  only by port, `kill $(lsof -tiTCP:<port> -sTCP:LISTEN)`, never `pkill` or
-  `killall`.
+  only by port, never `pkill` or `killall`, and without `$(...)` (a headless run denies command
+  substitution): first `lsof -tiTCP:<port> -sTCP:LISTEN`, then `kill <pid>` with the number it printed.
 - For criteria you can see on a page, start the dev server as above on your
   port, then look at the page with the `agent-browser` CLI (run
   `agent-browser skills get core` first to learn it). Pass

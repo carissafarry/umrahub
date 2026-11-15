@@ -109,3 +109,10 @@ Dua sumber boros: bekal awal agen sekitar 40 ribu token (agen kecil seperti revi
 - **Efek yang diharapkan:** tidak ada baris `denied Bash` di `driver.log` job berikutnya; reviewer dan approver bisa memeriksa kode dan tes sendiri. Biaya token naik sedikit karena mereka benar-benar menjalankan pemeriksaan.
 - **Catatan:** baris usage spec-writer be-064 bertanda `source: in-session` (spec dibuat sebelum driver dipakai), jadi hanya punya `totalTokens` dan tanpa biaya. Itu bukan bug pencatatan driver.
 - **Efek terukur:** belum ada (cek `driver.log` job database berikutnya).
+
+## workflow-016 Bash ditolak: cd + git, substitusi perintah, kill
+
+- **Perubahan:** file semua agen: `git -C <worktree> ...` menggantikan `cd <worktree> && git ...`; builder menghentikan dev server dengan `lsof` lalu `kill <pid>` (tanpa `$(...)`); `driver.mjs` mengizinkan `nohup`, `kill`, `sleep`; `driver.log` menyimpan 400 karakter perintah yang ditolak (sebelumnya 120).
+- **Alasan:** workflow-014 menambah `cd`, tetapi be-070 dan fe-100 masih ditolak. Tes langsung `claude -p` dengan daftar izin driver menunjukkan `cd <dir> && git ...` selalu ditolak, `git -C` lolos, dan `kill $(lsof ...)` ditolak karena substitusi perintah.
+- **Belum selesai:** menjalankan dev server dengan `nohup ... > log &` masih ditolak (pengalihan keluaran dan `&`). Penyelesaian yang rapi: driver yang menjalankan dev server builder.
+- **Efek terukur:** belum ada (hitung baris `denied Bash` di `driver.log` job berikutnya).

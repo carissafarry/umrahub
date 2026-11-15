@@ -14,7 +14,7 @@ const HERE = dirname(fileURLToPath(import.meta.url))
 const MAX_RESUMES = 2
 const GH_REPO = process.env.FACTORY_GH_REPO || 'carissafarry/umrahub'
 const REVIEWERS = { security: 'reviewer-security', ux: 'reviewer-ux', ui: 'reviewer-ui', code: 'reviewer-code' }
-const DEFAULT_TOOLS = 'Bash(git:*) Bash(npm:*) Bash(npx:*) Bash(node:*) Bash(supabase:*) Bash(gh:*) Bash(agent-browser:*) Bash(lsof:*) Bash(curl:*) Bash(ls:*) Bash(cat:*) Bash(grep:*) Bash(head:*) Bash(tail:*) Bash(wc:*) Bash(cd:*) Bash(pwd:*) Bash(sort:*) Bash(diff:*)'
+const DEFAULT_TOOLS = 'Bash(git:*) Bash(npm:*) Bash(npx:*) Bash(node:*) Bash(supabase:*) Bash(gh:*) Bash(agent-browser:*) Bash(lsof:*) Bash(curl:*) Bash(ls:*) Bash(cat:*) Bash(grep:*) Bash(head:*) Bash(tail:*) Bash(wc:*) Bash(cd:*) Bash(pwd:*) Bash(sort:*) Bash(diff:*) Bash(nohup:*) Bash(kill:*) Bash(sleep:*)'
 
 class Stop extends Error {} // a reason to set needs-human
 const oneLine = (t) => String(t).replace(/\s+/g, ' ').trim()
@@ -140,7 +140,7 @@ async function runAgent(c, agent, prompt, o, { round = 0, file, resume } = {}) {
   if (denied) await log(c, `${agent}: permission denied for ${denied}`)
   for (const d of denials) { // the command text shows which rule to allow; truncated, one line
     const cmd = d.tool_input?.command ?? d.tool_input?.file_path
-    if (typeof cmd === 'string') await log(c, `${agent}: denied ${d.tool_name || 'tool'}: ${cmd.replace(/\s+/g, ' ').slice(0, 120)}`)
+    if (typeof cmd === 'string') await log(c, `${agent}: denied ${d.tool_name || 'tool'}: ${cmd.replace(/\s+/g, ' ').slice(0, 400)}`)
   }
   const hint = denied ? ` (denied: ${denied}; see factory/driver.md)` : ''
   if (res.is_error || res.subtype !== 'success') {

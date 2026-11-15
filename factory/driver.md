@@ -64,7 +64,7 @@ the working directory and `--add-dir`); override with `FACTORY_PERMISSION_MODE` 
 A headless run cannot ask, so any tool that is not pre-allowed is denied. The agents
 run Bash for `git`, `npm`, `npx`, `node`, `supabase`, `gh`, `agent-browser`, `lsof`
 and `curl`. The default `--allowedTools` is
-`Bash(git:*) Bash(npm:*) Bash(npx:*) Bash(node:*) Bash(supabase:*) Bash(gh:*) Bash(agent-browser:*) Bash(lsof:*) Bash(curl:*) Bash(ls:*) Bash(cat:*) Bash(grep:*) Bash(head:*) Bash(tail:*) Bash(wc:*) Bash(cd:*) Bash(pwd:*) Bash(sort:*) Bash(diff:*)`.
+`Bash(git:*) Bash(npm:*) Bash(npx:*) Bash(node:*) Bash(supabase:*) Bash(gh:*) Bash(agent-browser:*) Bash(lsof:*) Bash(curl:*) Bash(ls:*) Bash(cat:*) Bash(grep:*) Bash(head:*) Bash(tail:*) Bash(wc:*) Bash(cd:*) Bash(pwd:*) Bash(sort:*) Bash(diff:*) Bash(nohup:*) Bash(kill:*) Bash(sleep:*)`.
 The six after `curl` (workflow-006) are read-only: be-061's reviewers and approver were denied Bash for such reads.
 `cd`, `pwd`, `sort` and `diff` (workflow-014) are read-only too: the agent files tell every command to start with `cd <worktree> && `, and a `&&` chain is allowed only when each part is, so be-064's reviewers, approver and builder were denied almost every Bash call (see `driver.log`).
 `find` and `sed` are left out on purpose (`find -delete/-exec`, `sed -i` write files); agents use Glob, Grep and Read with
@@ -146,3 +146,11 @@ agent cannot sign in to look at pages that need a login.
 - fe preview: id-owning routes are not looked up; the dev server is detached and
   only stopped by port (`lsof`), never by name.
 - Several jobs at once: run one driver per job; ports derive from the job number.
+
+## Bash chains that are always denied (workflow-016)
+
+A headless run always denies `cd <dir> && git ...` (Claude Code's guard against a `cd` into a repo whose git config could run code), even with `Bash(cd:*)` and `Bash(git:*)` allowed. `git -C <dir> ...` is allowed, and so are `cd <dir> && npm|npx|node|ls|cat|grep|head|tail ...` and `;` chains of allowed commands. The agent files say so. `driver.log` now keeps 400 characters of each denied command (was 120), so the reason for a denial is readable.
+
+`nohup`, `kill` and `sleep` (workflow-016) let a builder start its dev server detached and stop it by port, as `builder.md` says; before this, `nohup ... &` and `kill $(lsof ...)` were denied in a headless run. `kill` is not limited to one port by the rule, so the agent files stay the guard: only the job's own port, never 3000 or 8000. `awk` stays out (it can run commands); agents use grep, Grep and Read. Writes outside the worktree and the job folder (`echo > file`, `cp` elsewhere) stay denied on purpose.
+
+Command substitution (`$(...)`, backticks) is denied in a headless run whatever the rules say, so `builder.md` stops a dev server with two commands: `lsof -tiTCP:<port> -sTCP:LISTEN`, then `kill <pid>`. The job folder lives inside the main checkout (the agents' working directory), so `nohup ... > <job folder>/dev.log` is a write inside it.
