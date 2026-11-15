@@ -53,6 +53,8 @@ the orchestrator moves items whose dependencies are all merged from **Menunggu**
 - [x] [workflow-008] Usage rows carry task, feature text and prompt size: each usage.jsonl line gets job, task, feature (400 characters), stage and promptChars next to the agent lens → workflow-008
 - [x] [workflow-013] Schema artifact follows every database job: SKILL.md rule and resume check keep the "Skema Database Umra Hub" artifact current and set job.json `schema` → workflow-013
 - [x] [infra-113] Backlog bookkeeping for the sonnet-builder experiment: fe-100 and be-070 claimed, workflow-015, workflow-016 and workflow-017 recorded → infra-113
+- [x] [workflow-019] Signed-in preview for fe jobs: factory/preview.mjs sample users and one-click login on the local Supabase stack, wired into the driver → workflow-019
+- [x] [workflow-018] Metrics to compare builder models: factory/metrics.mjs per job and per builder model, score and bug commands → workflow-018
 - [x] [workflow-017] Dev server for fe jobs run by the driver: the driver starts the dev server before the builder and the UX/UI reviewers and tells them in the prompt, plus a local Supabase start recipe in AGENTS.md → workflow-017
 - [x] [workflow-016] Stop Bash denials: git -C instead of cd && git, no command substitution to stop a dev server, nohup/kill/sleep allowed, 400 characters of a denied command in driver.log → workflow-016
 - [x] [workflow-015] Model per agent and cost per run: driver flag --model <agent>=<model> and the cost a resumed run added → workflow-015
