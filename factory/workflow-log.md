@@ -138,3 +138,10 @@ Dua sumber boros: bekal awal agen sekitar 40 ribu token (agen kecil seperti revi
 - **Alasan:** kualitas builder sonnet belum teruji; satu job hanya anekdot. Perlu angka yang sama untuk setiap job.
 - **Efek yang diharapkan:** setelah beberapa job per model, ada perbandingan biaya, ronde, temuan dan skor yang bisa dipantau.
 - **Efek terukur:** belum ada (data awal: opus 5 job, sonnet 3 job, per 2026-11-16).
+
+## workflow-019 Login contoh untuk preview fe
+
+- **Perubahan:** `factory/preview.mjs` (dari WIP workflow-012: data contoh dan pembantu login di port 5090, hanya untuk Supabase lokal) dihubungkan ke driver: untuk job `fe-*` driver menyiapkan pengguna contoh, menjalankan dev server dengan URL dan kunci lokal, dan memberi builder serta reviewer UX/UI tautan satu klik.
+- **Alasan:** reviewer fe-100 menulis "I don't sign in", jadi halaman yang butuh sesi hanya dibaca dari diff.
+- **Diuji:** seed, login helper dan dev server dicoba terpisah dengan stack lokal: `/dashboard` menampilkan "Halo, Carissa" dan "Umrah Januari 2027". Tersambung ke driver, belum dijalankan pada job fe sungguhan.
+- **Efek terukur:** belum ada (cek review UX/UI job fe berikutnya: apakah mereka membuka halaman yang butuh login).

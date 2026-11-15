@@ -76,7 +76,7 @@ const tail = (c) => (c.code ? ` Task code: ${c.code}.` : '')
 const PREVIEW_SENTENCE = ' Preview route: write the exact page(s) to check, as paths, on a line "Preview route: <path>" in build.md.'
 // workflow-017: a headless agent cannot start a detached dev server (`nohup ... &` and redirects are denied), so for
 // an fe job the driver starts one on the preview port and the agents only use it.
-const DEV_SERVER = (c) => ` A dev server for this worktree is already running at http://localhost:${port(c, 3)} (started by the driver): open pages there, never start or stop a dev server yourself.`
+const DEV_SERVER = (c) => ` A dev server for this worktree is already running at http://localhost:${port(c, 3)} (started by the driver): open pages there, never start or stop a dev server yourself.${c.login ? ` Signed-in pages: open ${c.login} once (it signs in a sample user on the local stack and redirects; change the \`to\` address to open other pages).` : ' No sample user is available, so pages that need a sign-in cannot be opened: say so in your report.'}`
 const reviewerPort = (c, key) => (c.type === 'fe' ? DEV_SERVER(c) : key === 'ux' ? ` Port: ${port(c, 1)}.` : key === 'ui' ? ` Port: ${port(c, 2)}.` : '')
 
 function specPrompt(c) {
@@ -201,15 +201,37 @@ async function previewRoute(c) {
   return fromSpec ?? '/'
 }
 
+// workflow-019: sample data and a one-click sign-in for the reviewers (factory/preview.mjs, local Supabase stack only).
+// Best effort: with no local stack the preview runs as before and signed-in pages cannot be checked.
+async function prepareLogin(c, p) {
+  if (c.login !== undefined) return c.loginEnv ?? {}
+  c.login = null
+  try {
+    const route = await previewRoute(c)
+    const persona = route.startsWith('/onboarding') ? 'baru' : 'berjalan'
+    const script = fileURLToPath(new URL('./preview.mjs', import.meta.url))
+    const env = JSON.parse((await run('node', [script, 'prepare', persona], { cwd: c.root })).trim().split('\n').pop())
+    c.loginEnv = env
+    c.login = (await run('node', [script, 'link', persona, `http://localhost:${p}${route}`], { cwd: c.root })).trim()
+    await log(c, `signed-in preview ready (sample user "${persona}", local Supabase)`)
+    return env
+  } catch (e) {
+    await log(c, `no signed-in preview: ${oneLine(e.stderr || e.message).slice(0, 160)}`)
+    return {}
+  }
+}
+
 // Starts the job's dev server on the preview port when nothing answers there; the output goes to dev.log in the job folder.
 async function ensureDevServer(c) {
   const p = previewPort(c)
   const wt = resolve(c.job.worktree)
+  const login = await prepareLogin(c, p)
   if (!(await answers(p))) {
     const env = join(wt, '.env.local')
     if (!existsSync(env) && existsSync(join(c.root, '.env.local'))) await copyFile(join(c.root, '.env.local'), env)
     const out = openSync(join(c.dir, 'dev.log'), 'a')
-    spawn('npm', ['run', 'dev', '--', '--port', String(p)], { cwd: wt, detached: true, stdio: ['ignore', out, out] }).unref()
+    // the env of the local stack wins over .env.local, so a signed-in preview never touches the hosted project
+    spawn('npm', ['run', 'dev', '--', '--port', String(p)], { cwd: wt, detached: true, stdio: ['ignore', out, out], env: { ...process.env, ...login } }).unref()
     for (let i = 0; i < 60 && !(await answers(p)); i++) await new Promise((r) => setTimeout(r, 1000))
     if (!(await answers(p))) throw new Stop(`preview did not answer on port ${p}`)
   }

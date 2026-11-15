@@ -168,8 +168,10 @@ delta cannot be found and `costUsd` stays the raw total; compare with `costTotal
 A headless agent cannot start a detached dev server (`nohup ... > log &`, `&` and redirects to a file are denied). So for an `fe-*` job the
 driver starts `npm run dev -- --port <5103 + 10n>` in the worktree itself before the builder and before the UX/UI reviewers (output in
 `dev.log` of the job folder), and the prompts of builder and reviewers say it is already running at that port: they open pages there and
-never start or stop a server. The same server is the preview link. A signed-in page still needs a session; the agents do not sign in
-(see `factory/preview.mjs`, workflow-012 work in progress, for sample users on the local stack).
+never start or stop a server. The same server is the preview link. A signed-in page needs a session: when the local Supabase stack runs, the driver also calls `node factory/preview.mjs prepare <persona>` (sample user and
+data on the local stack: `berjalan` has a trip, `baru` has none and is used for `/onboarding`), starts the dev server with the local stack's URL and key (they
+win over `.env.local`, so the hosted project is never touched) and gives the agents a one-click link on the login helper (port 5090). With no local stack
+the agents are told they cannot open signed-in pages. Preparing a persona recreates the sample user, so two fe jobs running together can sign each other out.
 
 ## Metrics to compare builder models (workflow-018)
 
