@@ -239,7 +239,7 @@ export function OnboardingWizard({
 
         <form
           noValidate
-          className="flex flex-col gap-5 lg:rounded-[1.75rem] lg:border lg:border-surface-line lg:bg-surface lg:p-8"
+          className="flex flex-col gap-5 rounded-[1.75rem] border border-surface-line bg-surface p-5 lg:p-8"
           onSubmit={(event) => {
             event.preventDefault();
             handleNext();
