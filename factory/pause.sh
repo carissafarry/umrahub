@@ -32,7 +32,7 @@ stop_pids "login helper" $(pgrep -f "factory/preview.mjs serve")
 # 5. dev servers of the job previews (ports from job.json; never 3000 or 8000)
 for j in factory/jobs/*/job.json; do
   [ -e "$j" ] || continue
-  port=$(sed -n 's/.*"preview": "http:\/\/localhost:\([0-9]*\).*/\1/p' "$j")
+  port=$(sed -n 's/.*"preview": *"http:\/\/localhost:\([0-9]*\).*/\1/p' "$j")
   [ -n "$port" ] || continue
   case "$port" in 3000|8000) continue;; esac
   pids=$(lsof -tiTCP:"$port" -sTCP:LISTEN 2>/dev/null)
@@ -49,13 +49,18 @@ fi
 running=()
 for j in factory/jobs/*/job.json; do
   [ -e "$j" ] || continue
-  grep -qE '"stage": "(spec|build|review|approve)"' "$j" && running+=("$(basename "$(dirname "$j")")")
+  grep -qE '"stage": *"(spec|build|review|approve)"' "$j" && running+=("$(basename "$(dirname "$j")")")
 done
 
 [ "$dry" = 1 ] && { echo "dry run, nothing stopped:"; printf '  %s\n' "${stopped[@]}"; echo "jobs in progress: ${running[*]:-none}"; exit 0; }
+# a second pause must not forget what the first one stopped (resume needs it): keep the earlier list
+before=$(sed -n 's/^stopped: //p' factory/PAUSED 2>/dev/null)
+now="${stopped[*]}"
+all="$before"; [ "$all" = "nothing was running" ] && all=""
+[ -n "$now" ] && all="${all:+$all, }$now"
 {
   echo "paused $(date '+%Y-%m-%d %H:%M')"
-  echo "stopped: ${stopped[*]:-nothing was running}"
+  echo "stopped: ${all:-nothing was running}"
   echo "jobs interrupted: ${running[*]:-none}"
 } > factory/PAUSED
 cat factory/PAUSED
