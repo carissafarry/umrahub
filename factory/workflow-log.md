@@ -94,3 +94,10 @@ Dua sumber boros: bekal awal agen sekitar 40 ribu token (agen kecil seperti revi
 - **Alasan:** sesi baru menjalankan be-064 dan fe-062 langsung di chat, bukan lewat driver, sehingga pemakaian token tidak tercatat dan metode kerja biasa tidak dipakai.
 - **Efek yang diharapkan:** setiap sesi baru langsung memakai driver, cek kapasitas, baca inbox, dan melaporkan token. Tanpa token tambahan kecuali beberapa baris di konteks awal.
 - **Efek terukur:** belum ada (cek apakah job berikutnya di sesi baru punya `usage.jsonl`).
+
+## workflow-013 Artifact skema selalu ikut job database
+
+- **Perubahan:** `SKILL.md` mendapat aturan keras "Schema artifact for database jobs" (artifact "Skema Database Umra Hub" diperbarui di tempat sebelum job database masuk `needs-human`/`pr`, isi `job.json` `schema`, balik label saat merge) dan langkah cek di `/factory resume`. Dashboard menampilkan link dari `schema` (infra-111).
+- **Alasan:** be-064 sampai `needs-human` dengan artifact lama (masih rancangan spec) dan tanpa link di dashboard, padahal sudah diminta sebelumnya.
+- **Efek yang diharapkan:** setiap job database punya artifact skema yang cocok dengan migrasinya dan link yang bisa diklik. Biaya: satu baca dan satu publish artifact per job.
+- **Efek terukur:** belum ada (cek job database berikutnya: `schema` terisi dan isi artifact cocok).
