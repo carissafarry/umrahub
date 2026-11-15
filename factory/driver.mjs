@@ -4,7 +4,7 @@
 //   node factory/driver.mjs usage <job-id>
 // Never merges a PR and never pushes to main.
 import { execFile, spawn } from 'node:child_process'
-import { existsSync } from 'node:fs'
+import { existsSync, openSync } from 'node:fs'
 import { appendFile, copyFile, mkdir, readFile, stat, writeFile } from 'node:fs/promises'
 import { request } from 'node:http'
 import { dirname, join, resolve } from 'node:path'
@@ -74,7 +74,10 @@ const paths = (c) => `Job folder: ${c.dir}/. Worktree: ${resolve(c.job.worktree)
 const port = (c, offset) => 5100 + 10 * c.n + offset
 const tail = (c) => (c.code ? ` Task code: ${c.code}.` : '')
 const PREVIEW_SENTENCE = ' Preview route: write the exact page(s) to check, as paths, on a line "Preview route: <path>" in build.md.'
-const reviewerPort = (c, key) => (key === 'ux' ? ` Port: ${port(c, 1)}.` : key === 'ui' ? ` Port: ${port(c, 2)}.` : '')
+// workflow-017: a headless agent cannot start a detached dev server (`nohup ... &` and redirects are denied), so for
+// an fe job the driver starts one on the preview port and the agents only use it.
+const DEV_SERVER = (c) => ` A dev server for this worktree is already running at http://localhost:${port(c, 3)} (started by the driver): open pages there, never start or stop a dev server yourself.`
+const reviewerPort = (c, key) => (c.type === 'fe' ? DEV_SERVER(c) : key === 'ux' ? ` Port: ${port(c, 1)}.` : key === 'ui' ? ` Port: ${port(c, 2)}.` : '')
 
 function specPrompt(c) {
   const req = c.code && existsSync(join(c.root, 'factory/requirements', `${c.code}.md`))
@@ -82,7 +85,7 @@ function specPrompt(c) {
   return `${paths(c)} Feature: ${c.job.feature}${req}${tail(c)}`
 }
 const buildPrompt = (c, round) =>
-  `${paths(c)} Build round ${round}. Port: ${port(c, 0)}.${tail(c)}${c.type === 'fe' ? PREVIEW_SENTENCE : ''}`
+  `${paths(c)} Build round ${round}.${c.type === 'fe' ? DEV_SERVER(c) : ` Port: ${port(c, 0)}.`}${tail(c)}${c.type === 'fe' ? PREVIEW_SENTENCE : ''}`
 const changesPrompt = (c, round) =>
   `Round ${round} reviews are in ${c.dir}/round-${round}/. Address every review with VERDICT: CHANGES, commit, and update build.md for round ${round + 1}.`
 const reviewPrompt = (c, key, round) => `${paths(c)} Review round ${round}.${reviewerPort(c, key)}${tail(c)}`
@@ -198,17 +201,24 @@ async function previewRoute(c) {
   return fromSpec ?? '/'
 }
 
-async function ensurePreview(c) {
-  const route = await previewRoute(c)
+// Starts the job's dev server on the preview port when nothing answers there; the output goes to dev.log in the job folder.
+async function ensureDevServer(c) {
   const p = previewPort(c)
   const wt = resolve(c.job.worktree)
   if (!(await answers(p))) {
     const env = join(wt, '.env.local')
     if (!existsSync(env) && existsSync(join(c.root, '.env.local'))) await copyFile(join(c.root, '.env.local'), env)
-    spawn('npm', ['run', 'dev', '--', '--port', String(p)], { cwd: wt, detached: true, stdio: 'ignore' }).unref()
+    const out = openSync(join(c.dir, 'dev.log'), 'a')
+    spawn('npm', ['run', 'dev', '--', '--port', String(p)], { cwd: wt, detached: true, stdio: ['ignore', out, out] }).unref()
     for (let i = 0; i < 60 && !(await answers(p)); i++) await new Promise((r) => setTimeout(r, 1000))
     if (!(await answers(p))) throw new Stop(`preview did not answer on port ${p}`)
   }
+}
+
+async function ensurePreview(c) {
+  const route = await previewRoute(c)
+  const p = previewPort(c)
+  await ensureDevServer(c)
   await save(c, { preview: `http://localhost:${p}${route}` })
 }
 
@@ -225,7 +235,7 @@ async function stageSpec(c, o) {
 // Runs the builder (fresh, or resumed after review round `round`) and checks build.md.
 async function stageBuild(c, o, round, changes) {
   await save(c, { stage: 'build' })
-  if (c.type === 'fe') await stopPreview(c)
+  if (c.type === 'fe') await ensureDevServer(c) // workflow-017: the builder uses it, it does not start its own
   const session = changes ? await builderSession(c) : undefined
   let prompt = buildPrompt(c, round)
   if (changes) prompt = session ? changesPrompt(c, round)
@@ -260,7 +270,7 @@ async function stageReview(c, o, round) {
     else todo.push(key)
   }
   await save(c, { stage: 'review', round, reviews })
-  if (c.type === 'fe' && todo.some((k) => k === 'ux' || k === 'ui')) await stopPreview(c)
+  if (c.type === 'fe' && todo.some((k) => k === 'ux' || k === 'ui')) await ensureDevServer(c)
   await log(c, `review round ${round}: running ${todo.join(', ') || 'nothing'}`)
   const settled = await Promise.allSettled(todo.map(async (key) => {
     const f = join(dir, `review-${key}.md`)

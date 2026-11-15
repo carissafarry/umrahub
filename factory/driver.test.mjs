@@ -368,13 +368,14 @@ test('agent timeout: a hung agent is stopped with needs-human, no retry, flag an
   assert.notEqual(r.code, 0)
 })
 
-test('denied command text is logged, one line, truncated to 120 characters', async () => {
+test('denied command text is logged, one line, truncated to 400 characters', async () => {
   const t = await setup('be-932', { spec: true })
   await drive(t, ['run', 'be-932'], { FAKE_DENY: 'builder' })
   const log = await readFile(join(t.dir, 'driver.log'), 'utf8')
   const line = log.split('\n').find((l) => l.includes('builder: denied Bash: '))
   assert.ok(line, log)
-  assert.equal(line.split('denied Bash: ')[1].length, 120)
+  const shown = line.split('denied Bash: ')[1].length
+  assert.ok(shown > 120 && shown <= 400, String(shown)) // workflow-016: was 120
 })
 
 test('a crashed agent keeps its real error: exit code, stderr text, full text in agent-error-<agent>.txt', async () => {

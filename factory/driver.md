@@ -162,3 +162,11 @@ Command substitution (`$(...)`, backticks) is denied in a headless run whatever 
 A resumed session reports its cost since the session began, so `costUsd` is now what that run added and
 `costTotalUsd` is the raw figure (old rows have no `costTotalUsd`). If the resumed run gets a new session id the
 delta cannot be found and `costUsd` stays the raw total; compare with `costTotalUsd` before trusting a builder row.
+
+## Dev server for fe jobs (workflow-017)
+
+A headless agent cannot start a detached dev server (`nohup ... > log &`, `&` and redirects to a file are denied). So for an `fe-*` job the
+driver starts `npm run dev -- --port <5103 + 10n>` in the worktree itself before the builder and before the UX/UI reviewers (output in
+`dev.log` of the job folder), and the prompts of builder and reviewers say it is already running at that port: they open pages there and
+never start or stop a server. The same server is the preview link. A signed-in page still needs a session; the agents do not sign in
+(see `factory/preview.mjs`, workflow-012 work in progress, for sample users on the local stack).

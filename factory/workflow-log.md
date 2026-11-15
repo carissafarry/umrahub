@@ -123,3 +123,11 @@ Dua sumber boros: bekal awal agen sekitar 40 ribu token (agen kecil seperti revi
 - **Alasan:** biaya builder (opus) ~66% dari seluruh biaya, dan baris builder fe-068 menunjukkan $4,22 untuk 2 turn / 7 detik yang tidak masuk akal (dugaan: biaya kumulatif sesi). Perlu cara menguji builder dengan sonnet tanpa mengubah file agen.
 - **Efek yang diharapkan:** bisa membandingkan builder sonnet dan opus per job; biaya resume tidak terhitung dua kali. Percobaan pertama: fe-100 dengan `--model builder=sonnet`.
 - **Efek terukur:** belum ada (bandingkan fe-100 dengan fe-080 $1,26 dan fe-099 $2,37).
+
+## workflow-017 Dev server dijalankan driver untuk job fe
+
+- **Perubahan:** untuk job `fe-*` driver menyalakan dev server di port preview sebelum builder dan reviewer UX/UI (`dev.log` di folder job) dan memberi tahu agen lewat prompt; agen tidak lagi menyalakan atau mematikan server. `AGENTS.md` mendapat cara menyalakan Supabase lokal tanpa analytics.
+- **Alasan:** `nohup ... &` dan pengalihan ke berkas ditolak di run headless, jadi builder fe-100 tidak bisa membuka halaman dan semua reviewer hanya membaca diff.
+- **Efek yang diharapkan:** builder dan reviewer UX/UI fe bisa membuka halaman (belum bisa halaman yang butuh login). Tidak ada baris `denied Bash` tentang dev server.
+- **Belum selesai:** login untuk halaman yang butuh sesi (`factory/preview.mjs`, workflow-012 WIP, kini bisa dicoba karena Supabase lokal menyala).
+- **Efek terukur:** belum ada (cek job fe berikutnya).
