@@ -116,3 +116,10 @@ Dua sumber boros: bekal awal agen sekitar 40 ribu token (agen kecil seperti revi
 - **Alasan:** workflow-014 menambah `cd`, tetapi be-070 dan fe-100 masih ditolak. Tes langsung `claude -p` dengan daftar izin driver menunjukkan `cd <dir> && git ...` selalu ditolak, `git -C` lolos, dan `kill $(lsof ...)` ditolak karena substitusi perintah.
 - **Belum selesai:** menjalankan dev server dengan `nohup ... > log &` masih ditolak (pengalihan keluaran dan `&`). Penyelesaian yang rapi: driver yang menjalankan dev server builder.
 - **Efek terukur:** belum ada (hitung baris `denied Bash` di `driver.log` job berikutnya).
+
+## workflow-015 Model per agent dan biaya per run
+
+- **Perubahan:** driver menerima `--model <agen>=<model>` (menimpa `model:` di file agen) dan mencatat `modelOverride`; baris usage run yang dilanjutkan (resume) memakai selisih biaya sesi di `costUsd` dan menyimpan angka mentah di `costTotalUsd`.
+- **Alasan:** biaya builder (opus) ~66% dari seluruh biaya, dan baris builder fe-068 menunjukkan $4,22 untuk 2 turn / 7 detik yang tidak masuk akal (dugaan: biaya kumulatif sesi). Perlu cara menguji builder dengan sonnet tanpa mengubah file agen.
+- **Efek yang diharapkan:** bisa membandingkan builder sonnet dan opus per job; biaya resume tidak terhitung dua kali. Percobaan pertama: fe-100 dengan `--model builder=sonnet`.
+- **Efek terukur:** belum ada (bandingkan fe-100 dengan fe-080 $1,26 dan fe-099 $2,37).

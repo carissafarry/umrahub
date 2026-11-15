@@ -154,3 +154,11 @@ A headless run always denies `cd <dir> && git ...` (Claude Code's guard against 
 `nohup`, `kill` and `sleep` (workflow-016) let a builder start its dev server detached and stop it by port, as `builder.md` says; before this, `nohup ... &` and `kill $(lsof ...)` were denied in a headless run. `kill` is not limited to one port by the rule, so the agent files stay the guard: only the job's own port, never 3000 or 8000. `awk` stays out (it can run commands); agents use grep, Grep and Read. Writes outside the worktree and the job folder (`echo > file`, `cp` elsewhere) stay denied on purpose.
 
 Command substitution (`$(...)`, backticks) is denied in a headless run whatever the rules say, so `builder.md` stops a dev server with two commands: `lsof -tiTCP:<port> -sTCP:LISTEN`, then `kill <pid>`. The job folder lives inside the main checkout (the agents' working directory), so `nohup ... > <job folder>/dev.log` is a write inside it.
+
+## Model per agent and cost per run (workflow-015)
+
+`--model <agent>=<model>` (repeatable, for example `--model builder=sonnet`) passes `--model` to that agent's
+`claude -p` run and overrides the `model:` in its agent file; the row in `usage.jsonl` gets `modelOverride`.
+A resumed session reports its cost since the session began, so `costUsd` is now what that run added and
+`costTotalUsd` is the raw figure (old rows have no `costTotalUsd`). If the resumed run gets a new session id the
+delta cannot be found and `costUsd` stays the raw total; compare with `costTotalUsd` before trusting a builder row.

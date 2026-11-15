@@ -1,6 +1,6 @@
 // Factory driver: runs one job through spec -> build -> review -> approve -> PR without an
 // orchestrator conversation. Every agent is a fresh `claude -p` process. See factory/driver.md.
-//   node factory/driver.mjs run <job-id> [--from <stage>] [--dry-run] [--permission-mode <m>] [--allowed-tools "<rules>"] [--agent-timeout <minutes>]
+//   node factory/driver.mjs run <job-id> [--from <stage>] [--dry-run] [--permission-mode <m>] [--allowed-tools "<rules>"] [--agent-timeout <minutes>] [--model <agent>=<model>]...
 //   node factory/driver.mjs usage <job-id>
 // Never merges a PR and never pushes to main.
 import { execFile, spawn } from 'node:child_process'
@@ -98,6 +98,7 @@ function claudeArgs(c, agent, o, resume) {
   if (o.permissionMode === 'bypassPermissions') throw new Stop('refusing bypassPermissions: the driver never skips permissions')
   const args = ['-p', '--agent', agent, '--output-format', 'json', '--permission-mode', o.permissionMode,
     '--add-dir', resolve(c.job.worktree), '--allowedTools', ...o.allowedTools.split(/\s+/).filter(Boolean)]
+  if (o.models[agent]) args.push('--model', o.models[agent]) // workflow-015: overrides the model in the agent file
   if (o.slim) args.push(...SLIM_FLAGS)
   if (process.env.FACTORY_MAX_BUDGET_USD) args.push('--max-budget-usd', process.env.FACTORY_MAX_BUDGET_USD)
   if (resume) args.push('--resume', resume)
@@ -127,13 +128,21 @@ async function runAgent(c, agent, prompt, o, { round = 0, file, resume } = {}) {
   let res
   try { res = JSON.parse(out) } catch { throw new Stop(`${agent} printed no JSON result`) }
   const u = res.usage || {}
+  // workflow-015: a resumed session reports its cost since the session began, so record only what this run added.
+  // `costTotalUsd` keeps the raw figure; rows from before this change have no `costTotalUsd` and are left as they are.
+  let costUsd = res.total_cost_usd ?? null
+  if (resume && costUsd != null) {
+    const before = (await readText(join(c.dir, 'usage.jsonl'))).split('\n').filter(Boolean).map((l) => JSON.parse(l))
+      .filter((r) => r.sessionId === res.session_id && r.costTotalUsd != null).pop()
+    if (before && costUsd >= before.costTotalUsd) costUsd -= before.costTotalUsd
+  }
   await appendFile(join(c.dir, 'usage.jsonl'), JSON.stringify({
     ts: new Date().toISOString(), job: c.job.id, task: c.job.id, feature: String(c.job.feature || '').replace(/\s+/g, ' ').slice(0, 400),
     stage: c.job.stage, agent, round, sessionId: res.session_id ?? null, resumed: Boolean(resume), promptChars: prompt.length,
     model: Object.keys(res.modelUsage || {}).join(',') || null,
     inputTokens: u.input_tokens ?? null, outputTokens: u.output_tokens ?? null,
     cacheReadTokens: u.cache_read_input_tokens ?? null, cacheCreationTokens: u.cache_creation_input_tokens ?? null,
-    costUsd: res.total_cost_usd ?? null, durationMs: res.duration_ms ?? Date.now() - started, numTurns: res.num_turns ?? null,
+    costUsd, costTotalUsd: res.total_cost_usd ?? null, modelOverride: o.models[agent] ?? null, durationMs: res.duration_ms ?? Date.now() - started, numTurns: res.num_turns ?? null,
   }) + '\n')
   const denials = res.permission_denials || []
   const denied = denials.map((d) => d.tool_name || 'tool').join(', ')
@@ -377,7 +386,7 @@ function parseArgs(argv) {
     reviewers: (process.env.FACTORY_REVIEWERS || Object.keys(REVIEWERS).join(',')).split(',').map((s) => s.trim()).filter(Boolean),
     permissionMode: process.env.FACTORY_PERMISSION_MODE || 'acceptEdits',
     allowedTools: process.env.FACTORY_ALLOWED_TOOLS || DEFAULT_TOOLS,
-    agentTimeoutMin: Number(process.env.FACTORY_AGENT_TIMEOUT_MIN) || 45 }
+    agentTimeoutMin: Number(process.env.FACTORY_AGENT_TIMEOUT_MIN) || 45, models: {} }
   for (let i = 0; i < rest.length; i++) {
     if (rest[i] === '--dry-run') o.dryRun = true
     else if (rest[i] === '--slim') o.slim = true
@@ -386,6 +395,11 @@ function parseArgs(argv) {
     else if (rest[i] === '--permission-mode') o.permissionMode = rest[++i]
     else if (rest[i] === '--allowed-tools') o.allowedTools = rest[++i]
     else if (rest[i] === '--agent-timeout') o.agentTimeoutMin = Number(rest[++i])
+    else if (rest[i] === '--model') {
+      const [agent, model] = String(rest[++i]).split('=')
+      if (!agent || !model) throw new Stop('--model takes <agent>=<model>, for example builder=sonnet')
+      o.models[agent] = model
+    }
     else throw new Stop(`unknown option ${rest[i]}`)
   }
   return o
