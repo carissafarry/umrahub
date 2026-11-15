@@ -336,5 +336,10 @@
       "description": "Something went wrong while loading your notifications. Please try again.",
       "retry": "Try again"
     }
+  },
+  "NotFound": {
+    "title": "Page not found",
+    "description": "The page you are looking for does not exist or has moved.",
+    "cta": "Back to Home"
   }
 }

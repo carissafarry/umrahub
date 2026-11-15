@@ -336,5 +336,10 @@
       "description": "Terjadi kendala saat memuat notifikasi Anda. Silakan coba lagi.",
       "retry": "Coba lagi"
     }
+  },
+  "NotFound": {
+    "title": "Halaman tidak ditemukan",
+    "description": "Halaman yang Anda cari tidak ada atau sudah dipindahkan.",
+    "cta": "Kembali ke Beranda"
   }
 }
