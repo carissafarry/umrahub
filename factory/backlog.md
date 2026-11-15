@@ -52,6 +52,7 @@ the orchestrator moves items whose dependencies are all merged from **Menunggu**
 - [x] [infra-053] Sync infra branch after PR #20: bring origin/main (be-012 notifications merged by the user) into factory/infra so the open infra PR stays mergeable → infra-053
 - [x] [workflow-008] Usage rows carry task, feature text and prompt size: each usage.jsonl line gets job, task, feature (400 characters), stage and promptChars next to the agent lens → workflow-008
 - [x] [workflow-013] Schema artifact follows every database job: SKILL.md rule and resume check keep the "Skema Database Umra Hub" artifact current and set job.json `schema` → workflow-013
+- [x] [infra-114] Bookkeeping after be-070 approval: be-079 (database rule against cancel after a payment proof) queued before be-072, be-070 PR #60 → infra-114
 - [x] [infra-113] Backlog bookkeeping for the sonnet-builder experiment: fe-100 and be-070 claimed, workflow-015, workflow-016 and workflow-017 recorded → infra-113
 - [x] [workflow-021] Rework from the driver: --from build --rework runs a fresh builder on the latest rework note → workflow-021
 - [x] [workflow-020] Pause for the night: factory/pause.sh and /factory pause stop drivers, watchers, dashboard, preview servers, login helper and local Supabase; resume-check prints PAUSED → workflow-020
@@ -157,6 +158,7 @@ Cari dan Gabung Jadwal, MVP-1. Read first: `.plans/2026-11-02-cari-dan-gabung-ja
 
 ## Siap — gelombang 9
 
+- [be-079] Block cancel after a payment proof in the database: trigger or RLS rule that refuses setting participations.status to cancelled when a payment_proofs row exists for it (the rule be-070 only enforces in the app), with pgTAP tests; must be merged before be-072
 - [be-065] Dummy data: idempotent upsert migration with about 10 providers (muthawif and travel, some affiliated, one unverified), jadwal in Makkah, Thaif (day trip from Makkah) and Madinah for January 2027 with vehicle options, dummy reviews and catalog items, all is_dummy = true (ticket be-065, story US-14)
 - [be-075] Status notifications: database trigger inserting a notification for the trip owner when a participation status changes, with new notification types in the notifications table and fixed id and en copy keys (ticket be-075, story US-11)
 - [x] [be-070] Participation actions: expressInterest, setSeats, cancelInterest, confirmAttendance, respondToOption as Server Actions with trip-membership checks, validation and a pure, tested status-transition table; no cancel after payment proof (ticket be-070, stories US-5 to US-7) → claimed
@@ -173,7 +175,8 @@ Gelombang 10
 
 Gelombang 11
 - [be-067] Jadwal search: loader searchSchedules(trip, kinds) grouping results per city with day trips under their city, and a capacity function returning confirmed, fix and interested counts per option without exposing who the participants are (ticket be-067, stories US-3 and US-4) (butuh: be-061, be-064, be-065)
-- [be-072] Payment proof storage: private bucket, images only up to 1 MB, RLS so only the trip owner, the provider and admins can read, an upload action that sets paid_claimed, and a function that deletes proofs 30 days after the jadwal ends (scheduling it is a manual step noted in the PR) (ticket be-072, story US-8) (butuh: be-070)
+- [be-072] Payment proof storage: private bucket, images only up to 1 MB, RLS so only the trip owner, the provider and admins can read, an upload action that sets paid_claimed, and a function that deletes proofs 30 days after the jadwal ends (scheduling it is a manual step noted in the PR) (ticket be-072, story US-8) (butuh: be-070, be-079)
+
 
 Gelombang 12
 - [fe-069] Cari: /cari search form (trip dates, per-city rows, kinds chips, "Kabari saya soal kursi kosong" toggle placeholder), results page with large city bands, muthawif tiles and the Thaif day trip under Makkah, and the "Semua muthawif" list; adds the Cari tab. Open question: tapping a tile opens the jadwal detail (proposal) (ticket fe-069, stories US-3 and US-4) (butuh: be-067, fe-068)
