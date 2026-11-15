@@ -131,3 +131,10 @@ Dua sumber boros: bekal awal agen sekitar 40 ribu token (agen kecil seperti revi
 - **Efek yang diharapkan:** builder dan reviewer UX/UI fe bisa membuka halaman (belum bisa halaman yang butuh login). Tidak ada baris `denied Bash` tentang dev server.
 - **Belum selesai:** login untuk halaman yang butuh sesi (`factory/preview.mjs`, workflow-012 WIP, kini bisa dicoba karena Supabase lokal menyala).
 - **Efek terukur:** belum ada (cek job fe berikutnya).
+
+## workflow-018 Parameter pembanding model builder
+
+- **Perubahan:** `factory/metrics.mjs`: satu baris per job (model builder, biaya, ronde review, bersih di ronde 1, jumlah temuan, Bash ditolak, skor, bug setelah merge) dan ringkasan per model; `score` dan `bug` mencatat penilaianmu di `score.json`. `AGENTS.md` meminta laporan metrik setelah tiap job.
+- **Alasan:** kualitas builder sonnet belum teruji; satu job hanya anekdot. Perlu angka yang sama untuk setiap job.
+- **Efek yang diharapkan:** setelah beberapa job per model, ada perbandingan biaya, ronde, temuan dan skor yang bisa dipantau.
+- **Efek terukur:** belum ada (data awal: opus 5 job, sonnet 3 job, per 2026-11-16).

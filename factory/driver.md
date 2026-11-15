@@ -170,3 +170,10 @@ driver starts `npm run dev -- --port <5103 + 10n>` in the worktree itself before
 `dev.log` of the job folder), and the prompts of builder and reviewers say it is already running at that port: they open pages there and
 never start or stop a server. The same server is the preview link. A signed-in page still needs a session; the agents do not sign in
 (see `factory/preview.mjs`, workflow-012 work in progress, for sample users on the local stack).
+
+## Metrics to compare builder models (workflow-018)
+
+`node factory/metrics.mjs` prints one row per job (builder model, cost, builder cost, agent minutes, review rounds, whether round 1 was clean, number
+of findings in reviews that asked for changes, denied Bash, your score, bugs after merge) and a summary per builder model. `<job>` shows one job by
+round. `score <job> <1-5> [note]` and `bug <job> <note>` write `factory/jobs/<job>/score.json`. Builder model comes from `usage.jsonl` (`modelOverride`
+or the model of the run); jobs built in a chat session are labelled `in-session`. Compare models only with several jobs of the same kind: one job is an anecdote.
