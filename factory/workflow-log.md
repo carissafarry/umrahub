@@ -109,3 +109,53 @@ Dua sumber boros: bekal awal agen sekitar 40 ribu token (agen kecil seperti revi
 - **Efek yang diharapkan:** tidak ada baris `denied Bash` di `driver.log` job berikutnya; reviewer dan approver bisa memeriksa kode dan tes sendiri. Biaya token naik sedikit karena mereka benar-benar menjalankan pemeriksaan.
 - **Catatan:** baris usage spec-writer be-064 bertanda `source: in-session` (spec dibuat sebelum driver dipakai), jadi hanya punya `totalTokens` dan tanpa biaya. Itu bukan bug pencatatan driver.
 - **Efek terukur:** belum ada (cek `driver.log` job database berikutnya).
+
+## workflow-016 Bash ditolak: cd + git, substitusi perintah, kill
+
+- **Perubahan:** file semua agen: `git -C <worktree> ...` menggantikan `cd <worktree> && git ...`; builder menghentikan dev server dengan `lsof` lalu `kill <pid>` (tanpa `$(...)`); `driver.mjs` mengizinkan `nohup`, `kill`, `sleep`; `driver.log` menyimpan 400 karakter perintah yang ditolak (sebelumnya 120).
+- **Alasan:** workflow-014 menambah `cd`, tetapi be-070 dan fe-100 masih ditolak. Tes langsung `claude -p` dengan daftar izin driver menunjukkan `cd <dir> && git ...` selalu ditolak, `git -C` lolos, dan `kill $(lsof ...)` ditolak karena substitusi perintah.
+- **Belum selesai:** menjalankan dev server dengan `nohup ... > log &` masih ditolak (pengalihan keluaran dan `&`). Penyelesaian yang rapi: driver yang menjalankan dev server builder.
+- **Efek terukur:** belum ada (hitung baris `denied Bash` di `driver.log` job berikutnya).
+
+## workflow-015 Model per agent dan biaya per run
+
+- **Perubahan:** driver menerima `--model <agen>=<model>` (menimpa `model:` di file agen) dan mencatat `modelOverride`; baris usage run yang dilanjutkan (resume) memakai selisih biaya sesi di `costUsd` dan menyimpan angka mentah di `costTotalUsd`.
+- **Alasan:** biaya builder (opus) ~66% dari seluruh biaya, dan baris builder fe-068 menunjukkan $4,22 untuk 2 turn / 7 detik yang tidak masuk akal (dugaan: biaya kumulatif sesi). Perlu cara menguji builder dengan sonnet tanpa mengubah file agen.
+- **Efek yang diharapkan:** bisa membandingkan builder sonnet dan opus per job; biaya resume tidak terhitung dua kali. Percobaan pertama: fe-100 dengan `--model builder=sonnet`.
+- **Efek terukur:** belum ada (bandingkan fe-100 dengan fe-080 $1,26 dan fe-099 $2,37).
+
+## workflow-017 Dev server dijalankan driver untuk job fe
+
+- **Perubahan:** untuk job `fe-*` driver menyalakan dev server di port preview sebelum builder dan reviewer UX/UI (`dev.log` di folder job) dan memberi tahu agen lewat prompt; agen tidak lagi menyalakan atau mematikan server. `AGENTS.md` mendapat cara menyalakan Supabase lokal tanpa analytics.
+- **Alasan:** `nohup ... &` dan pengalihan ke berkas ditolak di run headless, jadi builder fe-100 tidak bisa membuka halaman dan semua reviewer hanya membaca diff.
+- **Efek yang diharapkan:** builder dan reviewer UX/UI fe bisa membuka halaman (belum bisa halaman yang butuh login). Tidak ada baris `denied Bash` tentang dev server.
+- **Belum selesai:** login untuk halaman yang butuh sesi (`factory/preview.mjs`, workflow-012 WIP, kini bisa dicoba karena Supabase lokal menyala).
+- **Efek terukur:** belum ada (cek job fe berikutnya).
+
+## workflow-018 Parameter pembanding model builder
+
+- **Perubahan:** `factory/metrics.mjs`: satu baris per job (model builder, biaya, ronde review, bersih di ronde 1, jumlah temuan, Bash ditolak, skor, bug setelah merge) dan ringkasan per model; `score` dan `bug` mencatat penilaianmu di `score.json`. `AGENTS.md` meminta laporan metrik setelah tiap job.
+- **Alasan:** kualitas builder sonnet belum teruji; satu job hanya anekdot. Perlu angka yang sama untuk setiap job.
+- **Efek yang diharapkan:** setelah beberapa job per model, ada perbandingan biaya, ronde, temuan dan skor yang bisa dipantau.
+- **Efek terukur:** belum ada (data awal: opus 5 job, sonnet 3 job, per 2026-11-16).
+
+## workflow-019 Login contoh untuk preview fe
+
+- **Perubahan:** `factory/preview.mjs` (dari WIP workflow-012: data contoh dan pembantu login di port 5090, hanya untuk Supabase lokal) dihubungkan ke driver: untuk job `fe-*` driver menyiapkan pengguna contoh, menjalankan dev server dengan URL dan kunci lokal, dan memberi builder serta reviewer UX/UI tautan satu klik.
+- **Alasan:** reviewer fe-100 menulis "I don't sign in", jadi halaman yang butuh sesi hanya dibaca dari diff.
+- **Diuji:** seed, login helper dan dev server dicoba terpisah dengan stack lokal: `/dashboard` menampilkan "Halo, Carissa" dan "Umrah Januari 2027". Tersambung ke driver, belum dijalankan pada job fe sungguhan.
+- **Efek terukur:** belum ada (cek review UX/UI job fe berikutnya: apakah mereka membuka halaman yang butuh login).
+
+## workflow-020 Perintah pause untuk tidur
+
+- **Perubahan:** `factory/pause.sh` (dengan `--dry-run`, `--keep-supabase`, `--quit-orbstack`) menghentikan driver dan agennya, watcher, server dashboard, dev server preview job, pembantu login dan Supabase lokal, tanpa menyentuh port 3000 dan 8000; menulis `factory/PAUSED`. `SKILL.md` mendapat `/factory pause`, `resume-check.sh` mencetak PAUSED.
+- **Alasan:** tidak ada cara resmi untuk menghentikan semua proses factory; hanya `/factory resume` untuk menyalakan.
+- **Diuji:** `--dry-run` menampilkan watcher, server dashboard, preview fe-100 dan Supabase. Pause sungguhan belum dijalankan.
+- **Efek terukur:** belum ada.
+- **Tes workflow-020 (2026-11-16):** `--dry-run`; pause sungguhan dengan driver tiruan beserta anaknya, dev server tiruan di port 15099, watcher, dashboard, pembantu login dan Supabase: semua berhenti, port 3000 dan 8000 tidak disentuh (preview yang menunjuk 8000 dilewati); pause kedua tidak menghapus daftar yang dihentikan pertama; `--keep-supabase` membiarkan Supabase hidup; `resume-check.sh` mencetak PAUSED; Supabase menyala lagi dengan resep di AGENTS.md. Dua cacat ketemu dan diperbaiki: pola `"stage":` tanpa spasi, dan pause kedua menimpa catatan pertama.
+
+## workflow-021 Rework lewat driver
+
+- **Perubahan:** `driver.mjs run <job> --from build --rework` menjalankan builder baru pada `rework-<k>.md` terbaru, ronde review lanjut dari ronde terakhir, jatah resume baru. Satu tes ditambahkan (22 lulus).
+- **Alasan:** driver belum punya rework: `--from build` hanya melanjutkan sesi builder lama dengan temuan review, jadi catatan user (mis. desain not-found untuk fe-100) harus dikerjakan di chat dan tidak tercatat.
+- **Efek terukur:** belum ada (fe-100 adalah pemakaian pertama).

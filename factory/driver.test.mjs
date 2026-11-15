@@ -368,13 +368,14 @@ test('agent timeout: a hung agent is stopped with needs-human, no retry, flag an
   assert.notEqual(r.code, 0)
 })
 
-test('denied command text is logged, one line, truncated to 120 characters', async () => {
+test('denied command text is logged, one line, truncated to 400 characters', async () => {
   const t = await setup('be-932', { spec: true })
   await drive(t, ['run', 'be-932'], { FAKE_DENY: 'builder' })
   const log = await readFile(join(t.dir, 'driver.log'), 'utf8')
   const line = log.split('\n').find((l) => l.includes('builder: denied Bash: '))
   assert.ok(line, log)
-  assert.equal(line.split('denied Bash: ')[1].length, 120)
+  const shown = line.split('denied Bash: ')[1].length
+  assert.ok(shown > 120 && shown <= 400, String(shown)) // workflow-016: was 120
 })
 
 test('a crashed agent keeps its real error: exit code, stderr text, full text in agent-error-<agent>.txt', async () => {
@@ -400,4 +401,16 @@ test('usage.jsonl rows carry the job, task, feature text, stage, prompt size and
   }
   assert.deepEqual([...new Set(rows.map((r) => r.agent))].filter((a) => a.startsWith('reviewer-')).sort(),
     ['reviewer-code', 'reviewer-security', 'reviewer-ui', 'reviewer-ux'])
+})
+
+test('--rework starts a fresh builder that reads the latest rework note, review round continues after the last one (workflow-021)', async () => {
+  const t = await setup('be-935', { stage: 'needs-human', round: 2, spec: true })
+  await writeFile(join(t.dir, 'rework-1.md'), 'Use the approved design.\n')
+  const r = await drive(t, ['run', 'be-935', '--from', 'build', '--rework'])
+  assert.equal(r.code, 0, r.stdout)
+  const cs = (await calls(t)).filter((c) => c.tool === 'claude')
+  const builder = cs.find((c) => c.agent === 'builder')
+  assert.ok(!builder.resume, 'a rework builder is fresh, not a resumed session')
+  assert.match(builder.prompt, new RegExp(`Rework: read ${t.dir}/rework-1\\.md and address it, then update build\\.md for round 3\\.`))
+  assert.ok(existsSync(join(t.dir, 'round-3')), 'reviews continue as round 3')
 })

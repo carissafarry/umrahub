@@ -486,6 +486,19 @@ check in **Merge**, like `factory/backlog.md`.
 On start, also process any files already in `factory/inbox/taken/` (left by a
 session that closed mid-request) and in `factory/inbox/`.
 
+## /factory pause — stop everything for the night (workflow-020)
+
+When the user says they are going to sleep or wants the factory quiet: run `bash factory/pause.sh` (add `--keep-supabase`
+or `--quit-orbstack` when asked; `--dry-run` shows what it would stop). It stops the job drivers and their agents, the
+watchers, the dashboard server, the job preview dev servers, the login helper and the local Supabase stack, never port 3000
+or 8000, and writes `factory/PAUSED`. Also stop the Monitors this session started (`TaskStop`) and spawn no agent until the
+user says resume. Report in a few lines what was stopped and which jobs were interrupted. `factory/resume-check.sh` prints
+`PAUSED` for a later session, so it is not mistaken for a crash.
+
+`/factory resume` after a pause: delete `factory/PAUSED`, then do the steps below; also start the local Supabase stack again
+when the pause stopped it (`supabase start --ignore-health-check -x logflare,vector,studio,imgproxy,edge-runtime,mailpit,postgres-meta,supavisor,realtime,storage-api`,
+see AGENTS.md) and restart the interrupted jobs.
+
 ## /factory resume — the factory restarts itself with the session
 
 **Rule: the factory never depends on one session staying alive.** When a session
