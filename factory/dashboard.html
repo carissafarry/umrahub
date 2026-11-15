@@ -578,6 +578,7 @@ function card(job, past) {
       ${requestFor(job.id) ? `<span class="sent">📨 ${esc(requestFor(job.id).action)} terkirim · ${requestFor(job.id).state === 'taken' ? 'diproses Claude' : 'menunggu Claude'}</span>` : ''}
       ${prUrl(job) ? `<span class="preview" data-preview="${esc(prUrl(job))}" role="link" style="background:var(--merged)">⇄ Buka PR #${esc(prUrl(job).split('/').pop())}</span>` : ''}
       ${previewUrl(job) ? `<span class="preview" data-preview="${esc(previewUrl(job))}" role="link">▶ Lihat preview · ${esc(previewUrl(job).replace('http://', ''))}</span>` : ''}
+      ${schemaUrl(job) ? `<span class="preview" data-preview="${esc(schemaUrl(job))}" role="link" style="background:var(--human)">▦ Lihat skema database</span>` : ''}
       ${human ? `<div class="hint">/factory approve ${esc(job.id)}<br>/factory rework ${esc(job.id)} …</div>` : ''}
     </button>`
 }
@@ -644,6 +645,8 @@ document.addEventListener('submit', async (e) => {
 
 // Only local dev-server URLs written by the orchestrator are shown.
 const previewUrl = (job) => (/^http:\/\/localhost:\d{2,5}(\/[\w\-./]*)?(\?[\w\-.=&%]*)?$/.test(job?.preview || '') ? job.preview : null)
+// The schema page (a claude.ai artifact) of a job that changes the database.
+const schemaUrl = (job) => (/^https:\/\/claude\.ai\/artifact\/[\w-]+$/.test(job?.schema || '') ? job.schema : null)
 const prUrl = (job) => (/^https:\/\/github\.com\/[\w.-]+\/[\w.-]+\/pull\/\d+$/.test(job?.pr || '') ? job.pr : null)
 
 async function render() {
@@ -1078,7 +1081,8 @@ async function refreshDrawer() {
   $('d-title').textContent = job.feature
   $('d-branch').textContent = job.branch
   $('d-links').innerHTML = `${prUrl(job) ? `<a class="t-job" style="display:inline-block;margin:8px 8px 0 0;text-decoration:none;background:var(--merged)" href="${esc(prUrl(job))}" target="_blank" rel="noopener">⇄ Buka PR #${esc(prUrl(job).split('/').pop())}</a>` : ''}
-    ${previewUrl(job) ? `<a class="t-job" style="display:inline-block;margin:8px 8px 0 0;text-decoration:none;background:var(--human)" href="${esc(previewUrl(job))}" target="_blank" rel="noopener">▶ Lihat preview</a>` : ''}`
+    ${previewUrl(job) ? `<a class="t-job" style="display:inline-block;margin:8px 8px 0 0;text-decoration:none;background:var(--human)" href="${esc(previewUrl(job))}" target="_blank" rel="noopener">▶ Lihat preview</a>` : ''}
+    ${schemaUrl(job) ? `<a class="t-job" style="display:inline-block;margin:8px 8px 0 0;text-decoration:none;background:var(--human)" href="${esc(schemaUrl(job))}" target="_blank" rel="noopener">▦ Lihat skema database</a>` : ''}`
   renderDecide(job)
   renderJobTasks(job)
 
