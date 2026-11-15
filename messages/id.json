@@ -338,8 +338,10 @@
     }
   },
   "NotFound": {
-    "title": "Halaman tidak ditemukan",
-    "description": "Halaman yang Anda cari tidak ada atau sudah dipindahkan.",
-    "cta": "Kembali ke Beranda"
+    "badge": "Error 404",
+    "title": "Halaman ini tidak ditemukan.",
+    "description": "Tautannya mungkin salah atau halamannya sudah dipindahkan. Kembali ke Beranda untuk melanjutkan persiapan Umrah-mu.",
+    "cta": "Kembali ke Beranda",
+    "secondary": "Lihat trip saya"
   }
 }
