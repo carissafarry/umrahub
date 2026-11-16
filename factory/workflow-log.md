@@ -159,3 +159,9 @@ Dua sumber boros: bekal awal agen sekitar 40 ribu token (agen kecil seperti revi
 - **Perubahan:** `driver.mjs run <job> --from build --rework` menjalankan builder baru pada `rework-<k>.md` terbaru, ronde review lanjut dari ronde terakhir, jatah resume baru. Satu tes ditambahkan (22 lulus).
 - **Alasan:** driver belum punya rework: `--from build` hanya melanjutkan sesi builder lama dengan temuan review, jadi catatan user (mis. desain not-found untuk fe-100) harus dikerjakan di chat dan tidak tercatat.
 - **Efek terukur:** belum ada (fe-100 adalah pemakaian pertama).
+
+## workflow-022 Builder: Write/Edit, bukan shell, dan tangkapan layar di folder job
+
+- **Perubahan:** `builder.md` melarang menulis berkas lewat shell (`cat > file <<EOF`, `sed -i`), menyuruh pakai Write dan Edit, tangkapan layar di `<folder job>/shots/` (bukan `/tmp`), dan `agent-browser` tanpa awalan variabel.
+- **Alasan:** setelah workflow-016 dan 017, rework fe-100 masih punya 19 penolakan di builder dengan pola itu. Reviewer UI sudah bisa membuka halaman yang butuh login dan menyimpan tangkapan layar (`round-3/shots/`).
+- **Efek terukur:** belum ada (hitung `denied` setelah `running builder` di `driver.log` job berikutnya; fe-100 rework: 19).
