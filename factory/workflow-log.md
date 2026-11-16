@@ -171,3 +171,9 @@ Dua sumber boros: bekal awal agen sekitar 40 ribu token (agen kecil seperti revi
 - **Perubahan:** `/factory resume` (SKILL.md dan `resume-check.sh`) menyalakan server preview desain (`.plans/design-preview`, port 8765) dan `pause.sh` menghentikannya.
 - **Alasan:** preview desain Cari jadwal (http://127.0.0.1:8765/cari-jadwal-preview-v3.html) mati bersama sesi dan harus diminta ulang.
 - **Efek terukur:** belum ada.
+
+## workflow-024 Pengecualian database hosted untuk orkestrator
+
+- **Perubahan:** `AGENTS.md` (aturan "job tidak menyentuh database remote") mendapat pengecualian: atas permintaan user, sesi chat orkestrator boleh menjalankan `supabase db push --yes` setelah menampilkan daftar migrasi (`migration list` dan `--dry-run`) dan user mengonfirmasi daftar persisnya. Agen job tetap tidak boleh.
+- **Alasan:** user meminta orkestrator menerapkan migrasi ke Supabase hosted. 2026-11-16: 8 migrasi tertunda (notifications sampai seed be-065) diterapkan dengan cara ini; `migration list` dan `db push --dry-run` setelahnya menunjukkan up to date.
+- **Efek terukur:** n/a.
