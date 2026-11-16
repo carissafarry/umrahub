@@ -212,6 +212,7 @@ async function prepareLogin(c, p) {
     const script = fileURLToPath(new URL('./preview.mjs', import.meta.url))
     const env = JSON.parse((await run('node', [script, 'prepare', persona], { cwd: c.root })).trim().split('\n').pop())
     c.loginEnv = env
+    c.persona = persona
     c.login = (await run('node', [script, 'link', persona, `http://localhost:${p}${route}`], { cwd: c.root })).trim()
     await log(c, `signed-in preview ready (sample user "${persona}", local Supabase)`)
     return env
@@ -241,7 +242,15 @@ async function ensurePreview(c) {
   const route = await previewRoute(c)
   const p = previewPort(c)
   await ensureDevServer(c)
-  await save(c, { preview: `http://localhost:${p}${route}` })
+  // workflow-025: the app only has Google sign-in, which the local stack cannot do, so the dashboard button opens the
+  // one-click sign-in link of the login helper (it signs the sample user in and redirects to the page). A bare
+  // localhost:<port> link would land on the sign-in screen with no way through.
+  let preview = `http://localhost:${p}${route}`
+  if (c.persona) {
+    const script = fileURLToPath(new URL('./preview.mjs', import.meta.url))
+    preview = await run('node', [script, 'link', c.persona, preview], { cwd: c.root }).then((t) => t.trim()).catch(() => preview)
+  }
+  await save(c, { preview })
 }
 
 // ---------- stages ----------

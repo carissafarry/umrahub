@@ -518,7 +518,7 @@ hand (run `bash factory/resume-check.sh` first if you have no report).
 1. **Bring the servers back**: the dashboard server (`node factory/server.mjs`,
    background, port 8000) dies with the session, so start it again when port 8000
    is down and give the user the link (http://localhost:8000/dashboard.html).
-   Also serve the design preview (`.plans/design-preview`, port 8765: `(cd .plans/design-preview && nohup python3 -m http.server 8765 --bind 127.0.0.1 >/dev/null 2>&1 &)`) and give the user http://127.0.0.1:8765/cari-jadwal-preview-v3.html. Then re-arm the watcher: Monitor `bash factory/watch.sh`, and re-arm it every
+   A job preview link that contains `localhost:5090/go` goes through the login helper (`(nohup node factory/preview.mjs serve >/dev/null 2>&1 &)`, needs the local Supabase stack): start it too, and always give the user that link, never a bare `localhost:<port>` one (the app only has Google sign-in). Also serve the design preview (`.plans/design-preview`, port 8765: `(cd .plans/design-preview && nohup python3 -m http.server 8765 --bind 127.0.0.1 >/dev/null 2>&1 &)`) and give the user http://127.0.0.1:8765/cari-jadwal-preview-v3.html. Then re-arm the watcher: Monitor `bash factory/watch.sh`, and re-arm it every
    time it expires. Never report the factory as resumed until both are up.
 2. **Dashboard requests**: process everything in `factory/inbox/taken/` and
    `factory/inbox/` as the user's own commands (see **Dashboard requests**). A
