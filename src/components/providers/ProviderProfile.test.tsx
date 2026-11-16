@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { NextIntlClientProvider } from "next-intl";
 import { act } from "react";
-import { createRoot } from "react-dom/client";
+import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import id from "../../../messages/id.json";
 import type { ProviderProfileData } from "@/lib/providers/queries";
@@ -28,18 +28,23 @@ const base: ProviderProfileData = {
 
 describe("ProviderProfile", () => {
   let container: HTMLDivElement;
+  let root: Root;
 
   beforeEach(() => {
     (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
     container = document.createElement("div");
     document.body.append(container);
+    root = createRoot(container);
   });
 
-  afterEach(() => container.remove());
+  afterEach(() => {
+    act(() => root.unmount());
+    container.remove();
+  });
 
   function render(profile: ProviderProfileData) {
     act(() =>
-      createRoot(container).render(
+      root.render(
         <NextIntlClientProvider locale="id" messages={id}>
           <ProviderProfile profile={profile} />
         </NextIntlClientProvider>,
