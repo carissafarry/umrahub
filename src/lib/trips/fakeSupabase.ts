@@ -11,6 +11,8 @@ function makeBuilder(result: Result) {
     select: vi.fn(() => builder),
     eq: vi.fn(() => builder),
     is: vi.fn(() => builder),
+    gte: vi.fn(() => builder),
+    or: vi.fn(() => builder),
     in: vi.fn(() => builder),
     gte: vi.fn(() => builder),
     lte: vi.fn(() => builder),

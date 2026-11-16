@@ -111,6 +111,45 @@
       "retry": "Coba lagi"
     }
   },
+  "ProviderProfile": {
+    "metaTitle": "Profil penyedia · Umra Hub",
+    "backToHome": "Kembali ke Beranda",
+    "type": { "muthawif": "Muthawif", "travel": "Travel" },
+    "verifiedBadge": "Terverifikasi",
+    "verifiedOn": "terverifikasi {date}",
+    "unverified": "Belum diverifikasi Umra Hub. Periksa sendiri sebelum membayar.",
+    "rating": "{rating} dari 5 · {count, plural, other {# ulasan}}",
+    "initialsLabel": "Inisial {name}",
+    "affiliationTitle": "Afiliasi",
+    "relationship": {
+      "works_at": "Bekerja di",
+      "owner": "Pemilik",
+      "partner": "Mitra"
+    },
+    "since": "sejak {year}",
+    "bioTitle": "Tentang",
+    "catalogTitle": "Katalog",
+    "reviewsTitle": "Ulasan",
+    "reviewsEmpty": "Belum ada ulasan.",
+    "reviewStars": "{rating} dari 5 bintang",
+    "schedulesTitle": "Jadwal tersedia",
+    "schedulesEmpty": "Belum ada jadwal yang tersedia.",
+    "scheduleFrom": "mulai dari {price} SAR per orang",
+    "contactTitle": "Kontak",
+    "whatsapp": "Hubungi lewat WhatsApp",
+    "opensInNewTab": "(membuka tab baru)",
+    "contactUnavailable": "Kontak WhatsApp belum tersedia untuk profil ini.",
+    "catalogItem": {
+      "metaTitle": "Detail katalog · Umra Hub",
+      "by": "Oleh",
+      "backToProfile": "Kembali ke profil"
+    },
+    "error": {
+      "title": "Profil ini belum bisa dimuat",
+      "description": "Tenang, datamu aman. Coba lagi sebentar lagi.",
+      "retry": "Coba lagi"
+    }
+  },
   "StepDetail": {
     "metaTitle": "Panduan langkah persiapan · Umra Hub",
     "backToChecklist": "Kembali ke checklist",
