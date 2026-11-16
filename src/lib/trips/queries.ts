@@ -23,7 +23,7 @@ const stepColumns =
 
 // Signed out → redirect to `/`; bad id or a trip that isn't the user's (RLS
 // returns no row) → 404.
-async function loadOwnedTrip(id: string) {
+export async function loadOwnedTrip(id: string) {
   const supabase = await createClient();
   const {
     data: { user },
