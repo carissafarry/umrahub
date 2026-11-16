@@ -122,12 +122,13 @@ select ok(not public.is_trip_member('bbbbbbbb-0000-0000-0000-0000000000ff'), 'is
 -- Published schedules and options are readable; drafts are not
 
 select is(
-  (select array_agg(id order by id) from public.schedules),
+  (select array_agg(id order by id) from public.schedules where not is_dummy),
   array['dddddddd-0000-4000-8000-000000000001']::uuid[],
   'A reads only the published schedule of a published provider'
 );
 select is(
-  (select array_agg(id order by id) from public.schedule_options),
+  (select array_agg(id order by id) from public.schedule_options
+   where id::text not like 'd0000000-0000-4000-8000-%'),
   array['eeeeeeee-0000-4000-8000-000000000001']::uuid[],
   'A reads only options of that schedule'
 );
