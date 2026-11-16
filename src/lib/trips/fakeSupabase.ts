@@ -12,6 +12,8 @@ function makeBuilder(result: Result) {
     eq: vi.fn(() => builder),
     is: vi.fn(() => builder),
     in: vi.fn(() => builder),
+    gte: vi.fn(() => builder),
+    lte: vi.fn(() => builder),
     order: vi.fn(() => builder),
     limit: vi.fn(() => builder),
     overrideTypes: vi.fn(() => builder),
