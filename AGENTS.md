@@ -30,6 +30,8 @@ Scope now: user-facing app only. Admin CMS is out of scope; content is edited vi
 - `src/components/trips/` — trip checklist UI (expandable step rows, status pill and circle, progress card) and the budget page body
 - `src/lib/steps/` — step detail data loader, the safe guide-markdown parser, comment validation (`comments.ts`), content-flag validation (`flags.ts`) and the comment, tip-vote (`voteStepComment`, `clearStepCommentVote`) and flag Server Actions (`actions.ts`) (see Step detail, Step comments, Tip ratings, Content flags)
 - `src/lib/jadwal/` — participation status-transition table (`transitions.ts`, pure) and the participation Server Actions (`actions.ts`) (see Jadwal participation actions)
+- `src/lib/providers/` — provider profile and catalog item loaders (see Provider profiles)
+- `src/components/providers/` — provider profile page body, catalog item detail and the verified check (see Provider profiles)
 - `src/components/steps/` — step detail page body, the `GuideMarkdown` renderer, the `ReportOutdatedInfo` report dialog and the `StepComments` tips section
 - `src/lib/dashboard/` — loader shared by the Beranda and the trip list, per-trip progress summary, the Beranda's next-tasks selection (`nextTasks.ts`), trip-name rules and the `renameTrip` / `deleteTrip` Server Actions (see Dashboard)
 - `src/components/dashboard/` — Beranda body (`Beranda.tsx`), trip card, shared trip progress bar (`TripProgress.tsx`) and the card's rename/delete dialogs (see Dashboard)
@@ -184,6 +186,16 @@ All four must pass before a change is ready. Use `build:check`, not `build`, for
 - `src/lib/jadwal/actions.ts` (`"use server"`) exports `expressInterest(tripId, scheduleId, seats)`, `setSeats`, `cancelInterest`, `confirmAttendance` and `respondToOption(participationId, "accept" | "decline")`, returning `{ ok: true } | { ok: false; error: "invalid" | "notFound" | "notAllowed" | "failed" }`. They validate first, call `getUser()` (signed out → `failed`), and check membership through RLS: the trip (`expressInterest`) or the participation row (the others) must be visible, else `notFound`.
 - A refused transition is `notAllowed` and writes nothing. Writes send only `{seats}`, `{status}` or `{seats, status}` and filter by `id` and the status that was read. `cancelInterest` also refuses when the participation has any `payment_proofs` row (a failed lookup is `failed`). `expressInterest` re-joins a `cancelled` row by updating it, inserts `{ trip_id, schedule_id, seats }` otherwise, and maps a `23505` race to `notAllowed`.
 - Success revalidates `/jadwal/<scheduleId>` and `/jadwal`. Logs are a fixed string plus `error.code` only.
+
+## Provider profiles
+
+- Routes (signed-in only): `/penyedia/[id]` (any published muthawif or travel) and `/penyedia/[id]/katalog/[itemId]` (one published catalog item of that provider). Signed out → `/`; bad UUID, missing or unpublished → `notFound()`; an item of another provider or unpublished → `notFound()`.
+- Loaders in `src/lib/providers/queries.ts`: `loadProviderProfile(id)` and `loadCatalogItem(providerId, itemId)`. They select explicit columns (never `bank_account_text`, `reviewed_by`, `final_group_url` or `select("*")`) and throw a generic `Error` on a failed query.
+- Verified rule: the badge and "terverifikasi <month year>" need a `provider_verifications` row with `status = 'verified'` and `expires_on >= today` (`isVerified`, `YYYY-MM-DD` string compare, server clock). Otherwise the profile shows the warning "Belum diverifikasi Umra Hub. Periksa sendiri sebelum membayar." and is still rendered. Reuse `isVerified` logic for any later screen (Cari, jadwal).
+- Afiliasi card: active affiliations only (the loader filters `status = 'active'` on top of RLS), directly after the header; a muthawif lists its travel with relationship and start year, a travel lists its muthawif with their own rating. No card when empty. Reviews are only the provider's own, newest first, 20 shown; average and count cover all visible ones.
+- Dummy WhatsApp rule: the loader returns `whatsappUrl` (`https://wa.me/<number>`, null when `is_dummy` or no number) and `contactAvailable`; the raw number and `is_dummy` never reach components or HTML. A neutral "belum tersedia" note replaces the button.
+- Catalog shape decision: a card list on the profile (image, title, 3-line description) opening the detail page; no CTA on the detail page. Jadwal rows are plain (no `/jadwal/<id>` link until fe-071).
+- Components in `src/components/providers/` (`ProviderProfile`, `CatalogItemDetail`, `VerifiedCheck`) are plain (non-async) components using next-intl hooks; copy is in the `ProviderProfile` namespace.
 
 ## How work is run (mandatory, every session)
 
