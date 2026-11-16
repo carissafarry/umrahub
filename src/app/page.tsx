@@ -61,7 +61,7 @@ export default async function Home({
 
         <div className="relative -mt-7 mx-auto flex w-full max-w-md flex-1 flex-col md:max-w-3xl md:px-8 lg:max-w-6xl lg:px-10">
           <div className="flex flex-1 flex-col gap-4 rounded-t-[2rem] bg-background px-4 pt-5 pb-8 md:gap-5 md:px-6 lg:gap-6 lg:px-8 lg:pt-8 lg:pb-12">
-            <p className="text-[0.9375rem] leading-relaxed text-muted lg:max-w-3xl lg:text-lg">
+            <p className="text-[0.9375rem] leading-relaxed text-muted lg:max-w-prose lg:text-lg">
               {t("description")}
             </p>
 

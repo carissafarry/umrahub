@@ -134,7 +134,7 @@ export async function Beranda({
 
             <div className="flex flex-col gap-2 pt-1.5 md:items-start lg:col-span-2">
               {/* /cari doesn't exist yet: fe-069 turns this into
-                <ButtonLink href="/cari"> and adds the Cari tab. */}
+                  <ButtonLink href="/cari"> and adds the Cari tab. */}
               <Button disabled aria-describedby="beranda-search-soon">
                 {t("search")}
               </Button>
