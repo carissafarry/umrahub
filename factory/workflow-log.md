@@ -165,3 +165,9 @@ Dua sumber boros: bekal awal agen sekitar 40 ribu token (agen kecil seperti revi
 - **Perubahan:** `builder.md` melarang menulis berkas lewat shell (`cat > file <<EOF`, `sed -i`), menyuruh pakai Write dan Edit, tangkapan layar di `<folder job>/shots/` (bukan `/tmp`), dan `agent-browser` tanpa awalan variabel.
 - **Alasan:** setelah workflow-016 dan 017, rework fe-100 masih punya 19 penolakan di builder dengan pola itu. Reviewer UI sudah bisa membuka halaman yang butuh login dan menyimpan tangkapan layar (`round-3/shots/`).
 - **Efek terukur:** belum ada (hitung `denied` setelah `running builder` di `driver.log` job berikutnya; fe-100 rework: 19).
+
+## workflow-023 Preview desain ikut menyala saat resume
+
+- **Perubahan:** `/factory resume` (SKILL.md dan `resume-check.sh`) menyalakan server preview desain (`.plans/design-preview`, port 8765) dan `pause.sh` menghentikannya.
+- **Alasan:** preview desain Cari jadwal (http://127.0.0.1:8765/cari-jadwal-preview-v3.html) mati bersama sesi dan harus diminta ulang.
+- **Efek terukur:** belum ada.

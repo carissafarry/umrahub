@@ -28,6 +28,7 @@ done
 stop_pids "watcher" $(pgrep -f "factory/watch.sh")
 stop_pids "dashboard server" $(pgrep -f "factory/server.mjs")
 stop_pids "login helper" $(pgrep -f "factory/preview.mjs serve")
+stop_pids "design preview" $(pgrep -f "http.server 8765")
 
 # 5. dev servers of the job previews (ports from job.json; never 3000 or 8000)
 for j in factory/jobs/*/job.json; do
