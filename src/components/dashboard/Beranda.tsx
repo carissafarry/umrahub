@@ -45,101 +45,103 @@ export async function Beranda({
     tChecklist.has(`phases.${key}`) ? tChecklist(`phases.${key}`) : key;
 
   return (
-    <div className="mx-auto w-full max-w-md flex-1 md:max-w-3xl md:px-8 lg:max-w-6xl lg:px-10">
+    <div className="flex w-full flex-1 flex-col">
       <main className="flex flex-col pb-[calc(7rem+env(safe-area-inset-bottom))] lg:pb-16">
         {/* The top padding leaves room for the SiteHeader overlaid on the sky. */}
-        <SkyHero className="h-56 px-5 pt-19 md:rounded-t-[2rem] md:px-8 lg:h-72 lg:px-10 lg:pt-24">
+        <SkyHero className="h-56 pt-19 lg:h-72 lg:pt-24">
           <h1 className="relative z-10 text-[2rem] leading-[1.05] font-semibold tracking-tight break-words text-primary-foreground lg:text-5xl">
             {t("greeting", { name: firstName })}
           </h1>
         </SkyHero>
 
-        <div className="relative -mt-7 flex flex-col gap-4 rounded-t-[2rem] bg-background px-4 pt-5 md:px-6 lg:grid lg:grid-cols-2 lg:items-start lg:gap-6 lg:px-8 lg:pt-8">
-          <Card className="flex flex-col gap-4 lg:p-7">
-            <div className="flex flex-col gap-1">
-              <span className="self-start rounded-full bg-accent-soft px-2.5 py-0.5 text-xs font-bold text-accent">
-                {t("activeTrip")}
-              </span>
-              <h2 className="mt-1 min-w-0 text-xl font-bold tracking-tight">
-                <Link
-                  href={`/trips/${active.id}`}
-                  className={`tap-target inline-flex items-center break-words underline-offset-4 hover:underline ${focusRing}`}
-                >
-                  {active.name}
-                </Link>
-              </h2>
-              <p className="text-sm text-muted">
-                {tDashboard("departureCity", { city: active.departure_city })}
-              </p>
-              {active.planned_departure_date && (
+        <div className="relative -mt-7 mx-auto w-full max-w-md md:max-w-3xl md:px-8 lg:max-w-6xl lg:px-10">
+          <div className="flex flex-col gap-4 rounded-t-[2rem] bg-background px-4 pt-5 md:px-6 lg:grid lg:grid-cols-2 lg:items-start lg:gap-6 lg:px-8 lg:pt-8">
+            <Card className="flex flex-col gap-4 lg:p-7">
+              <div className="flex flex-col gap-1">
+                <span className="self-start rounded-full bg-accent-soft px-2.5 py-0.5 text-xs font-bold text-accent">
+                  {t("activeTrip")}
+                </span>
+                <h2 className="mt-1 min-w-0 text-xl font-bold tracking-tight">
+                  <Link
+                    href={`/trips/${active.id}`}
+                    className={`tap-target inline-flex items-center break-words underline-offset-4 hover:underline ${focusRing}`}
+                  >
+                    {active.name}
+                  </Link>
+                </h2>
                 <p className="text-sm text-muted">
-                  {tDashboard("departureMonth", {
-                    date: format.dateTime(
-                      new Date(active.planned_departure_date),
-                      { month: "long", year: "numeric", timeZone: "UTC" },
-                    ),
-                  })}
+                  {tDashboard("departureCity", { city: active.departure_city })}
                 </p>
+                {active.planned_departure_date && (
+                  <p className="text-sm text-muted">
+                    {tDashboard("departureMonth", {
+                      date: format.dateTime(
+                        new Date(active.planned_departure_date),
+                        { month: "long", year: "numeric", timeZone: "UTC" },
+                      ),
+                    })}
+                  </p>
+                )}
+                <p className="text-sm text-muted">
+                  {t("travelers", { count: travelerCount })}
+                </p>
+              </div>
+              <hr className="border-surface-line" />
+              <TripProgress trip={active} />
+            </Card>
+
+            <section
+              aria-labelledby="beranda-tasks"
+              className="flex flex-col gap-3"
+            >
+              <h2
+                id="beranda-tasks"
+                className="text-lg font-extrabold tracking-tight"
+              >
+                {t("tasksTitle")}
+              </h2>
+              {tasks.length > 0 ? (
+                <ul className="flex flex-col gap-3">
+                  {tasks.map((step, index) => (
+                    <li key={step.id}>
+                      <Link
+                        href={`/steps/${step.id}?trip=${active.id}`}
+                        className={`tap-target flex items-center gap-3 rounded-[1.375rem] border border-border bg-surface-raised p-3 ${focusRing}`}
+                      >
+                        <span
+                          aria-hidden="true"
+                          className={`flex size-11 shrink-0 items-center justify-center rounded-2xl ${taskTiles[index % taskTiles.length]}`}
+                        >
+                          <ChecklistIcon className="size-5" />
+                        </span>
+                        <span className="flex min-w-0 flex-1 flex-col">
+                          <span className="text-sm font-bold break-words">
+                            {locale === "en" ? step.title_en : step.title_id}
+                          </span>
+                          <span className="truncate text-xs text-muted">
+                            {phaseLabel(step.phase_key)}
+                          </span>
+                        </span>
+                        <ChevronRightIcon className="size-5 shrink-0 text-muted" />
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-muted">{t("tasksDone")}</p>
               )}
-              <p className="text-sm text-muted">
-                {t("travelers", { count: travelerCount })}
+            </section>
+
+            <div className="flex flex-col gap-2 pt-1.5 md:items-start lg:col-span-2">
+              {/* /cari doesn't exist yet: fe-069 turns this into
+                <ButtonLink href="/cari"> and adds the Cari tab. */}
+              <Button disabled aria-describedby="beranda-search-soon">
+                {t("search")}
+              </Button>
+              <p id="beranda-search-soon" className="text-sm text-muted">
+                {t("searchSoon")}
               </p>
             </div>
-            <hr className="border-surface-line" />
-            <TripProgress trip={active} />
-          </Card>
-
-          <section
-            aria-labelledby="beranda-tasks"
-            className="flex flex-col gap-3"
-          >
-            <h2
-              id="beranda-tasks"
-              className="text-lg font-extrabold tracking-tight"
-            >
-              {t("tasksTitle")}
-            </h2>
-            {tasks.length > 0 ? (
-              <ul className="flex flex-col gap-3">
-                {tasks.map((step, index) => (
-                  <li key={step.id}>
-                    <Link
-                      href={`/steps/${step.id}?trip=${active.id}`}
-                      className={`tap-target flex items-center gap-3 rounded-[1.375rem] border border-border bg-surface-raised p-3 ${focusRing}`}
-                    >
-                      <span
-                        aria-hidden="true"
-                        className={`flex size-11 shrink-0 items-center justify-center rounded-2xl ${taskTiles[index % taskTiles.length]}`}
-                      >
-                        <ChecklistIcon className="size-5" />
-                      </span>
-                      <span className="flex min-w-0 flex-1 flex-col">
-                        <span className="text-sm font-bold break-words">
-                          {locale === "en" ? step.title_en : step.title_id}
-                        </span>
-                        <span className="truncate text-xs text-muted">
-                          {phaseLabel(step.phase_key)}
-                        </span>
-                      </span>
-                      <ChevronRightIcon className="size-5 shrink-0 text-muted" />
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className="text-muted">{t("tasksDone")}</p>
-            )}
-          </section>
-
-          <div className="flex flex-col gap-2 pt-1.5 md:items-start lg:col-span-2">
-            {/* /cari doesn't exist yet: fe-069 turns this into
-                <ButtonLink href="/cari"> and adds the Cari tab. */}
-            <Button disabled aria-describedby="beranda-search-soon">
-              {t("search")}
-            </Button>
-            <p id="beranda-search-soon" className="text-sm text-muted">
-              {t("searchSoon")}
-            </p>
           </div>
         </div>
       </main>

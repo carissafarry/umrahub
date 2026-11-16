@@ -13,7 +13,9 @@ export function SkyHero({
       data-sky-hero=""
       className={`relative overflow-hidden bg-linear-to-b from-sky-day-from to-sky-day-to ${className}`}
     >
-      {children}
+      <div className="mx-auto w-full max-w-md px-5 md:max-w-3xl md:px-16 lg:max-w-6xl lg:px-20">
+        {children}
+      </div>
       <HeroArt />
     </div>
   );
