@@ -111,6 +111,45 @@
       "retry": "Try again"
     }
   },
+  "ProviderProfile": {
+    "metaTitle": "Provider profile · Umra Hub",
+    "backToHome": "Back to Home",
+    "type": { "muthawif": "Muthawif", "travel": "Travel agency" },
+    "verifiedBadge": "Verified",
+    "verifiedOn": "verified {date}",
+    "unverified": "Not verified by Umra Hub. Check for yourself before you pay.",
+    "rating": "{rating} out of 5 · {count, plural, one {# review} other {# reviews}}",
+    "initialsLabel": "Initials of {name}",
+    "affiliationTitle": "Affiliation",
+    "relationship": {
+      "works_at": "Works at",
+      "owner": "Owner",
+      "partner": "Partner"
+    },
+    "since": "since {year}",
+    "bioTitle": "About",
+    "catalogTitle": "Catalogue",
+    "reviewsTitle": "Reviews",
+    "reviewsEmpty": "No reviews yet.",
+    "reviewStars": "{rating} out of 5 stars",
+    "schedulesTitle": "Available schedules",
+    "schedulesEmpty": "No schedules are available yet.",
+    "scheduleFrom": "from {price} SAR per person",
+    "contactTitle": "Contact",
+    "whatsapp": "Contact via WhatsApp",
+    "opensInNewTab": "(opens in a new tab)",
+    "contactUnavailable": "WhatsApp contact is not available for this profile yet.",
+    "catalogItem": {
+      "metaTitle": "Catalogue item · Umra Hub",
+      "by": "By",
+      "backToProfile": "Back to profile"
+    },
+    "error": {
+      "title": "We couldn't load this profile",
+      "description": "Don't worry, your data is safe. Please try again in a moment.",
+      "retry": "Try again"
+    }
+  },
   "StepDetail": {
     "metaTitle": "Preparation step guide · Umra Hub",
     "backToChecklist": "Back to checklist",
