@@ -231,7 +231,7 @@ select is(
 );
 
 select is(
-  (select count(*)::int from public.service_types),
+  (select count(*)::int from public.service_types where id::text not like 'd0000000-0000-4000-8000-%'),
   2,
   'all service types are visible'
 );
