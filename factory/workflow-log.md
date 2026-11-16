@@ -177,3 +177,9 @@ Dua sumber boros: bekal awal agen sekitar 40 ribu token (agen kecil seperti revi
 - **Perubahan:** `AGENTS.md` (aturan "job tidak menyentuh database remote") mendapat pengecualian: atas permintaan user, sesi chat orkestrator boleh menjalankan `supabase db push --yes` setelah menampilkan daftar migrasi (`migration list` dan `--dry-run`) dan user mengonfirmasi daftar persisnya. Agen job tetap tidak boleh.
 - **Alasan:** user meminta orkestrator menerapkan migrasi ke Supabase hosted. 2026-11-16: 8 migrasi tertunda (notifications sampai seed be-065) diterapkan dengan cara ini; `migration list` dan `db push --dry-run` setelahnya menunjukkan up to date.
 - **Efek terukur:** n/a.
+
+## workflow-025 Tombol preview langsung masuk (login)
+
+- **Perubahan:** `driver.mjs` mengisi `preview` di `job.json` dengan tautan satu klik dari pembantu login (`localhost:5090/go?persona=...&to=...`) bila stack Supabase lokal ada, `resume-check.sh` dan SKILL.md menyalakan pembantu login kembali.
+- **Alasan:** tombol "Lihat preview" di dashboard membuka `localhost:<port>` polos; aplikasi hanya punya login Google yang tidak ada di Supabase lokal, sehingga user tidak bisa masuk.
+- **Efek terukur:** belum ada; cek tombol preview job fe berikutnya.

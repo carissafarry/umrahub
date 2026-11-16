@@ -44,6 +44,13 @@ else
   need "dashboard server is down (it dies with the session): start it in the background with 'node factory/server.mjs' from the repo root, then tell the user http://localhost:8000/dashboard.html"
 fi
 
+echo "login helper:"
+if grep -lq 'localhost:5090/go' factory/jobs/*/job.json 2>/dev/null && ! lsof -tiTCP:5090 -sTCP:LISTEN >/dev/null 2>&1; then
+  need "login helper is down but a job preview uses it: start it in the background with '(nohup node factory/preview.mjs serve >/dev/null 2>&1 &)' (local Supabase must run)"
+else
+  note "ok (or no preview needs it)"
+fi
+
 echo "design preview:"
 if lsof -tiTCP:8765 -sTCP:LISTEN >/dev/null 2>&1; then
   note "running on http://127.0.0.1:8765/cari-jadwal-preview-v3.html"

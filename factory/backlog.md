@@ -52,6 +52,7 @@ the orchestrator moves items whose dependencies are all merged from **Menunggu**
 - [x] [infra-053] Sync infra branch after PR #20: bring origin/main (be-012 notifications merged by the user) into factory/infra so the open infra PR stays mergeable → infra-053
 - [x] [workflow-008] Usage rows carry task, feature text and prompt size: each usage.jsonl line gets job, task, feature (400 characters), stage and promptChars next to the agent lens → workflow-008
 - [x] [workflow-013] Schema artifact follows every database job: SKILL.md rule and resume check keep the "Skema Database Umra Hub" artifact current and set job.json `schema` → workflow-013
+- [x] [workflow-025] Preview buttons sign in: the dashboard preview link of an fe job is the login helper's one-click link, and resume restarts the helper → workflow-025
 - [x] [workflow-024] Hosted database exception: AGENTS.md lets the orchestrator apply merged migrations with supabase db push after the user confirms the exact list; jobs still never do → workflow-024
 - [x] [infra-116] Fix Siap items promoted without a checkbox and claim fe-077 and be-067: promoted lines were written as '- [code]' so /factory next could not see them → infra-116
 - [x] [infra-115] Bookkeeping for fe-101 and be-065: both claimed and opened as PRs #67 and #66; be-067, fe-074 and fe-077 promoted after be-065 merged → infra-115
