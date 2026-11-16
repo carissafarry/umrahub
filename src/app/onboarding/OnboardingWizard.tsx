@@ -198,10 +198,10 @@ export function OnboardingWizard({
             screen 11): the page title is read by screen readers only and the
             intro moves below the form. */}
         <div className="contents lg:flex lg:flex-col lg:gap-3">
-          <h1 className="sr-only lg:not-sr-only lg:text-5xl lg:leading-tight lg:font-bold lg:tracking-tight">
+          <h1 className="sr-only lg:not-sr-only lg:text-5xl lg:leading-tight lg:font-extrabold lg:tracking-[-0.03em]">
             {isNewTrip ? tNewTrip("title") : t("title")}
           </h1>
-          <p className="order-last text-sm text-muted lg:order-none lg:text-xl">
+          <p className="order-last text-sm text-muted lg:order-none lg:text-lg">
             {isNewTrip ? tNewTrip("intro") : t("intro")}
           </p>
           <ol
@@ -239,7 +239,7 @@ export function OnboardingWizard({
 
         <form
           noValidate
-          className="flex flex-col gap-5 lg:rounded-[2rem] lg:border lg:border-surface-line lg:p-8"
+          className="flex flex-col gap-5 rounded-[1.75rem] border border-surface-line bg-surface p-5 lg:p-8"
           onSubmit={(event) => {
             event.preventDefault();
             handleNext();
