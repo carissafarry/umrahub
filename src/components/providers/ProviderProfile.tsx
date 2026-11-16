@@ -47,7 +47,7 @@ export function ProviderProfile({ profile }: { profile: ProviderProfileData }) {
 
   return (
     <div className="mx-auto w-full max-w-md flex-1 px-5 md:max-w-3xl md:px-8 lg:max-w-[75rem] lg:px-10">
-      <main className="flex flex-col gap-6 pt-2 pb-[calc(7rem+env(safe-area-inset-bottom))] lg:grid lg:grid-cols-[minmax(0,1fr)_22rem] lg:gap-x-10 lg:gap-y-8 lg:pt-8 lg:pb-16">
+      <main className="flex flex-col gap-6 pt-2 pb-[calc(7rem+env(safe-area-inset-bottom))] lg:grid lg:grid-cols-[minmax(0,1fr)_22rem] lg:grid-rows-[auto_auto_1fr] lg:gap-x-10 lg:gap-y-8 lg:pt-8 lg:pb-16">
         <div className="flex flex-col gap-6 lg:col-span-2">
           <Link
             href="/dashboard"
