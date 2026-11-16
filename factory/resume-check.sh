@@ -44,6 +44,13 @@ else
   need "dashboard server is down (it dies with the session): start it in the background with 'node factory/server.mjs' from the repo root, then tell the user http://localhost:8000/dashboard.html"
 fi
 
+echo "design preview:"
+if lsof -tiTCP:8765 -sTCP:LISTEN >/dev/null 2>&1; then
+  note "running on http://127.0.0.1:8765/cari-jadwal-preview-v3.html"
+else
+  need "design preview is down: start it in the background with '(cd .plans/design-preview && nohup python3 -m http.server 8765 --bind 127.0.0.1 >/dev/null 2>&1 &)', then tell the user http://127.0.0.1:8765/cari-jadwal-preview-v3.html"
+fi
+
 # The dashboard silently drops backlog lines that are not "- [ ] [<type>-NNN] <Title>: <description>".
 bad=$(grep -E '^- (\[[ x]\] )?\[(infra|be|fe|spec|workflow|\?)-[0-9]{3}\]' factory/backlog.md | grep -vE '^- (\[[ x]\] )?\[(infra|be|fe|spec|workflow|\?)-[0-9]{3}\] .+: ' | LC_ALL=C sed -E 's/^- (\[[ x]\] )?\[([a-z?]+-[0-9]{3})\].*/\2/' | tr '\n' ' ')
 echo "backlog:"
