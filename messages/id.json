@@ -336,5 +336,12 @@
       "description": "Terjadi kendala saat memuat notifikasi Anda. Silakan coba lagi.",
       "retry": "Coba lagi"
     }
+  },
+  "NotFound": {
+    "badge": "Error 404",
+    "title": "Halaman ini tidak ditemukan.",
+    "description": "Tautannya mungkin salah atau halamannya sudah dipindahkan. Kembali ke Beranda untuk melanjutkan persiapan Umrah-mu.",
+    "cta": "Kembali ke Beranda",
+    "secondary": "Lihat trip saya"
   }
 }

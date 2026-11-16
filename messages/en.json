@@ -336,5 +336,12 @@
       "description": "Something went wrong while loading your notifications. Please try again.",
       "retry": "Try again"
     }
+  },
+  "NotFound": {
+    "badge": "Error 404",
+    "title": "This page could not be found.",
+    "description": "The link may be wrong or the page may have moved. Go back to Home to continue preparing for your Umrah.",
+    "cta": "Back to Home",
+    "secondary": "View my trips"
   }
 }
