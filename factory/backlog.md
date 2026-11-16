@@ -52,6 +52,8 @@ the orchestrator moves items whose dependencies are all merged from **Menunggu**
 - [x] [infra-053] Sync infra branch after PR #20: bring origin/main (be-012 notifications merged by the user) into factory/infra so the open infra PR stays mergeable → infra-053
 - [x] [workflow-008] Usage rows carry task, feature text and prompt size: each usage.jsonl line gets job, task, feature (400 characters), stage and promptChars next to the agent lens → workflow-008
 - [x] [workflow-013] Schema artifact follows every database job: SKILL.md rule and resume check keep the "Skema Database Umra Hub" artifact current and set job.json `schema` → workflow-013
+- [x] [infra-115] Bookkeeping for fe-101 and be-065: both claimed and opened as PRs #67 and #66; be-067, fe-074 and fe-077 promoted after be-065 merged → infra-115
+- [x] [workflow-023] Design preview on resume: /factory resume serves .plans/design-preview on port 8765 and pause stops it → workflow-023
 - [x] [workflow-022] Builder writes files with Write/Edit, screenshots in the job folder, agent-browser without variable prefix: builder.md rule after 19 denials in fe-100's rework → workflow-022
 - [x] [infra-114] Bookkeeping after be-070 approval: be-079 (database rule against cancel after a payment proof) queued before be-072, be-070 PR #60 → infra-114
 - [x] [infra-113] Backlog bookkeeping for the sonnet-builder experiment: fe-100 and be-070 claimed, workflow-015, workflow-016 and workflow-017 recorded → infra-113
@@ -159,9 +161,12 @@ Cari dan Gabung Jadwal, MVP-1. Read first: `.plans/2026-11-02-cari-dan-gabung-ja
 
 ## Siap — gelombang 9
 
-- [fe-101] Responsive web pass: make every restyled screen (header and top nav, Beranda, /trips, checklist, step detail, budget, plus the screens of fe-080, fe-099 and fe-100) a real desktop layout, not a stretched phone column: container up to about 1200px, multi-column grids at lg (1024px and up), two-column detail pages with the side card sticky, top nav instead of the bottom nav, hero text beside its art, comfortable line length; check each screen at 390, 768 and 1280px with screenshots in the review and fix horizontal scroll or oversized tap areas; the sky hero (and the landing hero) runs edge to edge across the full viewport width, only its content is held in the centred container: no white strips left and right of the hero on wide screens (seen on /dashboard at 1600px, 2026-11-12); no behaviour change
+- [fe-077] Provider profiles: muthawif and travel profile pages (verified badge with date, prominent affiliation card, read-only reviews, catalog cards, available jadwal, WhatsApp button, unverified warning text "Belum diverifikasi Umra Hub. Periksa sendiri sebelum membayar.") and a catalog item detail page. Open question: catalog shape (proposal: card list opening a detail page) (ticket fe-077, story US-10)
+- [be-067] Jadwal search: loader searchSchedules(trip, kinds) grouping results per city with day trips under their city, and a capacity function returning confirmed, fix and interested counts per option without exposing who the participants are (ticket be-067, stories US-3 and US-4)
+- [fe-074] Jadwal saya: tasks that need action and the list of jadwal with status pills; adds the Jadwal saya tab (ticket fe-074, story US-9)
+- [x] [fe-101] Responsive web pass: make every restyled screen (header and top nav, Beranda, /trips, checklist, step detail, budget, plus the screens of fe-080, fe-099 and fe-100) a real desktop layout, not a stretched phone column: container up to about 1200px, multi-column grids at lg (1024px and up), two-column detail pages with the side card sticky, top nav instead of the bottom nav, hero text beside its art, comfortable line length; check each screen at 390, 768 and 1280px with screenshots in the review and fix horizontal scroll or oversized tap areas; the sky hero (and the landing hero) runs edge to edge across the full viewport width, only its content is held in the centred container: no white strips left and right of the hero on wide screens (seen on /dashboard at 1600px, 2026-11-12); no behaviour change → claimed
 - [be-079] Block cancel after a payment proof in the database: trigger or RLS rule that refuses setting participations.status to cancelled when a payment_proofs row exists for it (the rule be-070 only enforces in the app), with pgTAP tests; must be merged before be-072
-- [be-065] Dummy data: idempotent upsert migration with about 10 providers (muthawif and travel, some affiliated, one unverified), jadwal in Makkah, Thaif (day trip from Makkah) and Madinah for January 2027 with vehicle options, dummy reviews and catalog items, all is_dummy = true (ticket be-065, story US-14)
+- [x] [be-065] Dummy data: idempotent upsert migration with about 10 providers (muthawif and travel, some affiliated, one unverified), jadwal in Makkah, Thaif (day trip from Makkah) and Madinah for January 2027 with vehicle options, dummy reviews and catalog items, all is_dummy = true (ticket be-065, story US-14) → claimed
 - [be-075] Status notifications: database trigger inserting a notification for the trip owner when a participation status changes, with new notification types in the notifications table and fixed id and en copy keys (ticket be-075, story US-11)
 - [x] [be-070] Participation actions: expressInterest, setSeats, cancelInterest, confirmAttendance, respondToOption as Server Actions with trip-membership checks, validation and a pure, tested status-transition table; no cancel after payment proof (ticket be-070, stories US-5 to US-7) → claimed
 
@@ -173,17 +178,14 @@ Gelombang 9
 - [fe-079] Tip ratings UI: "Membantu" and "Kurang" buttons with counts on each tip in the step detail, own vote highlighted, "Paling membantu" tag on the top tip, sort control; reference screen "Detail langkah" in the preview (ticket fe-079, story US-12) (butuh: be-078, fe-066)
 
 Gelombang 10
-- [fe-077] Provider profiles: muthawif and travel profile pages (verified badge with date, prominent affiliation card, read-only reviews, catalog cards, available jadwal, WhatsApp button, unverified warning text "Belum diverifikasi Umra Hub. Periksa sendiri sebelum membayar.") and a catalog item detail page. Open question: catalog shape (proposal: card list opening a detail page) (ticket fe-077, story US-10) (butuh: be-063, be-065, fe-066)
 
 Gelombang 11
-- [be-067] Jadwal search: loader searchSchedules(trip, kinds) grouping results per city with day trips under their city, and a capacity function returning confirmed, fix and interested counts per option without exposing who the participants are (ticket be-067, stories US-3 and US-4) (butuh: be-061, be-064, be-065)
 - [be-072] Payment proof storage: private bucket, images only up to 1 MB, RLS so only the trip owner, the provider and admins can read, an upload action that sets paid_claimed, and a function that deletes proofs 30 days after the jadwal ends (scheduling it is a manual step noted in the PR) (ticket be-072, story US-8) (butuh: be-070, be-079)
 
 
 Gelombang 12
 - [fe-069] Cari: /cari search form (trip dates, per-city rows, kinds chips, "Kabari saya soal kursi kosong" toggle placeholder), results page with large city bands, muthawif tiles and the Thaif day trip under Makkah, and the "Semua muthawif" list; adds the Cari tab. Open question: tapping a tile opens the jadwal detail (proposal) (ticket fe-069, stories US-3 and US-4) (butuh: be-067, fe-068)
 - [fe-071] Jadwal detail and interest: vehicle options with progress, seat stepper, deadlines, "Saya tertarik" CTA, state after interest, cancel dialog (ticket fe-071, stories US-4 and US-5) (butuh: be-070, be-067, fe-069)
-- [fe-074] Jadwal saya: tasks that need action and the list of jadwal with status pills; adds the Jadwal saya tab (ticket fe-074, story US-9) (butuh: be-070, fe-068)
 - [fe-073] Attendance and payment screens: konfirmasi hadir, tawaran opsi, final and pembayaran (bank account, copy button, proof upload, final group link) and the states after each action (ticket fe-073, stories US-6 to US-8) (butuh: be-072, fe-071)
 - [fe-076] Notifications restyle: notifications page in the new style with rows for the new notification types (ticket fe-076, story US-11) (butuh: be-075, fe-066)
 
