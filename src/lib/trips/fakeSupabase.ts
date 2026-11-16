@@ -14,7 +14,6 @@ function makeBuilder(result: Result) {
     gte: vi.fn(() => builder),
     or: vi.fn(() => builder),
     in: vi.fn(() => builder),
-    gte: vi.fn(() => builder),
     lte: vi.fn(() => builder),
     order: vi.fn(() => builder),
     limit: vi.fn(() => builder),
